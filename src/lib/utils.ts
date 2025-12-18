@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { format } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,9 +19,10 @@ export function sanitizePhoneNumber(phone: string): string {
 }
 
 export function formatDate(date: string | number | Date): string {
-  const d = new Date(date);
-  const year = d.getFullYear().toString().slice(-2);
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${day}/${month}/${year}`;
+  if (!date) return "";
+  try {
+    return format(new Date(date), "dd MMM, yyyy");
+  } catch (error) {
+    return "";
+  }
 }

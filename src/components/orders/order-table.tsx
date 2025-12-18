@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
@@ -51,6 +51,11 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const [deliveryDeadline, setDeliveryDeadline] = React.useState<Date | undefined>(
     order.entregaLimite ? new Date(order.entregaLimite) : undefined
   );
+  
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handleDelete = () => {
     startTransition(async () => {
@@ -64,7 +69,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         const updatedOrderData = {
           ...order,
           entrega: new Date(order.entrega),
-          entregaLimite: new Date(order.entregaLimite),
+          entregaLimite: deliveryDeadline || new Date(order.entregaLimite),
           [fieldName]: value,
         };
         await updateOrder(order.id, updatedOrderData);
@@ -121,11 +126,13 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         />
         <div className="text-sm text-muted-foreground flex items-center">
           {order.celular}
-          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
-            <a href={`https://wa.me/${sanitizePhoneNumber(order.celular)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${order.name}`}>
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
+                <a href={`https://wa.me/${sanitizePhoneNumber(order.celular)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${order.name}`}>
+                    <svg fill="currentColor" viewBox="0 0 24 24" className="h-4 w-4">
+                        <path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.75-.16 1.43-.2.6-.48.93-.73 1.05-.25.13-.5.13-.88.06-.38-.07-1.4-.46-2.6-1.55-1.5-1.3-2.6-2.9-2.9-3.4-.3-.5-.6-1-.6-1.5s.2-1 .4-1.2c.2-.2.4-.3.6-.3s.4.1.6.4a8.6 8.6 0 01.9 1.2c.2.3.3.4.2.7-.1.3-.2.4-.4.6-.2.2-.3.3-.4.4-.1.1-.1.2 0 .4.2.3.8.9 1.6 1.7.9.8 1.5 1.2 1.7 1.4.2.2.4.3.6.2.2-.1.4-.3.5-.4.2-.1.3-.1.4-.1.1 0 .3.1.4.2zM12 2a10 10 0 100 20 10 10 0 000-20zm0 18.5a8.5 8.5 0 110-17 8.5 8.5 0 010 17z"/>
+                    </svg>
+                </a>
+            </Button>
         </div>
       </TableCell>
       <TableCell>
@@ -155,14 +162,14 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         </Select>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />
+       {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-0">
+        <div className="flex items-center justify-end gap-2">
             <Button asChild variant="ghost" size="icon">
                 <Link href={`/orders/${order.id}/edit`}>
-                <ExternalLink className="h-4 w-4" />
+                <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit Order</span>
                 </Link>
             </Button>
@@ -235,6 +242,8 @@ export function OrderTable({ orders }: { orders: Order[] }) {
         title: "Success",
         description: "Order deleted successfully.",
       });
+      // This will trigger a re-render with the updated orders list from the server
+      replace(pathname + '?' + searchParams.toString());
     } catch (error) {
       toast({
         variant: "destructive",
@@ -261,7 +270,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[200px]">Customer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sub-Status</TableHead>
-              <TableHead className="hidden md:table-cell">Delivery Deadline</TableHead>
+              <TableHead className="hidden md:table-cell w-[180px]">Delivery Deadline</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
