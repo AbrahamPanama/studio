@@ -75,6 +75,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
       try {
         const updatedData = { ...order, [fieldName]: value };
         
+        // The server action will validate the full object
         await updateOrder(order.id, updatedData);
 
         toast({
@@ -123,7 +124,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
 
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
-      {p.name}
+      {p.name} - {p.quantity}
       {index < order.productos.length - 1 && ', '}
     </span>
   ));

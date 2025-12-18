@@ -44,7 +44,7 @@
           "name": "Buzón",
           "quantity": 1,
           "price": 95,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
       "orderTotal": 516,
@@ -75,7 +75,7 @@
           "name": "Business Cards",
           "quantity": 500,
           "price": 0.5,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660758551971",
