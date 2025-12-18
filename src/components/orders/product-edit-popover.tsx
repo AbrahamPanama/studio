@@ -94,7 +94,7 @@ export function ProductEditPopover({
               <div className="space-y-2">
                 <h4 className="font-medium leading-none">Edit Items</h4>
                 <p className="text-sm text-muted-foreground">
-                  Update product name and ready status.
+                  Update product ready status.
                 </p>
               </div>
               <div className="grid gap-2 max-h-60 overflow-y-auto pr-2">
@@ -109,7 +109,7 @@ export function ProductEditPopover({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} readOnly className="border-0 bg-transparent shadow-none" />
                           </FormControl>
                         </FormItem>
                       )}
