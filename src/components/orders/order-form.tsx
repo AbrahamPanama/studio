@@ -119,6 +119,7 @@ export function OrderForm({ order }: { order?: Order }) {
         }
         toast({ title: 'Success', description: `Order ${isEditing ? 'updated' : 'created'}.` });
         router.push('/');
+        router.refresh();
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Something went wrong.' });
       }

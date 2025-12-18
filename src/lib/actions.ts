@@ -116,7 +116,7 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     
     orders.unshift(newOrder);
     revalidatePath('/');
-    redirect('/');
+    revalidatePath('/orders/new');
 }
 
 export async function updateOrder(id: string, data: z.infer<typeof orderSchema>) {
@@ -139,11 +139,11 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
         ...validatedFields.data,
         id: originalOrder.id, // ensure id and fechaIngreso are not overwritten
         fechaIngreso: originalOrder.fechaIngreso,
+        productos: validatedFields.data.productos,
     };
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
-    redirect('/');
 }
 
 export async function deleteOrder(id: string) {
