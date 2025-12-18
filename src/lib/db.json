@@ -9,7 +9,7 @@
       "estado": "On Hand/Working",
       "subEstado": "Pendiente",
       "entrega": "2025-12-30T05:00:00.000Z",
-      "entregaLimite": "2025-12-04T05:00:00.000Z",
+      "entregaLimite": "2025-12-05T05:00:00.000Z",
       "servicioEntrega": "Uno Express",
       "direccionEnvio": "Mañanitas",
       "privacidad": "Limitado Fecha",
@@ -105,7 +105,7 @@
       "subEstado": "Check List",
       "fechaIngreso": "2023-10-26T10:00:00.000Z",
       "entrega": "2024-07-05T00:00:00.000Z",
-      "entregaLimite": "2024-07-10T00:00:00.000Z",
+      "entregaLimite": "2024-07-24T05:00:00.000Z",
       "servicioEntrega": "Uber",
       "direccionEnvio": "123 Main St, Anytown, USA",
       "privacidad": "ilimitado",
@@ -129,7 +129,10 @@
       "customTag1": "Urgent Project",
       "customTag2": "",
       "customTag3": "",
-      "customTag4": ""
+      "customTag4": "",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0
     },
     {
       "id": "3",

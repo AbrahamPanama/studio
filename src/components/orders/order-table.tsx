@@ -46,6 +46,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ProductEditPopover } from './product-edit-popover';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [isPending, startTransition] = React.useTransition();
@@ -74,8 +75,6 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
       try {
         const updatedData = { ...order, [fieldName]: value };
         
-        // Pass the plain object to the server action. 
-        // The server action is responsible for validation.
         await updateOrder(order.id, updatedData);
 
         toast({
@@ -177,16 +176,9 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         </Select>
       </TableCell>
       <TableCell>
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <p className="line-clamp-3">{productSummary}</p>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p className="max-w-xs">{productSummary}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        <ProductEditPopover order={order}>
+            <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
+        </ProductEditPopover>
       </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
