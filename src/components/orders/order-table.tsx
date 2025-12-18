@@ -9,16 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Edit, Trash2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
@@ -44,6 +37,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const [isPending, startTransition] = React.useTransition();
 
   React.useEffect(() => {
+    // This now runs only on the client, avoiding the hydration mismatch.
     setFormattedDate(formatDate(order.entrega));
   }, [order.entrega]);
 
@@ -70,34 +64,25 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         <StatusBadge status={order.estado} />
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {formattedDate}
+        {formattedDate || <span className="text-muted-foreground">Loading...</span>}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
         <AlertDialog>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-haspopup="true" size="icon" variant="ghost">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Toggle menu</span>
+          <div className="flex items-center justify-end gap-2">
+            <Button asChild variant="ghost" size="icon">
+              <Link href={`/orders/${order.id}/edit`}>
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">Edit Order</span>
+              </Link>
+            </Button>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete Order</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href={`/orders/${order.id}/edit`}>
-                  <Edit className="mr-2 h-4 w-4"/>
-                  Edit
-                </Link>
-              </DropdownMenuItem>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
-                  <Trash2 className="mr-2 h-4 w-4"/>
-                  Delete
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </AlertDialogTrigger>
+          </div>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
