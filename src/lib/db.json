@@ -1,0 +1,101 @@
+{
+  "orders": [
+    {
+      "id": "1",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "celular": "+1 (234) 567-890",
+      "description": "A sample order for 10 T-shirts and 20 mugs.",
+      "comentarios": "Customer requested a specific blue color for the t-shirts.",
+      "estado": "New",
+      "subEstado": "Pendiente Arte",
+      "fechaIngreso": "2023-10-26T10:00:00.000Z",
+      "entrega": "2024-07-05T00:00:00.000Z",
+      "entregaLimite": "2024-07-10T00:00:00.000Z",
+      "servicioEntrega": "Uber",
+      "direccionEnvio": "123 Main St, Anytown, USA",
+      "privacidad": "ilimitado",
+      "productos": [
+        {
+          "id": "p1",
+          "name": "T-Shirt",
+          "quantity": 10,
+          "price": 15,
+          "materialsReady": true
+        },
+        {
+          "id": "p2",
+          "name": "Mug",
+          "quantity": 20,
+          "price": 8,
+          "materialsReady": false
+        }
+      ],
+      "orderTotal": 310,
+      "customTag1": "Urgent Project",
+      "customTag2": "",
+      "customTag3": "",
+      "customTag4": ""
+    },
+    {
+      "id": "2",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "celular": "098-765-4321",
+      "description": "500 business cards, urgent requirement.",
+      "comentarios": "Use the new logo file provided via email.",
+      "estado": "Urgent",
+      "subEstado": "Pendiente Material",
+      "fechaIngreso": "2023-10-27T11:00:00.000Z",
+      "entrega": "2024-07-01T00:00:00.000Z",
+      "entregaLimite": "2024-07-01T00:00:00.000Z",
+      "servicioEntrega": "Retiro taller",
+      "direccionEnvio": "Retiro Taller",
+      "privacidad": "Limitado Fecha",
+      "productos": [
+        {
+          "id": "p3",
+          "name": "Business Cards",
+          "quantity": 500,
+          "price": 0.5,
+          "materialsReady": false
+        }
+      ],
+      "orderTotal": 250,
+      "customTag1": "High Priority",
+      "customTag2": "",
+      "customTag3": "",
+      "customTag4": ""
+    },
+    {
+      "id": "3",
+      "name": "Peter Jones",
+      "email": "peter.jones@example.com",
+      "celular": "555 123 4567",
+      "description": "1000 vinyl stickers, completed.",
+      "comentarios": "Customer was very happy with the quality.",
+      "estado": "Done",
+      "subEstado": "Check List",
+      "fechaIngreso": "2023-10-20T09:00:00.000Z",
+      "entrega": "2024-06-25T00:00:00.000Z",
+      "entregaLimite": "2024-06-25T00:00:00.000Z",
+      "servicioEntrega": "Uno Express",
+      "direccionEnvio": "456 Oak Ave, Somecity, USA",
+      "privacidad": "no respondió",
+      "productos": [
+        {
+          "id": "p4",
+          "name": "Vinyl Stickers",
+          "quantity": 1000,
+          "price": 0.2,
+          "materialsReady": true
+        }
+      ],
+      "orderTotal": 200,
+      "customTag1": "Repeat Customer",
+      "customTag2": "",
+      "customTag3": "",
+      "customTag4": ""
+    }
+  ]
+}
