@@ -1,17 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
-
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { formatDate } from "@/lib/utils";
+import { format, parseISO } from 'date-fns';
 
 type DatePickerProps = {
   value: Date | undefined;
@@ -19,30 +11,46 @@ type DatePickerProps = {
   disabled?: boolean;
 };
 
+// Helper to format date to "yyyy-MM-dd" for the input
+function formatDateForInput(date: Date | undefined): string {
+  if (!date) return "";
+  try {
+    return format(date, "yyyy-MM-dd");
+  } catch {
+    return "";
+  }
+}
+
 export function DatePicker({ value, onChange, disabled }: DatePickerProps) {
+  const [inputValue, setInputValue] = React.useState<string>(formatDateForInput(value));
+
+  React.useEffect(() => {
+    setInputValue(formatDateForInput(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStringValue = e.target.value;
+    setInputValue(newStringValue);
+    if (newStringValue) {
+        // The input value is a string 'YYYY-MM-DD'. The time zone is UTC.
+        // We parse it and then pass it to the form.
+        const date = parseISO(newStringValue);
+        onChange(date);
+    } else {
+      onChange(undefined);
+    }
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-[150px] justify-start text-left font-normal",
-            !value && "text-muted-foreground"
-          )}
-          disabled={disabled}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? formatDate(value) : <span>Pick a date</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={onChange}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
+    <Input
+      type="date"
+      value={inputValue}
+      onChange={handleChange}
+      disabled={disabled}
+      className={cn(
+        "w-[150px] justify-start text-left font-normal",
+        !value && "text-muted-foreground"
+      )}
+    />
   );
 }
