@@ -89,6 +89,8 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedProducts = form.watch('productos');
   const watchedEntrega = form.watch('entrega');
   const watchedServicio = form.watch('servicioEntrega');
+  const watchedTotalAbono = form.watch('totalAbono');
+  const watchedOrderTotal = form.watch('orderTotal');
 
   React.useEffect(() => {
     const total = watchedProducts.reduce((sum, product) => {
@@ -112,13 +114,30 @@ export function OrderForm({ order }: { order?: Order }) {
     }
   }, [watchedServicio, form]);
 
+  React.useEffect(() => {
+    const totalAbono = Number(watchedTotalAbono) || 0;
+    const orderTotal = Number(watchedOrderTotal) || 0;
+
+    if (totalAbono > 0) {
+      form.setValue('abono', true, { shouldValidate: true });
+    } else {
+      form.setValue('abono', false, { shouldValidate: true });
+    }
+
+    if (orderTotal > 0 && totalAbono === orderTotal) {
+      form.setValue('cancelo', true, { shouldValidate: true });
+    } else {
+      form.setValue('cancelo', false, { shouldValidate: true });
+    }
+  }, [watchedTotalAbono, watchedOrderTotal, form]);
+
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
-      if (isEditing) {
-        await updateOrder(order.id, data);
-      } else {
-        await createOrder(data);
-      }
+        if (isEditing) {
+          await updateOrder(order.id, data);
+        } else {
+          await createOrder(data);
+        }
     });
   }
 
