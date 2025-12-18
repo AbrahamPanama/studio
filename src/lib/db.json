@@ -47,9 +47,12 @@
           "materialsReady": false
         }
       ],
-      "orderTotal": 473.5,
+      "orderTotal": 516,
       "id": "1766075375916",
-      "fechaIngreso": "2025-12-18T16:29:35.916Z"
+      "fechaIngreso": "2025-12-18T16:29:35.916Z",
+      "abono": true,
+      "cancelo": true,
+      "totalAbono": 516
     },
     {
       "id": "2",
