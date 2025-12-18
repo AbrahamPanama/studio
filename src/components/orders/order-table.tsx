@@ -125,7 +125,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
 
   return (
     <TableRow>
-      <TableCell>
+      <TableCell className="w-[200px]">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -143,9 +143,9 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
             </Button>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="w-[160px]">
         <Select value={status} onValueChange={handleStatusChange} disabled={isPending}>
-            <SelectTrigger className="w-[150px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
+            <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
                 <SelectValue asChild>
                     <StatusBadge status={status} />
                 </SelectValue>
@@ -157,9 +157,9 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
             </SelectContent>
         </Select>
       </TableCell>
-      <TableCell>
+      <TableCell className="w-[160px]">
         <Select value={subStatus} onValueChange={handleSubStatusChange} disabled={isPending}>
-            <SelectTrigger className="w-[150px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
+            <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -172,20 +172,20 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
       <TableCell>
         <TooltipProvider>
             <Tooltip>
-                <TooltipTrigger>
-                    <div className="truncate w-[120px]">{productSummary}</div>
+                <TooltipTrigger asChild>
+                    <p className="line-clamp-3">{productSummary}</p>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>{productSummary}</p>
+                    <p className="max-w-xs">{productSummary}</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="hidden md:table-cell">
+      <TableCell className="hidden md:table-cell w-[160px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />}
       </TableCell>
-      <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
-      <TableCell>
+      <TableCell className="text-right w-[120px]">{formatCurrency(order.orderTotal)}</TableCell>
+      <TableCell className="w-[100px]">
         <div className="flex items-center justify-end gap-2">
             <Button asChild variant="ghost" size="icon">
                 <Link href={`/orders/${order.id}/edit`}>
@@ -288,12 +288,12 @@ export function OrderTable({ orders }: { orders: Order[] }) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[200px]">Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Sub-Status</TableHead>
+              <TableHead className="w-[160px]">Status</TableHead>
+              <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead className="hidden md:table-cell w-[180px]">Delivery Deadline</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>
+              <TableHead className="hidden md:table-cell w-[160px]">Delivery Deadline</TableHead>
+              <TableHead className="text-right w-[120px]">Total</TableHead>
+              <TableHead className="w-[100px]">
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
@@ -316,3 +316,5 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     </div>
   );
 }
+
+    

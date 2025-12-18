@@ -33,14 +33,21 @@
           "materialsReady": false
         },
         {
+          "id": "p17660760215772",
           "name": "cuadro de firmas ",
           "quantity": 1,
           "price": 175,
+          "materialsReady": false
+        },
+        {
+          "name": "Buzón",
+          "quantity": 1,
+          "price": 95,
           "materialsReady": false,
-          "id": "p17660760215772"
+          "id": "p17660761656313"
         }
       ],
-      "orderTotal": 198,
+      "orderTotal": 373,
       "id": "1766075375916",
       "fechaIngreso": "2025-12-18T16:29:35.916Z"
     },
