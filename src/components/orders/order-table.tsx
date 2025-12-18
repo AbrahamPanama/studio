@@ -46,6 +46,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { orderSchema } from '@/lib/schema';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [isPending, startTransition] = React.useTransition();
@@ -72,14 +73,23 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
     startTransition(async () => {
       try {
-        // Ensure date objects are correctly formatted for the action
+        // Create a plain object from the order that matches the schema
+        const orderDataForValidation = {
+            ...order,
+            entrega: new Date(order.entrega),
+            entregaLimite: new Date(order.entregaLimite),
+        };
+        
         const updatedOrderData = {
-          ...order,
-          entrega: new Date(order.entrega),
-          entregaLimite: deliveryDeadline || new Date(order.entregaLimite),
+          ...orderDataForValidation,
           [fieldName]: value,
         };
-        await updateOrder(order.id, updatedOrderData);
+
+        // Validate before sending
+        const validatedData = orderSchema.parse(updatedOrderData);
+
+        await updateOrder(order.id, validatedData);
+
         toast({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
@@ -99,6 +109,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
       }
     });
   };
+
 
   const handleNameBlur = () => {
     if (name !== order.name) {

@@ -15,7 +15,9 @@ type DatePickerProps = {
 function formatDateForInput(date: Date | undefined): string {
   if (!date) return "";
   try {
-    return format(date, "yyyy-MM-dd");
+    // Ensure the date is treated as local time when formatting for the input
+    const localDate = new Date(date.valueOf() + date.getTimezoneOffset() * 60000);
+    return format(localDate, "yyyy-MM-dd");
   } catch {
     return "";
   }
@@ -32,8 +34,8 @@ export function DatePicker({ value, onChange, disabled }: DatePickerProps) {
     const newStringValue = e.target.value;
     setInputValue(newStringValue);
     if (newStringValue) {
-        // The input value is a string 'YYYY-MM-DD'. The time zone is UTC.
-        // We parse it and then pass it to the form.
+        // The input value is a string 'YYYY-MM-DD'.
+        // parseISO treats it as UTC midnight.
         const date = parseISO(newStringValue);
         onChange(date);
     } else {
