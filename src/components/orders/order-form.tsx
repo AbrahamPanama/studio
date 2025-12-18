@@ -124,7 +124,7 @@ export function OrderForm({ order }: { order?: Order }) {
       form.setValue('abono', false, { shouldValidate: true });
     }
 
-    if (orderTotal > 0 && totalAbono === orderTotal) {
+    if (orderTotal > 0 && totalAbono >= orderTotal) {
       form.setValue('cancelo', true, { shouldValidate: true });
     } else {
       form.setValue('cancelo', false, { shouldValidate: true });
