@@ -39,13 +39,95 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
+  const [formattedDate, setFormattedDate] = React.useState('');
+  const [isPending, startTransition] = React.useTransition();
+
+  React.useEffect(() => {
+    setFormattedDate(formatDate(order.entrega));
+  }, [order.entrega]);
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      onDelete(order.id);
+    });
+  }
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="font-medium">{order.name}</div>
+        <div className="text-sm text-muted-foreground flex items-center">
+          {order.celular}
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
+            <a href={`https://wa.me/${sanitizePhoneNumber(order.celular)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${order.name}`}>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
+        </div>
+      </TableCell>
+      <TableCell>
+        <StatusBadge status={order.estado} />
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        {formattedDate}
+      </TableCell>
+      <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
+      <TableCell>
+        <AlertDialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button aria-haspopup="true" size="icon" variant="ghost">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link href={`/orders/${order.id}/edit`}>
+                  <Edit className="mr-2 h-4 w-4"/>
+                  Edit
+                </Link>
+              </DropdownMenuItem>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                  <Trash2 className="mr-2 h-4 w-4"/>
+                  Delete
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the order for {order.name}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isPending}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              >
+                {isPending ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 
 export function OrderTable({ orders }: { orders: Order[] }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = React.useTransition();
   
   const searchTerm = searchParams.get('query')?.toString() || '';
   const [inputValue, setInputValue] = React.useState(searchTerm);
@@ -71,21 +153,19 @@ export function OrderTable({ orders }: { orders: Order[] }) {
   }, [inputValue, pathname, replace, searchParams]);
 
   const handleDelete = async (id: string) => {
-    startTransition(async () => {
-      try {
-        await deleteOrder(id);
-        toast({
-          title: "Success",
-          description: "Order deleted successfully.",
-        });
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to delete order.",
-        });
-      }
-    });
+    try {
+      await deleteOrder(id);
+      toast({
+        title: "Success",
+        description: "Order deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete order.",
+      });
+    }
   };
 
   return (
@@ -114,71 +194,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
           <TableBody>
             {filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <div className="font-medium">{order.name}</div>
-                    <div className="text-sm text-muted-foreground flex items-center">
-                      {order.celular}
-                      <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
-                        <a href={`https://wa.me/${sanitizePhoneNumber(order.celular)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${order.name}`}>
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.estado} />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {formatDate(order.entrega)}
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/orders/${order.id}/edit`}>
-                              <Edit className="mr-2 h-4 w-4"/>
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4"/>
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the order for {order.name}.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(order.id)}
-                            disabled={isPending}
-                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                          >
-                            {isPending ? "Deleting..." : "Delete"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
+                <OrderTableRow key={order.id} order={order} onDelete={handleDelete} />
               ))
             ) : (
               <TableRow>
