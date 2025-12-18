@@ -23,7 +23,7 @@
           "name": "Invitaciones",
           "quantity": 24,
           "price": 7.5,
-          "materialsReady": true
+          "materialsReady": false
         },
         {
           "id": "p17660753759161",
@@ -37,14 +37,14 @@
           "name": "cuadro de firmas ",
           "quantity": 1,
           "price": 175,
-          "materialsReady": true
+          "materialsReady": false
         },
         {
           "id": "p17660761656313",
           "name": "Buzón",
           "quantity": 1,
           "price": 95,
-          "materialsReady": true
+          "materialsReady": false
         }
       ],
       "orderTotal": 516,

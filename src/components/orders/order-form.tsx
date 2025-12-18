@@ -396,16 +396,16 @@ export function OrderForm({ order }: { order?: Order }) {
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="customTag1" render={({ field }) => (
-                    <FormItem><FormLabel>Custom Tag 1</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Tag 1</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="customTag2" render={({ field }) => (
-                    <FormItem><FormLabel>Custom Tag 2</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Tag 2</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="customTag3" render={({ field }) => (
-                    <FormItem><FormLabel>Custom Tag 3</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Tag 3</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="customTag4" render={({ field }) => (
-                    <FormItem><FormLabel>Custom Tag 4</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Tag 4</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </CardContent>
               </Card>
