@@ -88,7 +88,8 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export async function getOrders() {
     await delay(300);
-    return orders.sort((a, b) => b.fechaIngreso.getTime() - a.fechaIngreso.getTime());
+    // Return a deep copy to avoid mutations affecting the "database"
+    return JSON.parse(JSON.stringify(orders.sort((a, b) => b.fechaIngreso.getTime() - a.fechaIngreso.getTime())));
 }
 
 export async function getOrderById(id: string) {
@@ -112,11 +113,11 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
         ...validatedFields.data,
         id: String(Date.now()),
         fechaIngreso: new Date(),
+        productos: validatedFields.data.productos.map((p, i) => ({...p, id: `p${Date.now()}${i}`}))
     };
     
     orders.unshift(newOrder);
     revalidatePath('/');
-    revalidatePath('/orders/new');
 }
 
 export async function updateOrder(id: string, data: z.infer<typeof orderSchema>) {
@@ -139,7 +140,7 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
         ...validatedFields.data,
         id: originalOrder.id, // ensure id and fechaIngreso are not overwritten
         fechaIngreso: originalOrder.fechaIngreso,
-        productos: validatedFields.data.productos,
+        productos: validatedFields.data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`})),
     };
     
     revalidatePath('/');
