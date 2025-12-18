@@ -6,7 +6,7 @@
       "celular": "+50762168911",
       "description": "sample",
       "comentarios": "sampleee",
-      "estado": "New",
+      "estado": "Urgent",
       "subEstado": "Pendiente",
       "entrega": "2025-12-20T05:00:00.000Z",
       "entregaLimite": "2025-12-20T05:00:00.000Z",
@@ -23,14 +23,14 @@
           "name": "Invitaciones",
           "quantity": 24,
           "price": 5.5,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660753759161",
           "name": "Imanes",
           "quantity": 12,
           "price": 5.5,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660760215772",
@@ -40,14 +40,14 @@
           "materialsReady": false
         },
         {
+          "id": "p17660761656313",
           "name": "Buzón",
           "quantity": 1,
           "price": 95,
-          "materialsReady": false,
-          "id": "p17660761656313"
+          "materialsReady": false
         }
       ],
-      "orderTotal": 373,
+      "orderTotal": 468,
       "id": "1766075375916",
       "fechaIngreso": "2025-12-18T16:29:35.916Z"
     },

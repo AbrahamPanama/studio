@@ -72,6 +72,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
     startTransition(async () => {
       try {
+        // Ensure date objects are correctly formatted for the action
         const updatedOrderData = {
           ...order,
           entrega: new Date(order.entrega),
@@ -84,11 +85,13 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
           description: `Order ${fieldName.toString()} updated.`,
         });
       } catch (error) {
+        console.error(error);
         toast({
           variant: 'destructive',
           title: 'Error',
           description: `Failed to update ${fieldName.toString()}.`,
         });
+        // Revert optimistic updates on failure
         if (fieldName === 'name') setName(order.name);
         if (fieldName === 'estado') setStatus(order.estado);
         if (fieldName === 'subEstado') setSubStatus(order.subEstado);
@@ -135,6 +138,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
           onChange={(e) => setName(e.target.value)}
           onBlur={handleNameBlur}
           className="font-medium border-0 focus-visible:ring-1 focus-visible:ring-ring"
+          disabled={isPending}
         />
         <div className="text-sm text-muted-foreground flex items-center">
           {order.celular}
@@ -186,7 +190,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         </TooltipProvider>
       </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
-       {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />}
+       {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right w-[120px]">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell className="w-[100px]">
@@ -267,7 +271,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
         description: "Order deleted successfully.",
       });
       // This will trigger a re-render with the updated orders list from the server
-      replace(pathname + '?' + searchParams.toString());
+      replace(pathname + '?' + searchParams.toString(), { scroll: false });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -320,7 +324,3 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     </div>
   );
 }
-
-    
-
-    
