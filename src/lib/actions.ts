@@ -142,10 +142,7 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
     };
     
     revalidatePath('/');
-    if (originalOrder.name === data.name && originalOrder.estado === data.estado) {
-      revalidatePath(`/orders/${id}/edit`);
-      redirect('/');
-    }
+    revalidatePath(`/orders/${id}/edit`);
 }
 
 export async function deleteOrder(id: string) {
