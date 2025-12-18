@@ -9,4 +9,7 @@ export type Order = z.infer<typeof orderSchema> & {
   id: string;
   fechaIngreso: Date;
   productos: Product[];
+  abono?: boolean;
+  cancelo?: boolean;
+  totalAbono?: number;
 };

@@ -22,7 +22,7 @@
           "id": "p17660753759160",
           "name": "Invitaciones",
           "quantity": 24,
-          "price": 5.5,
+          "price": 7.5,
           "materialsReady": true
         },
         {
@@ -47,7 +47,7 @@
           "materialsReady": false
         }
       ],
-      "orderTotal": 468,
+      "orderTotal": 473.5,
       "id": "1766075375916",
       "fechaIngreso": "2025-12-18T16:29:35.916Z"
     },

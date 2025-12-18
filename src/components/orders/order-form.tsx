@@ -66,6 +66,9 @@ export function OrderForm({ order }: { order?: Order }) {
         privacidad: 'Por preguntar',
         productos: [{ name: '', quantity: 1, price: 0, materialsReady: false }],
         orderTotal: 0,
+        abono: false,
+        cancelo: false,
+        totalAbono: 0,
         customTag1: '',
         customTag2: '',
         customTag3: '',
@@ -287,6 +290,27 @@ export function OrderForm({ order }: { order?: Order }) {
                           {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <div className="flex space-x-4">
+                    <FormField control={form.control} name="abono" render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        <FormLabel>Abonó</FormLabel>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="cancelo" render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        <FormLabel>Canceló</FormLabel>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={form.control} name="totalAbono" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Abono</FormLabel>
+                      <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

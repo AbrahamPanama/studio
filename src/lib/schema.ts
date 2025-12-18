@@ -24,6 +24,10 @@ export const orderSchema = z.object({
   servicioEntrega: z.enum(DELIVERY_SERVICES).default('Retiro taller'),
   direccionEnvio: z.string().optional(),
 
+  abono: z.boolean().default(false),
+  cancelo: z.boolean().default(false),
+  totalAbono: z.coerce.number().default(0),
+
   privacidad: z.enum(PRIVACY_OPTIONS).default('Por preguntar'),
   customTag1: z.string().optional(),
   customTag2: z.string().optional(),
