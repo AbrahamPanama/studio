@@ -38,19 +38,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ORDER_STATUSES } from '@/lib/constants';
+import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [formattedDate, setFormattedDate] = React.useState('');
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
-  const router = useRouter();
 
   const [name, setName] = React.useState(order.name);
   const [status, setStatus] = React.useState(order.estado);
+  const [subStatus, setSubStatus] = React.useState(order.subEstado);
 
   React.useEffect(() => {
-    // This now runs only on the client, avoiding the hydration mismatch.
     setFormattedDate(formatDate(order.entrega));
   }, [order.entrega]);
 
@@ -63,10 +62,8 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
     startTransition(async () => {
       try {
-        // We need to pass the full order object for validation, so we create a payload.
         const updatedOrderData = {
           ...order,
-          // Convert dates back to Date objects for validation, from string representations
           entrega: new Date(order.entrega),
           entregaLimite: new Date(order.entregaLimite),
           [fieldName]: value,
@@ -76,16 +73,15 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
           title: 'Success',
           description: `Order ${fieldName} updated.`,
         });
-        // No need to call router.refresh() as revalidatePath is handled in the action
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Error',
           description: `Failed to update ${fieldName}.`,
         });
-        // Revert optimistic updates on error
         if (fieldName === 'name') setName(order.name);
         if (fieldName === 'estado') setStatus(order.estado);
+        if (fieldName === 'subEstado') setSubStatus(order.subEstado);
       }
     });
   };
@@ -99,6 +95,11 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleStatusChange = (newStatus: Order['estado']) => {
     setStatus(newStatus);
     handleFieldUpdate('estado', newStatus);
+  };
+  
+  const handleSubStatusChange = (newSubStatus: Order['subEstado']) => {
+    setSubStatus(newSubStatus);
+    handleFieldUpdate('subEstado', newSubStatus);
   };
 
 
@@ -129,6 +130,18 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
             </SelectTrigger>
             <SelectContent>
                 {ORDER_STATUSES.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell>
+        <Select value={subStatus} onValueChange={handleSubStatusChange} disabled={isPending}>
+            <SelectTrigger className="w-[150px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {ORDER_SUB_STATUSES.map(s => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
             </SelectContent>
@@ -240,6 +253,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Sub-Status</TableHead>
               <TableHead className="hidden md:table-cell">Delivery Date</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>
@@ -254,7 +268,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>
