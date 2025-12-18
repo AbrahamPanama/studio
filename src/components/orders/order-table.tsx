@@ -46,7 +46,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { orderSchema } from '@/lib/schema';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [isPending, startTransition] = React.useTransition();
@@ -73,22 +72,11 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
     startTransition(async () => {
       try {
-        // Create a plain object from the order that matches the schema
-        const orderDataForValidation = {
-            ...order,
-            entrega: new Date(order.entrega),
-            entregaLimite: new Date(order.entregaLimite),
-        };
+        const updatedData = { ...order, [fieldName]: value };
         
-        const updatedOrderData = {
-          ...orderDataForValidation,
-          [fieldName]: value,
-        };
-
-        // Validate before sending
-        const validatedData = orderSchema.parse(updatedOrderData);
-
-        await updateOrder(order.id, validatedData);
+        // Pass the plain object to the server action. 
+        // The server action is responsible for validation.
+        await updateOrder(order.id, updatedData);
 
         toast({
           title: 'Success',
