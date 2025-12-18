@@ -23,7 +23,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import type { Order } from '@/lib/types';
-import { formatCurrency, sanitizePhoneNumber } from '@/lib/utils';
+import { formatCurrency, sanitizePhoneNumber, formatDate } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { deleteOrder } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -130,7 +130,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
                     <StatusBadge status={order.estado} />
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {new Date(order.entrega).toLocaleDateString()}
+                    {formatDate(order.entrega)}
                   </TableCell>
                   <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
                   <TableCell>
