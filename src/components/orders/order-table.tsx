@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import type { Order } from '@/lib/types';
-import { formatCurrency, formatDate, sanitizePhoneNumber } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, sanitizePhoneNumber } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { deleteOrder, updateOrder } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -120,8 +120,12 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     }
   }
 
-  const productSummary = order.productos.map(p => p.name).join(', ');
-
+  const productSummary = order.productos.map((p, index) => (
+    <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
+      {p.name}
+      {index < order.productos.length - 1 && ', '}
+    </span>
+  ));
 
   return (
     <TableRow>
@@ -181,7 +185,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
             </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="hidden md:table-cell w-[160px]">
+      <TableCell className="hidden md:table-cell w-[120px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />}
       </TableCell>
       <TableCell className="text-right w-[120px]">{formatCurrency(order.orderTotal)}</TableCell>
@@ -291,7 +295,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead className="hidden md:table-cell w-[160px]">Delivery Deadline</TableHead>
+              <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
               <TableHead className="text-right w-[120px]">Total</TableHead>
               <TableHead className="w-[100px]">
                 <span className="sr-only">Actions</span>
@@ -316,5 +320,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     </div>
   );
 }
+
+    
 
     
