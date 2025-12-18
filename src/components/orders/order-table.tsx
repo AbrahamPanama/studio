@@ -58,6 +58,10 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const [deliveryDeadline, setDeliveryDeadline] = React.useState<Date | undefined>(
     order.entregaLimite ? new Date(order.entregaLimite) : undefined
   );
+  const [tag1, setTag1] = React.useState(order.customTag1 || '');
+  const [tag2, setTag2] = React.useState(order.customTag2 || '');
+  const [tag3, setTag3] = React.useState(order.customTag3 || '');
+  const [tag4, setTag4] = React.useState(order.customTag4 || '');
   
   const [hasMounted, setHasMounted] = React.useState(false);
   React.useEffect(() => {
@@ -74,8 +78,6 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     startTransition(async () => {
       try {
         const updatedData = { ...order, [fieldName]: value };
-        
-        // The server action will validate the full object
         await updateOrder(order.id, updatedData);
 
         toast({
@@ -94,6 +96,10 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         if (fieldName === 'estado') setStatus(order.estado);
         if (fieldName === 'subEstado') setSubStatus(order.subEstado);
         if (fieldName === 'entregaLimite') setDeliveryDeadline(order.entregaLimite ? new Date(order.entregaLimite) : undefined);
+        if (fieldName === 'customTag1') setTag1(order.customTag1 || '');
+        if (fieldName === 'customTag2') setTag2(order.customTag2 || '');
+        if (fieldName === 'customTag3') setTag3(order.customTag3 || '');
+        if (fieldName === 'customTag4') setTag4(order.customTag4 || '');
       }
     });
   };
@@ -104,6 +110,14 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
       handleFieldUpdate('name', name);
     }
   };
+
+  const handleTagBlur = (tagNumber: 1 | 2 | 3 | 4) => {
+    const fieldName = `customTag${tagNumber}` as keyof Order;
+    const localState = [tag1, tag2, tag3, tag4][tagNumber-1];
+    if (localState !== (order[fieldName] || '')) {
+        handleFieldUpdate(fieldName, localState);
+    }
+  }
 
   const handleStatusChange = (newStatus: Order['estado']) => {
     setStatus(newStatus);
@@ -180,6 +194,18 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         <ProductEditPopover order={order}>
             <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
+      </TableCell>
+      <TableCell className="w-[150px]">
+        <Input value={tag1} onChange={e => setTag1(e.target.value)} onBlur={() => handleTagBlur(1)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
+      </TableCell>
+      <TableCell className="w-[150px]">
+        <Input value={tag2} onChange={e => setTag2(e.target.value)} onBlur={() => handleTagBlur(2)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
+      </TableCell>
+      <TableCell className="w-[150px]">
+        <Input value={tag3} onChange={e => setTag3(e.target.value)} onBlur={() => handleTagBlur(3)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
+      </TableCell>
+      <TableCell className="w-[150px]">
+        <Input value={tag4} onChange={e => setTag4(e.target.value)} onBlur={() => handleTagBlur(4)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
       </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
@@ -291,6 +317,10 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
+              <TableHead className="w-[150px]">Tag 1</TableHead>
+              <TableHead className="w-[150px]">Tag 2</TableHead>
+              <TableHead className="w-[150px]">Tag 3</TableHead>
+              <TableHead className="w-[150px]">Tag 4</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
               <TableHead className="text-right w-[120px]">Total</TableHead>
               <TableHead className="w-[100px]">
@@ -305,7 +335,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={11} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>
