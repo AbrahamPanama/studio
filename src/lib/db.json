@@ -6,7 +6,7 @@
       "celular": "+50762168911",
       "description": "sample",
       "comentarios": "sampleee",
-      "estado": "Urgent",
+      "estado": "On Hand/Working",
       "subEstado": "Pendiente",
       "entrega": "2025-12-20T05:00:00.000Z",
       "entregaLimite": "2025-12-20T05:00:00.000Z",
@@ -37,7 +37,7 @@
           "name": "cuadro de firmas ",
           "quantity": 1,
           "price": 175,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660761656313",
@@ -59,7 +59,7 @@
       "description": "500 business cards, urgent requirement.",
       "comentarios": "Use the new logo file provided via email.",
       "estado": "Urgent",
-      "subEstado": "Pendiente Material",
+      "subEstado": "Pendiente",
       "fechaIngreso": "2023-10-27T11:00:00.000Z",
       "entrega": "2024-07-01T00:00:00.000Z",
       "entregaLimite": "2024-07-01T00:00:00.000Z",
@@ -75,11 +75,11 @@
           "materialsReady": false
         },
         {
+          "id": "p17660758551971",
           "name": "Reconocimientos ",
           "quantity": 25,
           "price": 3.75,
-          "materialsReady": false,
-          "id": "p17660758551971"
+          "materialsReady": false
         }
       ],
       "orderTotal": 250,
@@ -96,7 +96,7 @@
       "description": "A sample order for 10 T-shirts and 20 mugs.",
       "comentarios": "Customer requested a specific blue color for the t-shirts.",
       "estado": "New",
-      "subEstado": "Pendiente Arte",
+      "subEstado": "Check List",
       "fechaIngreso": "2023-10-26T10:00:00.000Z",
       "entrega": "2024-07-05T00:00:00.000Z",
       "entregaLimite": "2024-07-10T00:00:00.000Z",
