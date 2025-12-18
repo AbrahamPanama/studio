@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import type { Order } from '@/lib/types';
-import { formatCurrency, sanitizePhoneNumber } from '@/lib/utils';
+import { formatCurrency, formatDate, sanitizePhoneNumber } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { deleteOrder, updateOrder } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,12 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [isPending, startTransition] = React.useTransition();
@@ -114,6 +120,8 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     }
   }
 
+  const productSummary = order.productos.map(p => p.name).join(', ');
+
 
   return (
     <TableRow>
@@ -160,6 +168,18 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
                 ))}
             </SelectContent>
         </Select>
+      </TableCell>
+      <TableCell>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger>
+                    <div className="truncate w-[120px]">{productSummary}</div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{productSummary}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
       </TableCell>
       <TableCell className="hidden md:table-cell">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />}
@@ -270,6 +290,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[200px]">Customer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sub-Status</TableHead>
+              <TableHead>Items</TableHead>
               <TableHead className="hidden md:table-cell w-[180px]">Delivery Deadline</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>
@@ -284,7 +305,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>
