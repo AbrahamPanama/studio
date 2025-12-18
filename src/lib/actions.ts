@@ -145,6 +145,7 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
+    redirect('/');
 }
 
 export async function deleteOrder(id: string) {

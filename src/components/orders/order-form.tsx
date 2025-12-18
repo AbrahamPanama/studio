@@ -116,9 +116,9 @@ export function OrderForm({ order }: { order?: Order }) {
           await updateOrder(order.id, data);
         } else {
           await createOrder(data);
+          router.push('/');
         }
         toast({ title: 'Success', description: `Order ${isEditing ? 'updated' : 'created'}.` });
-        router.push('/');
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Something went wrong.' });
       }
