@@ -77,8 +77,7 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
-    // No redirect here to allow for multiple edits without being kicked out.
-    // The component will show a toast on success.
+    redirect('/');
 }
 
 export async function deleteOrder(id: string) {

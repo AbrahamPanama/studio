@@ -114,10 +114,8 @@ export function OrderForm({ order }: { order?: Order }) {
       try {
         if (isEditing) {
           await updateOrder(order.id, data);
-           toast({ title: 'Success', description: 'Order updated.' });
         } else {
           await createOrder(data);
-          // The createOrder action now handles redirection.
         }
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Something went wrong.' });
