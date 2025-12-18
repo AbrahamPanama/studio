@@ -52,6 +52,15 @@ export function OrderForm({ order }: { order?: Order }) {
         ...order,
         entrega: new Date(order.entrega),
         entregaLimite: new Date(order.entregaLimite),
+        description: order.description || '',
+        comentarios: order.comentarios || '',
+        abono: order.abono || false,
+        cancelo: order.cancelo || false,
+        totalAbono: order.totalAbono || 0,
+        customTag1: order.customTag1 || '',
+        customTag2: order.customTag2 || '',
+        customTag3: order.customTag3 || '',
+        customTag4: order.customTag4 || '',
       }
     : {
         name: '',
@@ -133,11 +142,11 @@ export function OrderForm({ order }: { order?: Order }) {
 
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
-        if (isEditing) {
-          await updateOrder(order.id, data);
-        } else {
-          await createOrder(data);
-        }
+      if (isEditing) {
+        await updateOrder(order.id, data);
+      } else {
+        await createOrder(data);
+      }
     });
   }
 
