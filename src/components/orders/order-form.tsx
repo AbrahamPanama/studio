@@ -109,16 +109,12 @@ export function OrderForm({ order }: { order?: Order }) {
     }
   }, [watchedServicio, form]);
 
-  async function onSubmit(data: OrderFormValues) {
+  function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
-      try {
-        if (isEditing) {
-          await updateOrder(order.id, data);
-        } else {
-          await createOrder(data);
-        }
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Something went wrong.' });
+      if (isEditing) {
+        await updateOrder(order.id, data);
+      } else {
+        await createOrder(data);
       }
     });
   }

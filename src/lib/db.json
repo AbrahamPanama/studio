@@ -31,9 +31,16 @@
           "quantity": 12,
           "price": 5.5,
           "materialsReady": false
+        },
+        {
+          "name": "cuadro de firmas ",
+          "quantity": 1,
+          "price": 175,
+          "materialsReady": false,
+          "id": "p17660760215772"
         }
       ],
-      "orderTotal": 176.88,
+      "orderTotal": 198,
       "id": "1766075375916",
       "fechaIngreso": "2025-12-18T16:29:35.916Z"
     },
