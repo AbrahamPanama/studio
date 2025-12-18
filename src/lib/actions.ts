@@ -123,6 +123,7 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
     await delay(500);
     const validatedFields = orderSchema.safeParse(data);
      if (!validatedFields.success) {
+        console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
     }
 
@@ -136,13 +137,15 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
     orders[index] = {
         ...originalOrder,
         ...validatedFields.data,
-        id: originalOrder.id,
+        id: originalOrder.id, // ensure id and fechaIngreso are not overwritten
         fechaIngreso: originalOrder.fechaIngreso,
     };
     
     revalidatePath('/');
-    revalidatePath(`/orders/${id}/edit`);
-    redirect('/');
+    if (originalOrder.name === data.name && originalOrder.estado === data.estado) {
+      revalidatePath(`/orders/${id}/edit`);
+      redirect('/');
+    }
 }
 
 export async function deleteOrder(id: string) {

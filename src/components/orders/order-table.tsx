@@ -18,7 +18,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import type { Order } from '@/lib/types';
 import { formatCurrency, sanitizePhoneNumber, formatDate } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { deleteOrder } from '@/lib/actions';
+import { deleteOrder, updateOrder } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -31,10 +31,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ORDER_STATUSES } from '@/lib/constants';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
   const [formattedDate, setFormattedDate] = React.useState('');
   const [isPending, startTransition] = React.useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const [name, setName] = React.useState(order.name);
+  const [status, setStatus] = React.useState(order.estado);
 
   React.useEffect(() => {
     // This now runs only on the client, avoiding the hydration mismatch.
@@ -47,10 +60,57 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     });
   }
 
+  const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
+    startTransition(async () => {
+      try {
+        // We need to pass the full order object for validation, so we create a payload.
+        const updatedOrderData = {
+          ...order,
+          // Convert dates back to Date objects for validation, from string representations
+          entrega: new Date(order.entrega),
+          entregaLimite: new Date(order.entregaLimite),
+          [fieldName]: value,
+        };
+        await updateOrder(order.id, updatedOrderData);
+        toast({
+          title: 'Success',
+          description: `Order ${fieldName} updated.`,
+        });
+        // No need to call router.refresh() as revalidatePath is handled in the action
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Failed to update ${fieldName}.`,
+        });
+        // Revert optimistic updates on error
+        if (fieldName === 'name') setName(order.name);
+        if (fieldName === 'estado') setStatus(order.estado);
+      }
+    });
+  };
+
+  const handleNameBlur = () => {
+    if (name !== order.name) {
+      handleFieldUpdate('name', name);
+    }
+  };
+
+  const handleStatusChange = (newStatus: Order['estado']) => {
+    setStatus(newStatus);
+    handleFieldUpdate('estado', newStatus);
+  };
+
+
   return (
     <TableRow>
       <TableCell>
-        <div className="font-medium">{order.name}</div>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={handleNameBlur}
+          className="font-medium border-0 focus-visible:ring-1 focus-visible:ring-ring"
+        />
         <div className="text-sm text-muted-foreground flex items-center">
           {order.celular}
           <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
@@ -61,47 +121,58 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={order.estado} />
+        <Select value={status} onValueChange={handleStatusChange} disabled={isPending}>
+            <SelectTrigger className="w-[150px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
+                <SelectValue asChild>
+                    <StatusBadge status={status} />
+                </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+                {ORDER_STATUSES.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
       </TableCell>
       <TableCell className="hidden md:table-cell">
         {formattedDate || <span className="text-muted-foreground">Loading...</span>}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
-        <AlertDialog>
-          <div className="flex items-center justify-end gap-2">
-            <Button asChild variant="ghost" size="icon">
-              <Link href={`/orders/${order.id}/edit`}>
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Edit Order</span>
-              </Link>
-            </Button>
+        <div className="flex items-center justify-end gap-2">
+          <Button asChild variant="ghost" size="icon">
+            <Link href={`/orders/${order.id}/edit`}>
+              <Edit className="h-4 w-4" />
+              <span className="sr-only">Edit Order</span>
+            </Link>
+          </Button>
+          <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Delete Order</span>
               </Button>
             </AlertDialogTrigger>
-          </div>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the order for {order.name}.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                disabled={isPending}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              >
-                {isPending ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the order for {order.name}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  {isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </TableCell>
     </TableRow>
   )
