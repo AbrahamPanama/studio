@@ -11,12 +11,12 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 import type { Order } from '@/lib/types';
-import { formatCurrency, sanitizePhoneNumber, formatDate } from '@/lib/utils';
+import { formatCurrency, sanitizePhoneNumber } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { deleteOrder, updateOrder } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -38,20 +38,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
 
 const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
-  const [formattedDate, setFormattedDate] = React.useState('');
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
 
   const [name, setName] = React.useState(order.name);
   const [status, setStatus] = React.useState(order.estado);
   const [subStatus, setSubStatus] = React.useState(order.subEstado);
-
-  React.useEffect(() => {
-    setFormattedDate(formatDate(order.entrega));
-  }, [order.entrega]);
+  const [deliveryDeadline, setDeliveryDeadline] = React.useState<Date | undefined>(
+    order.entregaLimite ? new Date(order.entregaLimite) : undefined
+  );
 
   const handleDelete = () => {
     startTransition(async () => {
@@ -71,17 +70,18 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         await updateOrder(order.id, updatedOrderData);
         toast({
           title: 'Success',
-          description: `Order ${fieldName} updated.`,
+          description: `Order ${fieldName.toString()} updated.`,
         });
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: `Failed to update ${fieldName}.`,
+          description: `Failed to update ${fieldName.toString()}.`,
         });
         if (fieldName === 'name') setName(order.name);
         if (fieldName === 'estado') setStatus(order.estado);
         if (fieldName === 'subEstado') setSubStatus(order.subEstado);
+        if (fieldName === 'entregaLimite') setDeliveryDeadline(order.entregaLimite ? new Date(order.entregaLimite) : undefined);
       }
     });
   };
@@ -101,6 +101,13 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     setSubStatus(newSubStatus);
     handleFieldUpdate('subEstado', newSubStatus);
   };
+
+  const handleDeadlineChange = (newDeadline: Date | undefined) => {
+    if (newDeadline) {
+        setDeliveryDeadline(newDeadline);
+        handleFieldUpdate('entregaLimite', newDeadline);
+    }
+  }
 
 
   return (
@@ -148,43 +155,43 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         </Select>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {formattedDate || <span className="text-muted-foreground">Loading...</span>}
+        <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} />
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-2">
-          <Button asChild variant="ghost" size="icon">
-            <Link href={`/orders/${order.id}/edit`}>
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit Order</span>
-            </Link>
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete Order</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the order for {order.name}.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                >
-                  {isPending ? "Deleting..." : "Delete"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <div className="flex items-center justify-end gap-0">
+            <Button asChild variant="ghost" size="icon">
+                <Link href={`/orders/${order.id}/edit`}>
+                <ExternalLink className="h-4 w-4" />
+                <span className="sr-only">Edit Order</span>
+                </Link>
+            </Button>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete Order</span>
+                </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the order for {order.name}.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    >
+                    {isPending ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
       </TableCell>
     </TableRow>
@@ -251,10 +258,10 @@ export function OrderTable({ orders }: { orders: Order[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Customer</TableHead>
+              <TableHead className="w-[200px]">Customer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sub-Status</TableHead>
-              <TableHead className="hidden md:table-cell">Delivery Date</TableHead>
+              <TableHead className="hidden md:table-cell">Delivery Deadline</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
