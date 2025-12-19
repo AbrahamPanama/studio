@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/date-picker';
 import { Separator } from '@/components/ui/separator';
 
 import { orderSchema } from '@/lib/schema';
@@ -404,7 +404,7 @@ export function OrderForm({ order }: { order?: Order }) {
                     name="tags"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tags</FormLabel>
+                        <FormLabel>Tags Shipping</FormLabel>
                         <TagManager
                           allTags={allTags}
                           selectedTags={field.value || []}

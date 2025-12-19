@@ -263,11 +263,15 @@ export function OrderTable({ orders }: { orders: Order[] }) {
         const nameMatch = order.name.toLowerCase().includes(lowercasedSearchTerm);
         const descriptionMatch = order.description && order.description.toLowerCase().includes(lowercasedSearchTerm);
         const emailMatch = order.email && order.email.toLowerCase().includes(lowercasedSearchTerm);
-        const tagMatch = order.tags && order.tags.some(tag => tag.toLowerCase().includes(lowercasedSearchTerm));
+        
+        const orderTags = (order.tags || [])
+          .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
+          .filter((t): t is Tag => !!t);
+        const tagMatch = orderTags.some(tag => tag.label.toLowerCase().includes(lowercasedSearchTerm));
 
         return nameMatch || descriptionMatch || emailMatch || tagMatch;
     });
-  }, [orders, searchTerm]);
+  }, [orders, searchTerm, allTags]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -325,7 +329,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead className="w-[250px]">Tags</TableHead>
+              <TableHead className="w-[250px]">Tags Shipping</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
               <TableHead className="text-right w-[120px]">Total</TableHead>
               <TableHead className="w-[100px]">
