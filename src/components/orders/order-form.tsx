@@ -53,10 +53,6 @@ export function OrderForm({ order }: { order?: Order }) {
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   
-  const [subtotal, setSubtotal] = React.useState(0);
-  const [tax, setTax] = React.useState(0);
-  const [orderTotal, setOrderTotal] = React.useState(0);
-
   React.useEffect(() => {
     getTags().then(setAllTags);
     getOtherTags().then(setAllOtherTags);
@@ -118,29 +114,22 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
 
-  React.useEffect(() => {
-    const currentSubtotal = watchedProducts.reduce((sum, product) => {
+  // Perform calculations directly from watched values for real-time UI updates
+  const subtotal = React.useMemo(() => 
+    watchedProducts.reduce((sum, product) => {
       return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
-    }, 0);
-    const currentTax = watchedItbms ? currentSubtotal * TAX_RATE : 0;
-    const currentTotal = currentSubtotal + currentTax;
+    }, 0),
+    [watchedProducts]
+  );
+  const tax = watchedItbms ? subtotal * TAX_RATE : 0;
+  const orderTotal = subtotal + tax;
 
-    setSubtotal(currentSubtotal);
-    setTax(currentTax);
-    setOrderTotal(currentTotal);
-
-    form.setValue('subtotal', currentSubtotal, { shouldValidate: false });
-    form.setValue('tax', currentTax, { shouldValidate: false });
-    form.setValue('orderTotal', currentTotal, { shouldValidate: true });
-  }, [watchedProducts, watchedItbms, form]);
-  
+  // Effect to update the form's internal state for validation and submission
   React.useEffect(() => {
-    if (isEditing && order) {
-      setSubtotal(order.subtotal || 0);
-      setTax(order.tax || 0);
-      setOrderTotal(order.orderTotal || 0);
-    }
-  }, [isEditing, order]);
+    form.setValue('subtotal', subtotal);
+    form.setValue('tax', tax);
+    form.setValue('orderTotal', orderTotal);
+  }, [subtotal, tax, orderTotal, form]);
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -176,8 +165,12 @@ export function OrderForm({ order }: { order?: Order }) {
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
       try {
-        // The values are already set in the form state by the useEffect hook
-        const payload = data;
+        const payload = {
+          ...data,
+          subtotal,
+          tax,
+          orderTotal,
+        };
         
         if (isEditing && order) {
           await updateOrder(order.id, payload);
