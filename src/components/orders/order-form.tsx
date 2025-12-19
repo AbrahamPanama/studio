@@ -358,8 +358,9 @@ export function OrderForm({ order }: { order?: Order }) {
                         <Separator />
                         <div className="flex justify-between items-center font-semibold text-lg">
                             <div className="flex items-center gap-2">
-                                <Button type="button" size="icon" variant="secondary" onClick={handleCalculateTotals} className="h-7 w-7">
-                                    <Calculator className="h-4 w-4" />
+                                <Button type="button" variant="secondary" onClick={handleCalculateTotals}>
+                                    <Calculator className="mr-2 h-4 w-4" />
+                                    Calculate
                                 </Button>
                                 <span>Total</span>
                             </div>
