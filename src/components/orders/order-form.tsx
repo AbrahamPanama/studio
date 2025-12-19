@@ -113,19 +113,21 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedEntrega = form.watch('entrega');
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
-  const watchedOrderTotal = form.watch('orderTotal');
 
-  React.useEffect(() => {
-    const subtotal = watchedProducts.reduce((sum, product) => {
+  const subtotal = React.useMemo(() => {
+    return watchedProducts.reduce((sum, product) => {
       return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
     }, 0);
-    const tax = watchedItbms ? subtotal * TAX_RATE : 0;
-    const total = subtotal + tax;
+  }, [watchedProducts]);
 
-    form.setValue('subtotal', subtotal, { shouldValidate: true });
-    form.setValue('tax', tax, { shouldValidate: true });
-    form.setValue('orderTotal', total, { shouldValidate: true });
-  }, [watchedProducts, watchedItbms, form]);
+  const tax = watchedItbms ? subtotal * TAX_RATE : 0;
+  const orderTotal = subtotal + tax;
+
+  React.useEffect(() => {
+    form.setValue('subtotal', subtotal, { shouldValidate: false });
+    form.setValue('tax', tax, { shouldValidate: false });
+    form.setValue('orderTotal', orderTotal, { shouldValidate: true });
+  }, [subtotal, tax, orderTotal, form]);
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -144,8 +146,7 @@ export function OrderForm({ order }: { order?: Order }) {
 
   React.useEffect(() => {
     const totalAbono = Number(watchedTotalAbono) || 0;
-    const orderTotal = Number(watchedOrderTotal) || 0;
-
+    
     if (totalAbono > 0) {
       form.setValue('abono', true, { shouldValidate: true });
     } else {
@@ -157,16 +158,22 @@ export function OrderForm({ order }: { order?: Order }) {
     } else {
       form.setValue('cancelo', false, { shouldValidate: true });
     }
-  }, [watchedTotalAbono, watchedOrderTotal, form]);
+  }, [watchedTotalAbono, orderTotal, form]);
 
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
       try {
+        const payload = {
+          ...data,
+          subtotal,
+          tax,
+          orderTotal,
+        };
         if (isEditing && order) {
-          await updateOrder(order.id, data);
+          await updateOrder(order.id, payload);
           toast({ title: 'Success', description: 'Order updated successfully.' });
         } else {
-          await createOrder(data);
+          await createOrder(payload);
           toast({ title: 'Success', description: 'Order created successfully.' });
         }
         router.push('/');
@@ -306,24 +313,24 @@ export function OrderForm({ order }: { order?: Order }) {
                             )}
                         />
                         <div className="text-sm text-muted-foreground">
-                            Abono sugerido: {formatCurrency(watchedOrderTotal * 0.5)}
+                            Abono sugerido: {formatCurrency(orderTotal * 0.5)}
                         </div>
                       </div>
                     <div className="w-[250px] space-y-2">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
-                            <span>{formatCurrency(form.getValues('subtotal'))}</span>
+                            <span>{formatCurrency(subtotal)}</span>
                         </div>
                          {watchedItbms && (
                             <div className="flex justify-between">
                                 <span>Tax (7%)</span>
-                                <span>{formatCurrency(form.getValues('tax'))}</span>
+                                <span>{formatCurrency(tax)}</span>
                             </div>
                         )}
                         <Separator />
                         <div className="flex justify-between font-semibold text-lg">
                             <span>Total</span>
-                            <span>{formatCurrency(form.getValues('orderTotal'))}</span>
+                            <span>{formatCurrency(orderTotal)}</span>
                         </div>
                     </div>
                   </div>
