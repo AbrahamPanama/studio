@@ -110,6 +110,8 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         productos: data.productos 
             ? data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`}))
             : originalOrder.productos,
+        tags: data.tags || originalOrder.tags || [],
+        tagsOther: data.tagsOther || originalOrder.tagsOther || [],
     };
     
     const validatedFields = orderSchema.safeParse(updatedOrderData);
@@ -127,7 +129,7 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
-    revalidatePath('/dashboard');
+    redirect('/');
 }
 
 export async function deleteOrder(id: string) {
