@@ -71,6 +71,7 @@ export function OrderForm({ order }: { order?: Order }) {
         tags: order.tags || [],
         tagsOther: order.tagsOther || [],
         itbms: order.itbms || false,
+        productos: order.productos.map(p => ({...p, description: p.description || ''}))
       }
     : {
         name: '',
@@ -85,7 +86,7 @@ export function OrderForm({ order }: { order?: Order }) {
         servicioEntrega: 'Retiro taller',
         direccionEnvio: 'Retiro Taller',
         privacidad: 'Por preguntar',
-        productos: [{ name: '', quantity: 1, price: 0, materialsReady: false }],
+        productos: [{ name: '', description: '', quantity: 1, price: 0, materialsReady: false }],
         subtotal: 0,
         tax: 0,
         orderTotal: 0,
@@ -267,6 +268,7 @@ export function OrderForm({ order }: { order?: Order }) {
                         <TableRow>
                           <TableHead className="w-[50px] text-center">Ready</TableHead>
                           <TableHead>Product Name</TableHead>
+                          <TableHead>Description</TableHead>
                           <TableHead className="w-[120px]">Quantity</TableHead>
                           <TableHead className="w-[120px]">Unit Price</TableHead>
                           <TableHead className="w-[120px] text-right">Subtotal</TableHead>
@@ -286,6 +288,11 @@ export function OrderForm({ order }: { order?: Order }) {
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.name`} render={({ field }) => (
                                 <FormItem><FormControl><Input placeholder="e.g., T-Shirt" {...field} /></FormControl></FormItem>
+                              )} />
+                            </TableCell>
+                             <TableCell>
+                              <FormField control={form.control} name={`productos.${index}.description`} render={({ field }) => (
+                                <FormItem><FormControl><Input placeholder="e.g., Color, size" {...field} /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell>
@@ -314,7 +321,7 @@ export function OrderForm({ order }: { order?: Order }) {
                     </Table>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', quantity: 1, price: 0, materialsReady: false })}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', description: '', quantity: 1, price: 0, materialsReady: false })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Product
                     </Button>
                   </div>

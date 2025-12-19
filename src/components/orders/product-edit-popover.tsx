@@ -48,7 +48,7 @@ export function ProductEditPopover({
   const form = useForm<PopoverFormValues>({
     resolver: zodResolver(popoverFormSchema),
     defaultValues: {
-      productos: order.productos,
+      productos: order.productos.map(p => ({...p, description: p.description || ''})),
     },
   });
 
@@ -59,7 +59,7 @@ export function ProductEditPopover({
 
   React.useEffect(() => {
     // Reset form when order changes or popover is opened
-    form.reset({ productos: order.productos });
+    form.reset({ productos: order.productos.map(p => ({...p, description: p.description || ''})) });
   }, [order, isOpen, form]);
 
   const onSubmit = (data: PopoverFormValues) => {
@@ -102,17 +102,30 @@ export function ProductEditPopover({
                     key={item.id}
                     className="grid grid-cols-[1fr_auto] items-center gap-4"
                   >
-                    <FormField
-                      control={form.control}
-                      name={`productos.${index}.name`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...field} readOnly className="border-0 bg-transparent shadow-none" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name={`productos.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input {...field} readOnly className="border-0 bg-transparent shadow-none" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name={`productos.${index}.description`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input {...field} readOnly className="border-0 bg-transparent shadow-none text-sm text-muted-foreground" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
                       name={`productos.${index}.materialsReady`}

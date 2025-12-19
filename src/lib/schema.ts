@@ -4,6 +4,7 @@ import { ORDER_STATUSES, ORDER_SUB_STATUSES, DELIVERY_SERVICES, PRIVACY_OPTIONS 
 export const productSchema = z.object({
   id: z.string().optional(), // for existing products
   name: z.string().min(1, 'Product name is required.'),
+  description: z.string().optional(),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   price: z.coerce.number().min(0, 'Price cannot be negative.'),
   materialsReady: z.boolean().default(false),

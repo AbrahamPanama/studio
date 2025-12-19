@@ -141,7 +141,7 @@ const OrderTableRow = ({
 
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
-      {p.name} - {p.quantity}
+      {p.name} {p.description && `(${p.description})`} - {p.quantity}
       {index < order.productos.length - 1 && ', '}
     </span>
   ));
