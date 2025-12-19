@@ -12,11 +12,15 @@
       "entregaLimite": "2025-12-05T05:00:00.000Z",
       "servicioEntrega": "Uno Express",
       "direccionEnvio": "Mañanitas",
+      "abono": true,
+      "cancelo": true,
+      "totalAbono": 516,
       "privacidad": "Limitado Fecha",
-      "customTag1": "testtees",
-      "customTag2": "tesd",
-      "customTag3": "",
-      "customTag4": "",
+      "tags": [
+        "testtees",
+        "tesd",
+        "Los Santos"
+      ],
       "productos": [
         {
           "id": "p17660753759160",
@@ -47,12 +51,7 @@
           "materialsReady": false
         }
       ],
-      "orderTotal": 516,
-      "id": "1766075375916",
-      "fechaIngreso": "2025-12-18T16:29:35.916Z",
-      "abono": true,
-      "cancelo": true,
-      "totalAbono": 516
+      "orderTotal": 516
     },
     {
       "id": "2",

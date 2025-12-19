@@ -18,11 +18,12 @@ export async function getOrders() {
     // Migrate old tags to new tags array
     const orders = db.orders.map(order => {
         if (!order.tags) {
-            order.tags = [];
-            if (order.customTag1) order.tags.push(order.customTag1);
-            if (order.customTag2) order.tags.push(order.customTag2);
-            if (order.customTag3) order.tags.push(order.customTag3);
-            if (order.customTag4) order.tags.push(order.customTag4);
+            const newTags = [];
+            if (order.customTag1) newTags.push(order.customTag1);
+            if (order.customTag2) newTags.push(order.customTag2);
+            if (order.customTag3) newTags.push(order.customTag3);
+            if (order.customTag4) newTags.push(order.customTag4);
+            return { ...order, tags: newTags };
         }
         return order;
     })
@@ -39,11 +40,12 @@ export async function getOrderById(id: string) {
     }
     // Migrate old tags to new tags array
     if (!order.tags) {
-        order.tags = [];
-        if (order.customTag1) order.tags.push(order.customTag1);
-        if (order.customTag2) order.tags.push(order.customTag2);
-        if (order.customTag3) order.tags.push(order.customTag3);
-        if (order.customTag4) order.tags.push(order.customTag4);
+        const newTags = [];
+        if (order.customTag1) newTags.push(order.customTag1);
+        if (order.customTag2) newTags.push(order.customTag2);
+        if (order.customTag3) newTags.push(order.customTag3);
+        if (order.customTag4) newTags.push(order.customTag4);
+        order.tags = newTags;
     }
     return order;
 }
