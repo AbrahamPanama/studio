@@ -52,6 +52,10 @@ export function OrderForm({ order }: { order?: Order }) {
   const [isPending, startTransition] = React.useTransition();
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
+  
+  const [subtotal, setSubtotal] = React.useState(0);
+  const [tax, setTax] = React.useState(0);
+  const [orderTotal, setOrderTotal] = React.useState(0);
 
   React.useEffect(() => {
     getTags().then(setAllTags);
@@ -114,20 +118,29 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
 
-  const subtotal = React.useMemo(() => {
-    return watchedProducts.reduce((sum, product) => {
+  React.useEffect(() => {
+    const currentSubtotal = watchedProducts.reduce((sum, product) => {
       return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
     }, 0);
-  }, [watchedProducts]);
+    const currentTax = watchedItbms ? currentSubtotal * TAX_RATE : 0;
+    const currentTotal = currentSubtotal + currentTax;
 
-  const tax = watchedItbms ? subtotal * TAX_RATE : 0;
-  const orderTotal = subtotal + tax;
+    setSubtotal(currentSubtotal);
+    setTax(currentTax);
+    setOrderTotal(currentTotal);
 
+    form.setValue('subtotal', currentSubtotal, { shouldValidate: false });
+    form.setValue('tax', currentTax, { shouldValidate: false });
+    form.setValue('orderTotal', currentTotal, { shouldValidate: true });
+  }, [watchedProducts, watchedItbms, form]);
+  
   React.useEffect(() => {
-    form.setValue('subtotal', subtotal, { shouldValidate: false });
-    form.setValue('tax', tax, { shouldValidate: false });
-    form.setValue('orderTotal', orderTotal, { shouldValidate: true });
-  }, [subtotal, tax, orderTotal, form]);
+    if (isEditing && order) {
+      setSubtotal(order.subtotal || 0);
+      setTax(order.tax || 0);
+      setOrderTotal(order.orderTotal || 0);
+    }
+  }, [isEditing, order]);
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -163,12 +176,9 @@ export function OrderForm({ order }: { order?: Order }) {
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
       try {
-        const payload = {
-          ...data,
-          subtotal,
-          tax,
-          orderTotal,
-        };
+        // The values are already set in the form state by the useEffect hook
+        const payload = data;
+        
         if (isEditing && order) {
           await updateOrder(order.id, payload);
           toast({ title: 'Success', description: 'Order updated successfully.' });
