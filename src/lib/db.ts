@@ -172,12 +172,13 @@ export async function readDb(): Promise<{ orders: Order[] }> {
 
   const data = JSON.parse(fileContent);
   // Dates are stored as strings in JSON, so we need to convert them back to Date objects
-  data.orders = data.orders.map((order: Order) => ({
-    ...order,
-    fechaIngreso: new Date(order.fechaIngreso),
-    entrega: new Date(order.entrega),
-    entregaLimite: new Date(order.entregaLimite),
-  }));
+  data.orders = data.orders.map((order: any) => {
+    const newOrder = { ...order };
+    if (newOrder.fechaIngreso) newOrder.fechaIngreso = new Date(newOrder.fechaIngreso);
+    if (newOrder.entrega) newOrder.entrega = new Date(newOrder.entrega);
+    if (newOrder.entregaLimite) newOrder.entregaLimite = new Date(newOrder.entregaLimite);
+    return newOrder;
+  });
 
   return data;
 }
@@ -187,7 +188,11 @@ export async function readDb(): Promise<{ orders: Order[] }> {
  */
 export async function writeDb(data: { orders: Order[] }): Promise<void> {
   await fs.writeFile(dbPath, JSON.stringify({
-    orders: data.orders.sort((a, b) => new Date(b.fechaIngreso).getTime() - new Date(a.fechaIngreso).getTime())
+    orders: data.orders.sort((a, b) => {
+      const dateA = a.fechaIngreso ? new Date(a.fechaIngreso).getTime() : 0;
+      const dateB = b.fechaIngreso ? new Date(b.fechaIngreso).getTime() : 0;
+      return dateB - dateA;
+    })
   }, null, 2), 'utf8');
 }
 
