@@ -38,7 +38,7 @@ import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS 
 import { cn, formatCurrency } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
@@ -114,22 +114,31 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
 
-  // Perform calculations directly from watched values for real-time UI updates
-  const subtotal = React.useMemo(() => 
-    watchedProducts.reduce((sum, product) => {
-      return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
-    }, 0),
-    [watchedProducts]
-  );
-  const tax = watchedItbms ? subtotal * TAX_RATE : 0;
-  const orderTotal = subtotal + tax;
+  // Watch the calculated fields to update the UI
+  const subtotal = form.watch('subtotal');
+  const tax = form.watch('tax');
+  const orderTotal = form.watch('orderTotal');
 
-  // Effect to update the form's internal state for validation and submission
-  React.useEffect(() => {
-    form.setValue('subtotal', subtotal);
-    form.setValue('tax', tax);
-    form.setValue('orderTotal', orderTotal);
-  }, [subtotal, tax, orderTotal, form]);
+  const handleCalculateTotals = () => {
+    const products = form.getValues('productos');
+    const itbms = form.getValues('itbms');
+
+    const newSubtotal = products.reduce((sum, product) => {
+      return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
+    }, 0);
+    
+    const newTax = itbms ? newSubtotal * TAX_RATE : 0;
+    const newOrderTotal = newSubtotal + newTax;
+
+    form.setValue('subtotal', newSubtotal);
+    form.setValue('tax', newTax);
+    form.setValue('orderTotal', newOrderTotal);
+
+    toast({
+        title: "Calculated",
+        description: `New total is ${formatCurrency(newOrderTotal)}`,
+    });
+  };
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -147,29 +156,38 @@ export function OrderForm({ order }: { order?: Order }) {
   }, [watchedServicio, form]);
 
   React.useEffect(() => {
-    const totalAbono = Number(watchedTotalAbono) || 0;
+    const totalAbonoValue = Number(watchedTotalAbono) || 0;
     
-    if (totalAbono > 0) {
+    if (totalAbonoValue > 0) {
       form.setValue('abono', true, { shouldValidate: true });
     } else {
       form.setValue('abono', false, { shouldValidate: true });
     }
 
-    if (orderTotal > 0 && totalAbono >= orderTotal) {
+    const currentOrderTotal = form.getValues('orderTotal');
+    if (currentOrderTotal > 0 && totalAbonoValue >= currentOrderTotal) {
       form.setValue('cancelo', true, { shouldValidate: true });
     } else {
       form.setValue('cancelo', false, { shouldValidate: true });
     }
-  }, [watchedTotalAbono, orderTotal, form]);
+  }, [watchedTotalAbono, form, orderTotal]);
+
 
   function onSubmit(data: OrderFormValues) {
+    // Re-calculate one last time before submitting to ensure data is accurate
+    const products = form.getValues('productos');
+    const itbms = form.getValues('itbms');
+    const finalSubtotal = products.reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
+    const finalTax = itbms ? finalSubtotal * TAX_RATE : 0;
+    const finalOrderTotal = finalSubtotal + finalTax;
+
     startTransition(async () => {
       try {
         const payload = {
           ...data,
-          subtotal,
-          tax,
-          orderTotal,
+          subtotal: finalSubtotal,
+          tax: finalTax,
+          orderTotal: finalOrderTotal,
         };
         
         if (isEditing && order) {
@@ -294,9 +312,14 @@ export function OrderForm({ order }: { order?: Order }) {
                       </TableBody>
                     </Table>
                   </div>
-                  <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ name: '', quantity: 1, price: 0, materialsReady: false })}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Product
-                  </Button>
+                  <div className="mt-4 flex gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', quantity: 1, price: 0, materialsReady: false })}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+                    </Button>
+                    <Button type="button" size="sm" variant="secondary" onClick={handleCalculateTotals}>
+                        <Calculator className="mr-2 h-4 w-4" /> Calculate Totals
+                    </Button>
+                  </div>
                   <Separator className="my-6" />
                    <div className="flex justify-between items-start">
                       <div className="space-y-4">
