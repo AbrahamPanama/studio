@@ -53,7 +53,7 @@ export async function getOrderById(id: string) {
     if (!order) {
         return null;
     }
-    // Migrate old tags to new tags array
+    // Ensure tags arrays exist
     if (!order.tags) {
         const newTags: string[] = [];
         if (order.customTag1) newTags.push(order.customTag1);
@@ -103,18 +103,20 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
 
     const originalOrder = db.orders[index];
 
-    // No need to parse the whole schema, just merge the fields
-    const updatedOrderData = {
+    // Merge incoming partial data with existing data
+    const mergedData = {
         ...originalOrder,
         ...data,
+        // Ensure products have IDs
         productos: data.productos 
             ? data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`}))
             : originalOrder.productos,
+        // Ensure tags arrays are always arrays
         tags: data.tags || originalOrder.tags || [],
         tagsOther: data.tagsOther || originalOrder.tagsOther || [],
     };
     
-    const validatedFields = orderSchema.safeParse(updatedOrderData);
+    const validatedFields = orderSchema.safeParse(mergedData);
      if (!validatedFields.success) {
         console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
@@ -123,13 +125,18 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
     db.orders[index] = {
         ...validatedFields.data,
         id: originalOrder.id, // Ensure original ID is preserved
+        fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
     };
     
     await writeDb(db);
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
-    redirect('/');
+    
+    // Only redirect if it's a full form submission, not a partial update from the table
+    if (Object.keys(data).length > 2) { // Heuristic: partial updates are usually 1-2 fields
+        redirect('/');
+    }
 }
 
 export async function deleteOrder(id: string) {
@@ -160,7 +167,6 @@ export async function updateTags(tags: Tag[]) {
     }
     await writeTags(validatedTags.data);
     revalidatePath('/');
-    revalidatePath('/dashboard');
 }
 
 export async function getOtherTags() {
@@ -176,5 +182,4 @@ export async function updateOtherTags(tags: Tag[]) {
     }
     await writeOtherTags(validatedTags.data);
     revalidatePath('/');
-    revalidatePath('/dashboard');
 }

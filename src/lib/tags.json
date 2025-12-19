@@ -1,26 +1,109 @@
 {
   "tags": [
-    { "id": "1", "label": "Urgente", "color": "#dc2626" },
-    { "id": "2", "label": "Punta Pacífica", "color": "#f97316" },
-    { "id": "3", "label": "Brisas del Golf", "color": "#a16207" },
-    { "id": "4", "label": "Los Andes", "color": "#9ca3af" },
-    { "id": "5", "label": "Noche", "color": "#ec4899" },
-    { "id": "6", "label": "Colón", "color": "#10b981" },
-    { "id": "7", "label": "Aguadulce", "color": "#ef4444" },
-    { "id": "8", "label": "Tarde", "color": "#8b5cf6" },
-    { "id": "9", "label": "Bugaba", "color": "#84cc16" },
-    { "id": "10", "label": "Interior", "color": "#7c3aed" },
-    { "id": "11", "label": "Verificado", "color": "#facc15" },
-    { "id": "12", "label": "Panamá", "color": "#3b82f6" },
-    { "id": "13", "label": "Los Santos", "color": "#f87171" },
-    { "id": "14", "label": "Albrook", "color": "#0ea5e9" },
-    { "id": "15", "label": "Retiro", "color": "#f472b6" },
-    { "id": "16", "label": "Vista Hermosa", "color": "#ca8a04" },
-    { "id": "17", "label": "David", "color": "#60a5fa" },
-    { "id": "18", "label": "Las Tablas", "color": "#fb923c" },
-    { "id": "19", "label": "Envío", "color": "#f97316" },
-    { "id": "20", "label": "Villa Lucre", "color": "#4f46e5" },
-    { "id": "21", "label": "Penonomé", "color": "#78716c" },
-    { "id": "22", "label": "La Doña", "color": "#6366f1" }
+    {
+      "id": "2",
+      "label": "Punta Pacífica",
+      "color": "#f97316"
+    },
+    {
+      "id": "3",
+      "label": "Brisas del Golf",
+      "color": "#a16207"
+    },
+    {
+      "id": "4",
+      "label": "Los Andes",
+      "color": "#9ca3af"
+    },
+    {
+      "id": "5",
+      "label": "Noche",
+      "color": "#ec4899"
+    },
+    {
+      "id": "6",
+      "label": "Colón",
+      "color": "#10b981"
+    },
+    {
+      "id": "7",
+      "label": "Aguadulce",
+      "color": "#ef4444"
+    },
+    {
+      "id": "8",
+      "label": "Tarde",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "9",
+      "label": "Bugaba",
+      "color": "#84cc16"
+    },
+    {
+      "id": "10",
+      "label": "Interior",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "11",
+      "label": "Verificado",
+      "color": "#facc15"
+    },
+    {
+      "id": "12",
+      "label": "Panamá",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "13",
+      "label": "Los Santos",
+      "color": "#f87171"
+    },
+    {
+      "id": "14",
+      "label": "Albrook",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "15",
+      "label": "Retiro",
+      "color": "#f472b6"
+    },
+    {
+      "id": "16",
+      "label": "Vista Hermosa",
+      "color": "#ca8a04"
+    },
+    {
+      "id": "17",
+      "label": "David",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "18",
+      "label": "Las Tablas",
+      "color": "#fb923c"
+    },
+    {
+      "id": "19",
+      "label": "Envío",
+      "color": "#f97316"
+    },
+    {
+      "id": "20",
+      "label": "Villa Lucre",
+      "color": "#4f46e5"
+    },
+    {
+      "id": "21",
+      "label": "Penonomé",
+      "color": "#78716c"
+    },
+    {
+      "id": "22",
+      "label": "La Doña",
+      "color": "#6366f1"
+    }
   ]
 }

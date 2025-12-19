@@ -4,6 +4,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { orderSchema, productSchema } from '@/lib/schema';
+import { productSchema } from '@/lib/schema';
 import type { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { updateOrder } from '@/lib/actions';
@@ -42,6 +43,7 @@ export function ProductEditPopover({
   const [isOpen, setIsOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<PopoverFormValues>({
     resolver: zodResolver(popoverFormSchema),
@@ -63,16 +65,13 @@ export function ProductEditPopover({
   const onSubmit = (data: PopoverFormValues) => {
     startTransition(async () => {
       try {
-        const fullOrderData = {
-          ...order,
-          ...data,
-        };
-        await updateOrder(order.id, fullOrderData);
+        await updateOrder(order.id, { productos: data.productos });
         toast({
           title: 'Success',
           description: 'Products have been updated.',
         });
         setIsOpen(false);
+        router.refresh();
       } catch (error) {
         console.error(error);
         toast({

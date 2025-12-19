@@ -18,7 +18,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import type { Order, Tag } from '@/lib/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { deleteOrder, updateOrder, getTags, getOtherTags, updateOtherTags } from '@/lib/actions';
+import { deleteOrder, updateOrder, getTags, getOtherTags, updateTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -62,6 +62,7 @@ const OrderTableRow = ({
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [name, setName] = React.useState(order.name);
   const [status, setStatus] = React.useState(order.estado);
@@ -77,6 +78,8 @@ const OrderTableRow = ({
 
   const handleDelete = () => {
     startTransition(async () => {
+      await deleteOrder(order.id);
+      toast({ title: 'Success', description: 'Order deleted.' });
       onDelete(order.id);
     });
   }
@@ -89,6 +92,7 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
+        router.refresh();
       } catch (error) {
         console.error(error);
         toast({
@@ -213,6 +217,7 @@ const OrderTableRow = ({
               selectedTags={order.tags || []}
               onSelectedTagsChange={handleTagsUpdate}
               onTagsUpdate={onAllTagsUpdate}
+              onSave={updateTags}
             />
           </PopoverContent>
         </Popover>
@@ -284,12 +289,12 @@ const OrderTableRow = ({
 }
 
 
-export function OrderTable({ orders }: { orders: Order[] }) {
+export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
-  const { toast } = useToast();
   
+  const [orders, setOrders] = React.useState(initialOrders);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
 
@@ -338,27 +343,12 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     return () => clearTimeout(handler);
   }, [inputValue, pathname, replace, searchParams]);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteOrder(id);
-      toast({
-        title: "Success",
-        description: "Order deleted successfully.",
-      });
-      // This will trigger a re-render with the updated orders list from the server
-      replace(pathname + '?' + searchParams.toString(), { scroll: false });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete order.",
-      });
-    }
+  const handleDelete = (id: string) => {
+    setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
   };
 
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
-    // Optionally, re-fetch orders or just let the local state update the view
     replace(pathname + '?' + searchParams.toString(), { scroll: false });
   }
 
@@ -366,6 +356,10 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     setAllOtherTags(newTags);
     replace(pathname + '?' + searchParams.toString(), { scroll: false });
   }
+  
+  React.useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
 
   return (
     <div className="flex flex-col gap-4">

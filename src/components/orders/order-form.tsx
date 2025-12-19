@@ -35,7 +35,7 @@ import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
 import { cn, formatCurrency } from '@/lib/utils';
-import { createOrder, updateOrder, getTags, getOtherTags, updateOtherTags } from '@/lib/actions';
+import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
@@ -58,8 +58,8 @@ export function OrderForm({ order }: { order?: Order }) {
   const defaultValues: Partial<OrderFormValues> = isEditing
     ? {
         ...order,
-        entrega: new Date(order.entrega),
-        entregaLimite: new Date(order.entregaLimite),
+        entrega: order.entrega ? new Date(order.entrega) : new Date(),
+        entregaLimite: order.entregaLimite ? new Date(order.entregaLimite) : new Date(),
         description: order.description || '',
         comentarios: order.comentarios || '',
         abono: order.abono || false,
@@ -76,6 +76,8 @@ export function OrderForm({ order }: { order?: Order }) {
         comentarios: '',
         estado: 'New',
         subEstado: 'Pendiente',
+        entrega: new Date(),
+        entregaLimite: new Date(),
         servicioEntrega: 'Retiro taller',
         direccionEnvio: 'Retiro Taller',
         privacidad: 'Por preguntar',
@@ -146,10 +148,21 @@ export function OrderForm({ order }: { order?: Order }) {
 
   function onSubmit(data: OrderFormValues) {
     startTransition(async () => {
-      if (isEditing) {
-        await updateOrder(order.id, data);
-      } else {
-        await createOrder(data);
+      try {
+        if (isEditing && order) {
+          await updateOrder(order.id, data);
+          toast({ title: 'Success', description: 'Order updated successfully.' });
+        } else {
+          await createOrder(data);
+          toast({ title: 'Success', description: 'Order created successfully.' });
+        }
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: isEditing ? 'Failed to update order.' : 'Failed to create order.',
+        });
       }
     });
   }
@@ -414,6 +427,7 @@ export function OrderForm({ order }: { order?: Order }) {
                           selectedTags={field.value || []}
                           onSelectedTagsChange={field.onChange}
                           onTagsUpdate={setAllTags}
+                          onSave={updateTags}
                         />
                          <FormMessage />
                       </FormItem>

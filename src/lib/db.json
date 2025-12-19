@@ -25,7 +25,9 @@
       ],
       "tagsOther": [
         "M. NO FOTO.",
-        "Pend. Aproba"
+        "Pend. Aproba",
+        "Pend. fecha",
+        "Pend. Arte"
       ],
       "productos": [
         {
@@ -58,7 +60,8 @@
         }
       ],
       "orderTotal": 516,
-      "id": "1766075375916"
+      "id": "1766075375916",
+      "fechaIngreso": null
     },
     {
       "id": "1",
@@ -107,7 +110,7 @@
       "description": "1000 vinyl stickers, completed.",
       "comentarios": "Customer was very happy with the quality.",
       "estado": "Done",
-      "subEstado": "Check List",
+      "subEstado": "Pendiente",
       "entrega": "2024-06-25T00:00:00.000Z",
       "entregaLimite": "2024-06-25T00:00:00.000Z",
       "servicioEntrega": "Uno Express",
@@ -120,6 +123,7 @@
         "Repeat Customer",
         "Urgente"
       ],
+      "tagsOther": [],
       "productos": [
         {
           "id": "p4",
@@ -130,17 +134,15 @@
         }
       ],
       "orderTotal": 200,
-      "id": "3",
-      "fechaIngreso": "1970-01-01T00:00:00.000Z"
+      "id": "3"
     },
     {
-      "id": "2",
       "name": "Jane Smith",
       "email": "jane.smith@example.com",
       "celular": "098-765-4321",
       "description": "500 business cards, urgent requirement.",
       "comentarios": "Use the new logo file provided via email.",
-      "estado": "Urgent",
+      "estado": "Packaging",
       "subEstado": "Pendiente",
       "entrega": "2024-07-01T00:00:00.000Z",
       "entregaLimite": "2026-02-06T05:00:00.000Z",
@@ -154,6 +156,7 @@
         "High Priority",
         "Colón"
       ],
+      "tagsOther": [],
       "productos": [
         {
           "id": "p3",
@@ -171,6 +174,7 @@
         }
       ],
       "orderTotal": 250,
+      "id": "2",
       "fechaIngreso": "1970-01-01T00:00:00.000Z"
     }
   ]
