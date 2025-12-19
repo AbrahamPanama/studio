@@ -18,6 +18,8 @@ export function StatusBadge({ status, className }: { status: Status; className?:
       return <Badge className={cn("border-transparent bg-[hsl(var(--chart-4))] text-foreground hover:bg-[hsl(var(--chart-4))]/80", commonClass, className)}>On Hand/Working</Badge>;
     case 'Packaging':
       return <Badge className={cn("border-transparent bg-accent text-accent-foreground hover:bg-accent/80", commonClass, className)}>Packaging</Badge>;
+    case 'Cotización':
+      return <Badge variant="secondary" className={cn(commonClass, className)}>Cotización</Badge>;
     case 'Pending':
     default:
       return <Badge variant="outline" className={cn(commonClass, className)}>{status}</Badge>;
