@@ -119,7 +119,7 @@ export function OrderForm({ order }: { order?: Order }) {
   const tax = form.watch('tax');
   const orderTotal = form.watch('orderTotal');
 
-  const handleCalculateTotals = () => {
+  const handleCalculateTotals = React.useCallback(() => {
     const products = form.getValues('productos');
     const itbms = form.getValues('itbms');
 
@@ -138,7 +138,12 @@ export function OrderForm({ order }: { order?: Order }) {
         title: "Calculated",
         description: `New total is ${formatCurrency(newOrderTotal)}`,
     });
-  };
+  }, [form, toast]);
+
+  React.useEffect(() => {
+    handleCalculateTotals();
+  }, [watchedItbms, handleCalculateTotals]);
+
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -316,9 +321,6 @@ export function OrderForm({ order }: { order?: Order }) {
                     <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', quantity: 1, price: 0, materialsReady: false })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Product
                     </Button>
-                    <Button type="button" size="sm" variant="secondary" onClick={handleCalculateTotals}>
-                        <Calculator className="mr-2 h-4 w-4" /> Calculate Totals
-                    </Button>
                   </div>
                   <Separator className="my-6" />
                    <div className="flex justify-between items-start">
@@ -354,8 +356,13 @@ export function OrderForm({ order }: { order?: Order }) {
                             </div>
                         )}
                         <Separator />
-                        <div className="flex justify-between font-semibold text-lg">
-                            <span>Total</span>
+                        <div className="flex justify-between items-center font-semibold text-lg">
+                            <div className="flex items-center gap-2">
+                                <Button type="button" size="icon" variant="secondary" onClick={handleCalculateTotals} className="h-7 w-7">
+                                    <Calculator className="h-4 w-4" />
+                                </Button>
+                                <span>Total</span>
+                            </div>
                             <span>{formatCurrency(orderTotal)}</span>
                         </div>
                     </div>
