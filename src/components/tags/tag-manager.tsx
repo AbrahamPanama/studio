@@ -24,6 +24,7 @@ interface TagManagerProps {
   selectedTags: string[];
   onSelectedTagsChange: (tags: string[]) => void;
   onTagsUpdate: (tags: Tag[]) => void;
+  onSave?: (tags: Tag[]) => Promise<void>;
 }
 
 export function TagManager({
@@ -31,6 +32,7 @@ export function TagManager({
   selectedTags,
   onSelectedTagsChange,
   onTagsUpdate,
+  onSave = updateTags,
 }: TagManagerProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedTags, setEditedTags] = React.useState(allTags);
@@ -51,7 +53,7 @@ export function TagManager({
   const handleSaveEdits = () => {
     startTransition(async () => {
       try {
-        await updateTags(editedTags);
+        await onSave(editedTags);
         onTagsUpdate(editedTags);
         toast({ title: 'Success', description: 'Labels updated successfully.' });
         setIsEditing(false);

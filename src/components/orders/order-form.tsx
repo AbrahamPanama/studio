@@ -35,7 +35,7 @@ import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
 import { cn, formatCurrency } from '@/lib/utils';
-import { createOrder, updateOrder, getTags } from '@/lib/actions';
+import { createOrder, updateOrder, getTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
@@ -48,9 +48,11 @@ export function OrderForm({ order }: { order?: Order }) {
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
+  const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
 
   React.useEffect(() => {
     getTags().then(setAllTags);
+    getOtherTags().then(setAllOtherTags);
   }, []);
 
   const defaultValues: Partial<OrderFormValues> = isEditing
@@ -64,6 +66,7 @@ export function OrderForm({ order }: { order?: Order }) {
         cancelo: order.cancelo || false,
         totalAbono: order.totalAbono || 0,
         tags: order.tags || [],
+        tagsOther: order.tagsOther || [],
       }
     : {
         name: '',
@@ -82,6 +85,7 @@ export function OrderForm({ order }: { order?: Order }) {
         cancelo: false,
         totalAbono: 0,
         tags: [],
+        tagsOther: [],
       };
 
   const form = useForm<OrderFormValues>({
@@ -410,6 +414,23 @@ export function OrderForm({ order }: { order?: Order }) {
                           selectedTags={field.value || []}
                           onSelectedTagsChange={field.onChange}
                           onTagsUpdate={setAllTags}
+                        />
+                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tagsOther"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tags Other</FormLabel>
+                        <TagManager
+                          allTags={allOtherTags}
+                          selectedTags={field.value || []}
+                          onSelectedTagsChange={field.onChange}
+                          onTagsUpdate={setAllOtherTags}
+                          onSave={updateOtherTags}
                         />
                          <FormMessage />
                       </FormItem>

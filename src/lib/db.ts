@@ -7,6 +7,7 @@ import type { Order, Tag } from './types';
 // The path to the JSON file that will act as our database.
 const dbPath = path.join(process.cwd(), 'src', 'lib', 'db.json');
 const tagsPath = path.join(process.cwd(), 'src', 'lib', 'tags.json');
+const tagsOtherPath = path.join(process.cwd(), 'src', 'lib', 'tags-other.json');
 
 // Initial data structure if the file doesn't exist.
 const initialData: { orders: Order[] } = {
@@ -32,6 +33,7 @@ const initialData: { orders: Order[] } = {
       ],
       orderTotal: (10 * 15) + (20 * 8), // 310
       tags: ['Urgent Project'],
+      tagsOther: [],
     },
     {
         id: '2',
@@ -53,6 +55,7 @@ const initialData: { orders: Order[] } = {
         ],
         orderTotal: 250,
         tags: ['High Priority'],
+        tagsOther: [],
     },
      {
         id: '3',
@@ -74,6 +77,7 @@ const initialData: { orders: Order[] } = {
         ],
         orderTotal: 200,
         tags: ['Repeat Customer'],
+        tagsOther: [],
     }
   ],
 };
@@ -103,6 +107,49 @@ const initialTags: { tags: Tag[] } = {
         { id: "21", label: "Penonomé", color: "hsl(30, 10%, 50%)" },
         { id: "22", label: "La Doña", color: "hsl(250, 80%, 60%)" }
     ]
+};
+
+const initialOtherTags: { tags: Tag[] } = {
+  "tags": [
+    { "id": "other-1", "label": "Por Armar", "color": "#ef4444" },
+    { "id": "other-2", "label": "Estado", "color": "#f97316" },
+    { "id": "other-3", "label": "Por impresión", "color": "#84cc16" },
+    { "id": "other-4", "label": "Incompleto", "color": "#10b981" },
+    { "id": "other-5", "label": "Arte en reviision", "color": "#0ea5e9" },
+    { "id": "other-6", "label": "Pend.Corte", "color": "#6366f1" },
+    { "id": "other-7", "label": "Pend. Arte", "color": "#8b5cf6" },
+    { "id": "other-8", "label": "Foto por subir", "color": "#ec4899" },
+    { "id": "other-9", "label": "Corregir arte", "color": "#dc2626" },
+    { "id": "other-10", "label": "Foto subida", "color": "#f59e0b" },
+    { "id": "other-11", "label": "M. NO FOTO.", "color": "#a16207" },
+    { "id": "other-12", "label": "Pend. Aproba", "color": "#65a30d" },
+    { "id": "other-13", "label": "Pend. inform", "color": "#22d3ee" },
+    { "id": "other-14", "label": "Arte Urgente", "color": "#3b82f6" },
+    { "id": "other-15", "label": "Revisar whapsatt", "color": "#7c3aed" },
+    { "id": "other-16", "label": "Pend. fecha", "color": "#c026d3" },
+    { "id": "other-17", "label": "Pend. foto", "color": "#db2777" },
+    { "id": "other-18", "label": "Organizador", "color": "#e11d48" },
+    { "id": "other-19", "label": "Porta vela", "color": "#d97706" },
+    { "id": "other-20", "label": "Material Incompleto", "color": "#ca8a04" },
+    { "id": "other-21", "label": "Completo", "color": "#4d7c0f" },
+    { "id": "other-22", "label": "705", "color": "#0d9488" },
+    { "id": "other-23", "label": "BORLA", "color": "#0284c7" },
+    { "id": "other-24", "label": "711", "color": "#4338ca" },
+    { "id": "other-25", "label": "Corpus", "color": "#a78bfa" },
+    { "id": "other-26", "label": "Cruces con luz", "color": "#be185d" },
+    { "id": "other-27", "label": "Mini lamparas", "color": "#9f1239" },
+    { "id": "other-28", "label": "Invitaciones", "color": "#ea580c" },
+    { "id": "other-29", "label": "Recordatorios", "color": "#b45309" },
+    { "id": "other-30", "label": "Lampara", "color": "#16a34a" },
+    { "id": "other-31", "label": "Reconoc.", "color": "#059669" },
+    { "id": "other-32", "label": "Imanes", "color": "#0891b2" },
+    { "id": "other-33", "label": "Colgantes", "color": "#2563eb" },
+    { "id": "other-34", "label": "REVISAR BORLA", "color": "#7e22ce" },
+    { "id": "other-35", "label": "Graduación", "color": "#9d174d" },
+    { "id": "other-36", "label": "Porta llaves", "color": "#7f1d1d" },
+    { "id": "other-37", "label": "Copon", "color": "#b91c1c" },
+    { "id": "other-38", "label": "Madre", "color": "#fb923c" }
+  ]
 };
 
 /**
@@ -163,4 +210,25 @@ export async function readTags(): Promise<Tag[]> {
 
 export async function writeTags(tags: Tag[]): Promise<void> {
     await fs.writeFile(tagsPath, JSON.stringify({ tags }, null, 2), 'utf8');
+}
+
+
+export async function readOtherTags(): Promise<Tag[]> {
+  try {
+    await fs.access(tagsOtherPath);
+  } catch (error) {
+    await fs.writeFile(tagsOtherPath, JSON.stringify(initialOtherTags, null, 2), 'utf8');
+    return initialOtherTags.tags;
+  }
+
+  const fileContent = await fs.readFile(tagsOtherPath, 'utf8');
+  if (!fileContent) {
+    return initialOtherTags.tags;
+  }
+
+  return JSON.parse(fileContent).tags;
+}
+
+export async function writeOtherTags(tags: Tag[]): Promise<void> {
+    await fs.writeFile(tagsOtherPath, JSON.stringify({ tags }, null, 2), 'utf8');
 }

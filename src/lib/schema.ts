@@ -30,6 +30,7 @@ export const orderSchema = z.object({
 
   privacidad: z.enum(PRIVACY_OPTIONS).default('Por preguntar'),
   tags: z.array(z.string()).default([]),
+  tagsOther: z.array(z.string()).default([]),
   
   productos: z.array(productSchema).min(1, 'At least one product is required.'),
   orderTotal: z.coerce.number().default(0),

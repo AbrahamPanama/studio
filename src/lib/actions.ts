@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import type { Order, Tag } from '@/lib/types';
 import { orderSchema, tagSchema } from '@/lib/schema';
-import { readDb, writeDb, readTags, writeTags } from '@/lib/db';
+import { readDb, writeDb, readTags, writeTags, readOtherTags, writeOtherTags } from '@/lib/db';
 
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -28,6 +28,10 @@ export async function getOrders(): Promise<Order[]> {
             if (newOrder.customTag3) newTags.push(newOrder.customTag3);
             if (newOrder.customTag4) newTags.push(newOrder.customTag4);
             newOrder.tags = newTags;
+        }
+
+        if (!newOrder.tagsOther) {
+            newOrder.tagsOther = [];
         }
         
         // Ensure an ID exists, though the primary fix is in db.json
@@ -57,6 +61,9 @@ export async function getOrderById(id: string) {
         if (order.customTag3) newTags.push(order.customTag3);
         if (order.customTag4) newTags.push(order.customTag4);
         order.tags = newTags;
+    }
+    if (!order.tagsOther) {
+        order.tagsOther = [];
     }
     return order;
 }
@@ -150,6 +157,22 @@ export async function updateTags(tags: Tag[]) {
         throw new Error("Invalid data provided to updateTags action.");
     }
     await writeTags(validatedTags.data);
+    revalidatePath('/');
+    revalidatePath('/dashboard');
+}
+
+export async function getOtherTags() {
+    await delay(100);
+    return await readOtherTags();
+}
+
+export async function updateOtherTags(tags: Tag[]) {
+    await delay(300);
+    const validatedTags = z.array(tagSchema).safeParse(tags);
+    if (!validatedTags.success) {
+        throw new Error("Invalid data provided to updateOtherTags action.");
+    }
+    await writeOtherTags(validatedTags.data);
     revalidatePath('/');
     revalidatePath('/dashboard');
 }

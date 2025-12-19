@@ -18,7 +18,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import type { Order, Tag } from '@/lib/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { deleteOrder, updateOrder, getTags } from '@/lib/actions';
+import { deleteOrder, updateOrder, getTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -45,7 +45,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 
-const OrderTableRow = ({ order, allTags, onAllTagsUpdate, onDelete }: { order: Order, allTags: Tag[], onAllTagsUpdate: (tags: Tag[]) => void, onDelete: (id: string) => void }) => {
+const OrderTableRow = ({ 
+  order, 
+  allTags, 
+  allOtherTags, 
+  onAllTagsUpdate, 
+  onAllOtherTagsUpdate, 
+  onDelete 
+}: { 
+  order: Order, 
+  allTags: Tag[], 
+  allOtherTags: Tag[], 
+  onAllTagsUpdate: (tags: Tag[]) => void, 
+  onAllOtherTagsUpdate: (tags: Tag[]) => void, 
+  onDelete: (id: string) => void 
+}) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
 
@@ -94,6 +108,9 @@ const OrderTableRow = ({ order, allTags, onAllTagsUpdate, onDelete }: { order: O
   const handleTagsUpdate = (tags: string[]) => {
     handleFieldUpdate('tags', tags);
   }
+  const handleOtherTagsUpdate = (tags: string[]) => {
+    handleFieldUpdate('tagsOther', tags);
+  }
 
   const handleNameBlur = () => {
     if (name !== order.name) {
@@ -127,6 +144,10 @@ const OrderTableRow = ({ order, allTags, onAllTagsUpdate, onDelete }: { order: O
 
   const orderTags = (order.tags || [])
     .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
+    .filter((t): t is Tag => !!t);
+  
+  const orderOtherTags = (order.tagsOther || [])
+    .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
     .filter((t): t is Tag => !!t);
 
 
@@ -196,6 +217,28 @@ const OrderTableRow = ({ order, allTags, onAllTagsUpdate, onDelete }: { order: O
           </PopoverContent>
         </Popover>
       </TableCell>
+      <TableCell className="max-w-[250px]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex flex-wrap gap-1 cursor-pointer">
+              {orderOtherTags.length > 0 ? orderOtherTags.map(tag => (
+                <Badge key={tag.id} style={{ backgroundColor: tag.color }} className="text-white">
+                  {tag.label}
+                </Badge>
+              )) : <span className="text-muted-foreground text-xs">No tags</span>}
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-96">
+            <TagManager 
+              allTags={allOtherTags}
+              selectedTags={order.tagsOther || []}
+              onSelectedTagsChange={handleOtherTagsUpdate}
+              onTagsUpdate={onAllOtherTagsUpdate}
+              onSave={updateOtherTags}
+            />
+          </PopoverContent>
+        </Popover>
+      </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
       </TableCell>
@@ -248,11 +291,14 @@ export function OrderTable({ orders }: { orders: Order[] }) {
   const { toast } = useToast();
   
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
+  const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
+
   const searchTerm = searchParams.get('query')?.toString() || '';
   const [inputValue, setInputValue] = React.useState(searchTerm);
 
   React.useEffect(() => {
     getTags().then(setAllTags);
+    getOtherTags().then(setAllOtherTags);
   }, []);
   
   const filteredOrders = React.useMemo(() => {
@@ -268,10 +314,15 @@ export function OrderTable({ orders }: { orders: Order[] }) {
           .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
           .filter((t): t is Tag => !!t);
         const tagMatch = orderTags.some(tag => tag.label.toLowerCase().includes(lowercasedSearchTerm));
+        
+        const orderOtherTags = (order.tagsOther || [])
+          .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
+          .filter((t): t is Tag => !!t);
+        const otherTagMatch = orderOtherTags.some(tag => tag.label.toLowerCase().includes(lowercasedSearchTerm));
 
-        return nameMatch || descriptionMatch || emailMatch || tagMatch;
+        return nameMatch || descriptionMatch || emailMatch || tagMatch || otherTagMatch;
     });
-  }, [orders, searchTerm, allTags]);
+  }, [orders, searchTerm, allTags, allOtherTags]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -311,6 +362,11 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     replace(pathname + '?' + searchParams.toString(), { scroll: false });
   }
 
+  const handleAllOtherTagsUpdate = (newTags: Tag[]) => {
+    setAllOtherTags(newTags);
+    replace(pathname + '?' + searchParams.toString(), { scroll: false });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center">
@@ -330,6 +386,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
               <TableHead className="w-[250px]">Tags Shipping</TableHead>
+              <TableHead className="w-[250px]">Tags Other</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
               <TableHead className="text-right w-[120px]">Total</TableHead>
               <TableHead className="w-[100px]">
@@ -344,12 +401,14 @@ export function OrderTable({ orders }: { orders: Order[] }) {
                     key={order.id} 
                     order={order} 
                     allTags={allTags}
+                    allOtherTags={allOtherTags}
                     onAllTagsUpdate={handleAllTagsUpdate}
+                    onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                     onDelete={handleDelete} />
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>
