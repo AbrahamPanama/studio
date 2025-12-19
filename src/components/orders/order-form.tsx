@@ -30,6 +30,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/date-picker';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
@@ -41,6 +42,8 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
+
+const TAX_RATE = 0.07;
 
 export function OrderForm({ order }: { order?: Order }) {
   const isEditing = !!order;
@@ -67,6 +70,7 @@ export function OrderForm({ order }: { order?: Order }) {
         totalAbono: order.totalAbono || 0,
         tags: order.tags || [],
         tagsOther: order.tagsOther || [],
+        itbms: order.itbms || false,
       }
     : {
         name: '',
@@ -82,7 +86,10 @@ export function OrderForm({ order }: { order?: Order }) {
         direccionEnvio: 'Retiro Taller',
         privacidad: 'Por preguntar',
         productos: [{ name: '', quantity: 1, price: 0, materialsReady: false }],
+        subtotal: 0,
+        tax: 0,
         orderTotal: 0,
+        itbms: false,
         abono: false,
         cancelo: false,
         totalAbono: 0,
@@ -102,17 +109,23 @@ export function OrderForm({ order }: { order?: Order }) {
   });
 
   const watchedProducts = form.watch('productos');
+  const watchedItbms = form.watch('itbms');
   const watchedEntrega = form.watch('entrega');
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
   const watchedOrderTotal = form.watch('orderTotal');
 
   React.useEffect(() => {
-    const total = watchedProducts.reduce((sum, product) => {
+    const subtotal = watchedProducts.reduce((sum, product) => {
       return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
     }, 0);
+    const tax = watchedItbms ? subtotal * TAX_RATE : 0;
+    const total = subtotal + tax;
+
+    form.setValue('subtotal', subtotal, { shouldValidate: true });
+    form.setValue('tax', tax, { shouldValidate: true });
     form.setValue('orderTotal', total, { shouldValidate: true });
-  }, [watchedProducts, form]);
+  }, [watchedProducts, watchedItbms, form]);
 
   React.useEffect(() => {
     if (watchedEntrega) {
@@ -156,6 +169,7 @@ export function OrderForm({ order }: { order?: Order }) {
           await createOrder(data);
           toast({ title: 'Success', description: 'Order created successfully.' });
         }
+        router.push('/');
       } catch (error) {
         console.error(error);
         toast({
@@ -274,8 +288,34 @@ export function OrderForm({ order }: { order?: Order }) {
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Product
                   </Button>
                   <Separator className="my-6" />
-                  <div className="flex justify-end">
+                   <div className="flex justify-between items-start">
+                     <FormField
+                        control={form.control}
+                        name="itbms"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2">
+                               <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel className="font-normal">ITBMS</FormLabel>
+                            </FormItem>
+                        )}
+                    />
                     <div className="w-[250px] space-y-2">
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>{formatCurrency(form.getValues('subtotal'))}</span>
+                        </div>
+                         {watchedItbms && (
+                            <div className="flex justify-between">
+                                <span>Tax (7%)</span>
+                                <span>{formatCurrency(form.getValues('tax'))}</span>
+                            </div>
+                        )}
+                        <Separator />
                         <div className="flex justify-between font-semibold text-lg">
                             <span>Total</span>
                             <span>{formatCurrency(form.getValues('orderTotal'))}</span>

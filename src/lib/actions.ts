@@ -72,6 +72,7 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     await delay(500);
     const validatedFields = orderSchema.safeParse(data);
     if (!validatedFields.success) {
+        console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to createOrder action.");
     }
     
@@ -88,7 +89,7 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     await writeDb(db);
     
     revalidatePath('/');
-    redirect('/');
+    // Redirect is handled client-side in the form component
 }
 
 export async function updateOrder(id: string, data: Partial<z.infer<typeof orderSchema>>) {
@@ -132,11 +133,6 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
-    
-    // Only redirect if it's a full form submission, not a partial update from the table
-    if (Object.keys(data).length > 2) { // Heuristic: partial updates are usually 1-2 fields
-        redirect('/');
-    }
 }
 
 export async function deleteOrder(id: string) {

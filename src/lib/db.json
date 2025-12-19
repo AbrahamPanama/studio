@@ -1,13 +1,53 @@
 {
   "orders": [
     {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "celular": "+1 (234) 567-890",
+      "description": "A sample order for 10 T-shirts and 20 mugs.",
+      "comentarios": "Customer requested a specific blue color for the t-shirts.",
+      "estado": "New",
+      "subEstado": "Check List",
+      "entrega": "2024-07-05T00:00:00.000Z",
+      "entregaLimite": "2024-07-24T05:00:00.000Z",
+      "servicioEntrega": "Uber",
+      "direccionEnvio": "123 Main St, Anytown, USA",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "privacidad": "ilimitado",
+      "tags": [],
+      "tagsOther": [
+        "Pend. Aproba"
+      ],
+      "productos": [
+        {
+          "id": "p1",
+          "name": "T-Shirt",
+          "quantity": 10,
+          "price": 15,
+          "materialsReady": true
+        },
+        {
+          "id": "p2",
+          "name": "Mug",
+          "quantity": 20,
+          "price": 8,
+          "materialsReady": false
+        }
+      ],
+      "orderTotal": 310,
+      "id": "1",
+      "fechaIngreso": "2023-10-26T10:00:00.000Z"
+    },
+    {
       "name": "Abraham Israel Saenz Clark",
       "email": "abraham.saenz@gmail.com",
       "celular": "+50762168911",
       "description": "sample",
       "comentarios": "sampleee",
       "estado": "On Hand/Working",
-      "subEstado": "Pendiente",
+      "subEstado": "Pendiente Arte",
       "entrega": "2025-12-12T05:00:00.000Z",
       "entregaLimite": "2025-12-05T05:00:00.000Z",
       "servicioEntrega": "Uno Express",
@@ -61,47 +101,7 @@
       ],
       "orderTotal": 516,
       "id": "1766075375916",
-      "fechaIngreso": null
-    },
-    {
-      "id": "1",
-      "name": "John Doe",
-      "email": "john.doe@example.com",
-      "celular": "+1 (234) 567-890",
-      "description": "A sample order for 10 T-shirts and 20 mugs.",
-      "comentarios": "Customer requested a specific blue color for the t-shirts.",
-      "estado": "New",
-      "subEstado": "Check List",
-      "fechaIngreso": "2023-10-26T10:00:00.000Z",
-      "entrega": "2024-07-05T00:00:00.000Z",
-      "entregaLimite": "2024-07-24T05:00:00.000Z",
-      "servicioEntrega": "Uber",
-      "direccionEnvio": "123 Main St, Anytown, USA",
-      "privacidad": "ilimitado",
-      "productos": [
-        {
-          "id": "p1",
-          "name": "T-Shirt",
-          "quantity": 10,
-          "price": 15,
-          "materialsReady": true
-        },
-        {
-          "id": "p2",
-          "name": "Mug",
-          "quantity": 20,
-          "price": 8,
-          "materialsReady": false
-        }
-      ],
-      "orderTotal": 310,
-      "customTag1": "Urgent Project",
-      "customTag2": "",
-      "customTag3": "",
-      "customTag4": "",
-      "abono": false,
-      "cancelo": false,
-      "totalAbono": 0
+      "fechaIngreso": "1970-01-01T00:00:00.000Z"
     },
     {
       "name": "Peter Jones",
@@ -109,7 +109,7 @@
       "celular": "555 123 4567",
       "description": "1000 vinyl stickers, completed.",
       "comentarios": "Customer was very happy with the quality.",
-      "estado": "Done",
+      "estado": "On Hand/Working",
       "subEstado": "Pendiente",
       "entrega": "2024-06-25T00:00:00.000Z",
       "entregaLimite": "2024-06-25T00:00:00.000Z",
@@ -134,7 +134,8 @@
         }
       ],
       "orderTotal": 200,
-      "id": "3"
+      "id": "3",
+      "fechaIngreso": "1970-01-01T00:00:00.000Z"
     },
     {
       "name": "Jane Smith",

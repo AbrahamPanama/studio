@@ -33,6 +33,10 @@ export const orderSchema = z.object({
   tagsOther: z.array(z.string()).default([]),
   
   productos: z.array(productSchema).min(1, 'At least one product is required.'),
+
+  itbms: z.boolean().default(false),
+  subtotal: z.coerce.number().default(0),
+  tax: z.coerce.number().default(0),
   orderTotal: z.coerce.number().default(0),
 });
 
