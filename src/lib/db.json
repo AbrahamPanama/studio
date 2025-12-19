@@ -8,6 +8,42 @@
       "comentarios": "",
       "estado": "New",
       "subEstado": "Pendiente",
+      "entrega": "2025-12-19T18:36:57.194Z",
+      "entregaLimite": "2025-12-17T05:00:00.000Z",
+      "servicioEntrega": "Retiro taller",
+      "direccionEnvio": "Retiro Taller",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "privacidad": "Por preguntar",
+      "tags": [],
+      "tagsOther": [
+        "Urgente"
+      ],
+      "productos": [
+        {
+          "id": "p17661699456680",
+          "name": "Invitaciones Quinceaños",
+          "quantity": 67,
+          "price": 9.5,
+          "materialsReady": false
+        }
+      ],
+      "itbms": true,
+      "subtotal": 636.5,
+      "tax": 44.55500000000001,
+      "orderTotal": 681.0550000000001,
+      "id": "1766169945668",
+      "fechaIngreso": "2025-12-19T18:45:45.668Z"
+    },
+    {
+      "name": "Abraham Israel Saenz Clark",
+      "email": "abraham.saenz@gmail.com",
+      "celular": "+50762168911",
+      "description": "",
+      "comentarios": "",
+      "estado": "New",
+      "subEstado": "Pendiente",
       "entrega": "2025-12-19T18:13:29.965Z",
       "entregaLimite": "2025-12-19T18:13:29.965Z",
       "servicioEntrega": "Retiro taller",
@@ -27,28 +63,28 @@
           "id": "p17661682153450",
           "name": "Invitaciones",
           "quantity": 25,
-          "price": 9.25,
+          "price": 9.29,
           "materialsReady": false
         },
         {
           "id": "p17661682153451",
           "name": "Imanes",
-          "quantity": 24,
-          "price": 3.25,
+          "quantity": 26,
+          "price": 3.26,
           "materialsReady": false
         },
         {
           "id": "p17661682153452",
           "name": "Envío Uno Express ",
-          "quantity": 1,
-          "price": 6.5,
+          "quantity": 2,
+          "price": 6.59,
           "materialsReady": false
         }
       ],
       "itbms": true,
-      "subtotal": 315.75,
-      "tax": 22.102500000000003,
-      "orderTotal": 337.8525,
+      "subtotal": 330.19,
+      "tax": 23.113300000000002,
+      "orderTotal": 353.3033,
       "id": "1766168215345",
       "fechaIngreso": "2025-12-19T18:16:55.345Z"
     },
@@ -175,7 +211,9 @@
         "Repeat Customer",
         "Urgente"
       ],
-      "tagsOther": [],
+      "tagsOther": [
+        "Urgente"
+      ],
       "productos": [
         {
           "id": "p4",
@@ -185,6 +223,9 @@
           "materialsReady": true
         }
       ],
+      "itbms": false,
+      "subtotal": 0,
+      "tax": 0,
       "orderTotal": 200,
       "id": "3",
       "fechaIngreso": "1970-01-01T00:00:00.000Z"
