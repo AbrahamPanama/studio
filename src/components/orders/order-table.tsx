@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/date-picker';
 import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
 import { ProductEditPopover } from './product-edit-popover';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -255,11 +255,19 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     getTags().then(setAllTags);
   }, []);
   
-  const filteredOrders = React.useMemo(() => orders.filter(order =>
-    order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.description && order.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (order.email && order.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  ), [orders, searchTerm]);
+  const filteredOrders = React.useMemo(() => {
+    if (!searchTerm) return orders;
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+
+    return orders.filter(order => {
+        const nameMatch = order.name.toLowerCase().includes(lowercasedSearchTerm);
+        const descriptionMatch = order.description && order.description.toLowerCase().includes(lowercasedSearchTerm);
+        const emailMatch = order.email && order.email.toLowerCase().includes(lowercasedSearchTerm);
+        const tagMatch = order.tags && order.tags.some(tag => tag.toLowerCase().includes(lowercasedSearchTerm));
+
+        return nameMatch || descriptionMatch || emailMatch || tagMatch;
+    });
+  }, [orders, searchTerm]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -303,7 +311,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center">
         <Input
-          placeholder="Search by name, email, or description..."
+          placeholder="Search by name, email, description, or tag..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           className="max-w-sm"
