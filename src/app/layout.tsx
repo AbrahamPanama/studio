@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/layout/header';
 
 export const metadata: Metadata = {
-  title: 'OrderFlow',
+  title: 'VA OMS',
   description: 'Lightweight Order Management System',
 };
 
