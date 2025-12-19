@@ -15,10 +15,10 @@ import { Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
-import type { Order } from '@/lib/types';
-import { cn, formatCurrency, formatDate, sanitizePhoneNumber } from '@/lib/utils';
+import type { Order, Tag } from '@/lib/types';
+import { cn, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { deleteOrder, updateOrder } from '@/lib/actions';
+import { deleteOrder, updateOrder, getTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -40,15 +40,12 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { ProductEditPopover } from './product-edit-popover';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { TagManager } from '../tags/tag-manager';
+import { Badge } from '../ui/badge';
 
-const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: string) => void }) => {
+const OrderTableRow = ({ order, allTags, onAllTagsUpdate, onDelete }: { order: Order, allTags: Tag[], onAllTagsUpdate: (tags: Tag[]) => void, onDelete: (id: string) => void }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
 
@@ -58,10 +55,6 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const [deliveryDeadline, setDeliveryDeadline] = React.useState<Date | undefined>(
     order.entregaLimite ? new Date(order.entregaLimite) : undefined
   );
-  const [tag1, setTag1] = React.useState(order.customTag1 || '');
-  const [tag2, setTag2] = React.useState(order.customTag2 || '');
-  const [tag3, setTag3] = React.useState(order.customTag3 || '');
-  const [tag4, setTag4] = React.useState(order.customTag4 || '');
   
   const [hasMounted, setHasMounted] = React.useState(false);
   React.useEffect(() => {
@@ -77,9 +70,7 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
     startTransition(async () => {
       try {
-        const updatedData = { ...order, [fieldName]: value };
-        await updateOrder(order.id, updatedData);
-
+        await updateOrder(order.id, { [fieldName]: value });
         toast({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
@@ -96,28 +87,19 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         if (fieldName === 'estado') setStatus(order.estado);
         if (fieldName === 'subEstado') setSubStatus(order.subEstado);
         if (fieldName === 'entregaLimite') setDeliveryDeadline(order.entregaLimite ? new Date(order.entregaLimite) : undefined);
-        if (fieldName === 'customTag1') setTag1(order.customTag1 || '');
-        if (fieldName === 'customTag2') setTag2(order.customTag2 || '');
-        if (fieldName === 'customTag3') setTag3(order.customTag3 || '');
-        if (fieldName === 'customTag4') setTag4(order.customTag4 || '');
       }
     });
   };
 
+  const handleTagsUpdate = (tags: string[]) => {
+    handleFieldUpdate('tags', tags);
+  }
 
   const handleNameBlur = () => {
     if (name !== order.name) {
       handleFieldUpdate('name', name);
     }
   };
-
-  const handleTagBlur = (tagNumber: 1 | 2 | 3 | 4) => {
-    const fieldName = `customTag${tagNumber}` as keyof Order;
-    const localState = [tag1, tag2, tag3, tag4][tagNumber-1];
-    if (localState !== (order[fieldName] || '')) {
-        handleFieldUpdate(fieldName, localState);
-    }
-  }
 
   const handleStatusChange = (newStatus: Order['estado']) => {
     setStatus(newStatus);
@@ -143,6 +125,11 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
     </span>
   ));
 
+  const orderTags = (order.tags || [])
+    .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
+    .filter((t): t is Tag => !!t);
+
+
   return (
     <TableRow>
       <TableCell className="w-[200px]">
@@ -155,13 +142,6 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
         />
         <div className="text-sm text-muted-foreground flex items-center">
           {order.celular}
-            <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" asChild>
-                <a href={`https://wa.me/${sanitizePhoneNumber(order.celular)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${order.name}`}>
-                    <svg fill="currentColor" viewBox="0 0 24 24" className="h-4 w-4">
-                        <path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.75-.16 1.43-.2.6-.48.93-.73 1.05-.25.13-.5.13-.88.06-.38-.07-1.4-.46-2.6-1.55-1.5-1.3-2.6-2.9-2.9-3.4-.3-.5-.6-1-.6-1.5s.2-1 .4-1.2c.2-.2.4-.3.6-.3s.4.1.6.4a8.6 8.6 0 01.9 1.2c.2.3.3.4.2.7-.1.3-.2.4-.4.6-.2.2-.3.3-.4.4-.1.1-.1.2 0 .4.2.3.8.9 1.6 1.7.9.8 1.5 1.2 1.7 1.4.2.2.4.3.6.2.2-.1.4-.3.5-.4.2-.1.3-.1.4-.1.1 0 .3.1.4.2zM12 2a10 10 0 100 20 10 10 0 000-20zm0 18.5a8.5 8.5 0 110-17 8.5 8.5 0 010 17z"/>
-                    </svg>
-                </a>
-            </Button>
         </div>
       </TableCell>
       <TableCell className="w-[160px]">
@@ -195,17 +175,26 @@ const OrderTableRow = ({ order, onDelete }: { order: Order, onDelete: (id: strin
             <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
-      <TableCell className="w-[150px]">
-        <Input value={tag1} onChange={e => setTag1(e.target.value)} onBlur={() => handleTagBlur(1)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
-      </TableCell>
-      <TableCell className="w-[150px]">
-        <Input value={tag2} onChange={e => setTag2(e.target.value)} onBlur={() => handleTagBlur(2)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
-      </TableCell>
-      <TableCell className="w-[150px]">
-        <Input value={tag3} onChange={e => setTag3(e.target.value)} onBlur={() => handleTagBlur(3)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
-      </TableCell>
-      <TableCell className="w-[150px]">
-        <Input value={tag4} onChange={e => setTag4(e.target.value)} onBlur={() => handleTagBlur(4)} disabled={isPending} className="border-0 focus-visible:ring-1 focus-visible:ring-ring" />
+       <TableCell className="max-w-[250px]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex flex-wrap gap-1 cursor-pointer">
+              {orderTags.length > 0 ? orderTags.map(tag => (
+                <Badge key={tag.id} style={{ backgroundColor: tag.color }} className="text-white">
+                  {tag.label}
+                </Badge>
+              )) : <span className="text-muted-foreground text-xs">No tags</span>}
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-96">
+            <TagManager 
+              allTags={allTags}
+              selectedTags={order.tags || []}
+              onSelectedTagsChange={handleTagsUpdate}
+              onTagsUpdate={onAllTagsUpdate}
+            />
+          </PopoverContent>
+        </Popover>
       </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
        {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
@@ -258,8 +247,13 @@ export function OrderTable({ orders }: { orders: Order[] }) {
   const { replace } = useRouter();
   const { toast } = useToast();
   
+  const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const searchTerm = searchParams.get('query')?.toString() || '';
   const [inputValue, setInputValue] = React.useState(searchTerm);
+
+  React.useEffect(() => {
+    getTags().then(setAllTags);
+  }, []);
   
   const filteredOrders = React.useMemo(() => orders.filter(order =>
     order.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -299,6 +293,12 @@ export function OrderTable({ orders }: { orders: Order[] }) {
     }
   };
 
+  const handleAllTagsUpdate = (newTags: Tag[]) => {
+    setAllTags(newTags);
+    // Optionally, re-fetch orders or just let the local state update the view
+    replace(pathname + '?' + searchParams.toString(), { scroll: false });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center">
@@ -317,10 +317,7 @@ export function OrderTable({ orders }: { orders: Order[] }) {
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead className="w-[150px]">Tag 1</TableHead>
-              <TableHead className="w-[150px]">Tag 2</TableHead>
-              <TableHead className="w-[150px]">Tag 3</TableHead>
-              <TableHead className="w-[150px]">Tag 4</TableHead>
+              <TableHead className="w-[250px]">Tags</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
               <TableHead className="text-right w-[120px]">Total</TableHead>
               <TableHead className="w-[100px]">
@@ -331,11 +328,16 @@ export function OrderTable({ orders }: { orders: Order[] }) {
           <TableBody>
             {filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
-                <OrderTableRow key={order.id} order={order} onDelete={handleDelete} />
+                <OrderTableRow 
+                    key={order.id} 
+                    order={order} 
+                    allTags={allTags}
+                    onAllTagsUpdate={handleAllTagsUpdate}
+                    onDelete={handleDelete} />
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>

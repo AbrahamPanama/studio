@@ -29,11 +29,14 @@ export const orderSchema = z.object({
   totalAbono: z.coerce.number().default(0),
 
   privacidad: z.enum(PRIVACY_OPTIONS).default('Por preguntar'),
-  customTag1: z.string().optional(),
-  customTag2: z.string().optional(),
-  customTag3: z.string().optional(),
-  customTag4: z.string().optional(),
+  tags: z.array(z.string()).default([]),
   
   productos: z.array(productSchema).min(1, 'At least one product is required.'),
   orderTotal: z.coerce.number().default(0),
+});
+
+export const tagSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1, "Label is required"),
+  color: z.string().min(1, "Color is required"),
 });

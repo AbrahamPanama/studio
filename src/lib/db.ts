@@ -2,10 +2,11 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import type { Order } from './types';
+import type { Order, Tag } from './types';
 
 // The path to the JSON file that will act as our database.
 const dbPath = path.join(process.cwd(), 'src', 'lib', 'db.json');
+const tagsPath = path.join(process.cwd(), 'src', 'lib', 'tags.json');
 
 // Initial data structure if the file doesn't exist.
 const initialData: { orders: Order[] } = {
@@ -30,10 +31,7 @@ const initialData: { orders: Order[] } = {
           { id: 'p2', name: 'Mug', quantity: 20, price: 8, materialsReady: false },
       ],
       orderTotal: (10 * 15) + (20 * 8), // 310
-      customTag1: 'Urgent Project',
-      customTag2: '',
-      customTag3: '',
-      customTag4: '',
+      tags: ['Urgent Project'],
     },
     {
         id: '2',
@@ -54,10 +52,7 @@ const initialData: { orders: Order[] } = {
             { id: 'p3', name: 'Business Cards', quantity: 500, price: 0.5, materialsReady: false },
         ],
         orderTotal: 250,
-        customTag1: 'High Priority',
-        customTag2: '',
-        customTag3: '',
-        customTag4: '',
+        tags: ['High Priority'],
     },
      {
         id: '3',
@@ -78,12 +73,36 @@ const initialData: { orders: Order[] } = {
             { id: 'p4', name: 'Vinyl Stickers', quantity: 1000, price: 0.2, materialsReady: true },
         ],
         orderTotal: 200,
-        customTag1: 'Repeat Customer',
-        customTag2: '',
-        customTag3: '',
-        customTag4: '',
+        tags: ['Repeat Customer'],
     }
   ],
+};
+
+const initialTags: { tags: Tag[] } = {
+    tags: [
+        { id: "1", label: "Urgente", color: "hsl(0, 84%, 60%)" },
+        { id: "2", label: "Punta Pacífica", color: "hsl(35, 92%, 55%)" },
+        { id: "3", label: "Brisas del Golf", color: "hsl(25, 50%, 40%)" },
+        { id: "4", label: "Los Andes", color: "hsl(210, 20%, 60%)" },
+        { id: "5", label: "Noche", color: "hsl(320, 80%, 60%)" },
+        { id: "6", label: "Colón", color: "hsl(150, 80%, 40%)" },
+        { id: "7", label: "Aguadulce", color: "hsl(0, 60%, 50%)" },
+        { id: "8", label: "Tarde", color: "hsl(270, 60%, 60%)" },
+        { id: "9", label: "Bugaba", color: "hsl(80, 60%, 50%)" },
+        { id: "10", label: "Interior", color: "hsl(260, 60%, 60%)" },
+        { id: "11", label: "Verificado", color: "hsl(45, 100%, 50%)" },
+        { id: "12", label: "Panamá", color: "hsl(220, 80%, 60%)" },
+        { id: "13", label: "Los Santos", color: "hsl(10, 80%, 60%)" },
+        { id: "14", label: "Albrook", color: "hsl(200, 100%, 40%)" },
+        { id: "15", label: "Retiro", color: "hsl(330, 80%, 80%)" },
+        { id: "16", label: "Vista Hermosa", color: "hsl(50, 50%, 50%)" },
+        { id: "17", label: "David", color: "hsl(190, 80%, 60%)" },
+        { id: "18", label: "Las Tablas", color: "hsl(0, 80%, 80%)" },
+        { id: "19", label: "Envío", color: "hsl(20, 90%, 60%)" },
+        { id: "20", label: "Villa Lucre", color: "hsl(230, 80%, 60%)" },
+        { id: "21", label: "Penonomé", color: "hsl(30, 10%, 50%)" },
+        { id: "22", label: "La Doña", color: "hsl(250, 80%, 60%)" }
+    ]
 };
 
 /**
@@ -123,4 +142,25 @@ export async function writeDb(data: { orders: Order[] }): Promise<void> {
   await fs.writeFile(dbPath, JSON.stringify({
     orders: data.orders.sort((a, b) => new Date(b.fechaIngreso).getTime() - new Date(a.fechaIngreso).getTime())
   }, null, 2), 'utf8');
+}
+
+
+export async function readTags(): Promise<Tag[]> {
+  try {
+    await fs.access(tagsPath);
+  } catch (error) {
+    await fs.writeFile(tagsPath, JSON.stringify(initialTags, null, 2), 'utf8');
+    return initialTags.tags;
+  }
+
+  const fileContent = await fs.readFile(tagsPath, 'utf8');
+  if (!fileContent) {
+    return initialTags.tags;
+  }
+
+  return JSON.parse(fileContent).tags;
+}
+
+export async function writeTags(tags: Tag[]): Promise<void> {
+    await fs.writeFile(tagsPath, JSON.stringify({ tags }, null, 2), 'utf8');
 }

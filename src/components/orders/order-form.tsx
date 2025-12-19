@@ -32,12 +32,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 
 import { orderSchema } from '@/lib/schema';
-import type { Order } from '@/lib/types';
+import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
 import { cn, formatCurrency } from '@/lib/utils';
-import { createOrder, updateOrder } from '@/lib/actions';
+import { createOrder, updateOrder, getTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { TagManager } from '@/components/tags/tag-manager';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
@@ -46,6 +47,11 @@ export function OrderForm({ order }: { order?: Order }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
+  const [allTags, setAllTags] = React.useState<Tag[]>([]);
+
+  React.useEffect(() => {
+    getTags().then(setAllTags);
+  }, []);
 
   const defaultValues: Partial<OrderFormValues> = isEditing
     ? {
@@ -57,10 +63,7 @@ export function OrderForm({ order }: { order?: Order }) {
         abono: order.abono || false,
         cancelo: order.cancelo || false,
         totalAbono: order.totalAbono || 0,
-        customTag1: order.customTag1 || '',
-        customTag2: order.customTag2 || '',
-        customTag3: order.customTag3 || '',
-        customTag4: order.customTag4 || '',
+        tags: order.tags || [],
       }
     : {
         name: '',
@@ -78,10 +81,7 @@ export function OrderForm({ order }: { order?: Order }) {
         abono: false,
         cancelo: false,
         totalAbono: 0,
-        customTag1: '',
-        customTag2: '',
-        customTag3: '',
-        customTag4: '',
+        tags: [],
       };
 
   const form = useForm<OrderFormValues>({
@@ -345,14 +345,18 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="entrega" render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Delivery Date (Entrega)</FormLabel>
-                      <FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl>
+                      <FormControl>
+                        <DatePicker value={field.value} onChange={field.onChange} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="entregaLimite" render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Delivery Deadline (Entrega Límite)</FormLabel>
-                      <FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl>
+                      <FormControl>
+                         <DatePicker value={field.value} onChange={field.onChange} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -395,18 +399,22 @@ export function OrderForm({ order }: { order?: Order }) {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="customTag1" render={({ field }) => (
-                    <FormItem><FormLabel>Tag 1</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                  )} />
-                  <FormField control={form.control} name="customTag2" render={({ field }) => (
-                    <FormItem><FormLabel>Tag 2</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                  )} />
-                  <FormField control={form.control} name="customTag3" render={({ field }) => (
-                    <FormItem><FormLabel>Tag 3</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                  )} />
-                  <FormField control={form.control} name="customTag4" render={({ field }) => (
-                    <FormItem><FormLabel>Tag 4</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                  )} />
+                  <FormField
+                    control={form.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tags</FormLabel>
+                        <TagManager
+                          allTags={allTags}
+                          selectedTags={field.value || []}
+                          onSelectedTagsChange={field.onChange}
+                          onTagsUpdate={setAllTags}
+                        />
+                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </div>

@@ -4,9 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
-import type { Order } from '@/lib/types';
-import { orderSchema } from '@/lib/schema';
-import { readDb, writeDb } from '@/lib/db';
+import type { Order, Tag } from '@/lib/types';
+import { orderSchema, tagSchema } from '@/lib/schema';
+import { readDb, writeDb, readTags, writeTags } from '@/lib/db';
 
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -14,15 +14,36 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 export async function getOrders() {
     await delay(300);
     const db = await readDb();
-    return db.orders;
+    
+    // Migrate old tags to new tags array
+    const orders = db.orders.map(order => {
+        if (!order.tags) {
+            order.tags = [];
+            if (order.customTag1) order.tags.push(order.customTag1);
+            if (order.customTag2) order.tags.push(order.customTag2);
+            if (order.customTag3) order.tags.push(order.customTag3);
+            if (order.customTag4) order.tags.push(order.customTag4);
+        }
+        return order;
+    })
+    
+    return orders;
 }
 
 export async function getOrderById(id: string) {
     await delay(300);
     const db = await readDb();
-    const order = db.orders.find(o => o.id === id);
+    let order = db.orders.find(o => o.id === id);
     if (!order) {
         return null;
+    }
+    // Migrate old tags to new tags array
+    if (!order.tags) {
+        order.tags = [];
+        if (order.customTag1) order.tags.push(order.customTag1);
+        if (order.customTag2) order.tags.push(order.customTag2);
+        if (order.customTag3) order.tags.push(order.customTag3);
+        if (order.customTag4) order.tags.push(order.customTag4);
     }
     return order;
 }
@@ -50,14 +71,9 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     redirect('/');
 }
 
-export async function updateOrder(id: string, data: z.infer<typeof orderSchema>) {
+export async function updateOrder(id: string, data: Partial<z.infer<typeof orderSchema>>) {
     await delay(500);
-    const validatedFields = orderSchema.safeParse(data);
-     if (!validatedFields.success) {
-        console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
-        throw new Error("Invalid data provided to updateOrder action.");
-    }
-
+    
     const db = await readDb();
     const index = db.orders.findIndex(o => o.id === id);
 
@@ -67,16 +83,28 @@ export async function updateOrder(id: string, data: z.infer<typeof orderSchema>)
 
     const originalOrder = db.orders[index];
 
-    db.orders[index] = {
+    // No need to parse the whole schema, just merge the fields
+    const updatedOrder = {
         ...originalOrder,
-        ...validatedFields.data,
-        productos: validatedFields.data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`})),
+        ...data,
+        productos: data.productos 
+            ? data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`}))
+            : originalOrder.productos,
     };
+    
+    const validatedFields = orderSchema.safeParse(updatedOrder);
+     if (!validatedFields.success) {
+        console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
+        throw new Error("Invalid data provided to updateOrder action.");
+    }
+
+    db.orders[index] = validatedFields.data;
     
     await writeDb(db);
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
+    revalidatePath('/dashboard');
 }
 
 export async function deleteOrder(id: string) {
@@ -91,4 +119,21 @@ export async function deleteOrder(id: string) {
     await writeDb(db);
     
     revalidatePath('/');
+}
+
+// Tag Actions
+export async function getTags() {
+    await delay(100);
+    return await readTags();
+}
+
+export async function updateTags(tags: Tag[]) {
+    await delay(300);
+    const validatedTags = z.array(tagSchema).safeParse(tags);
+    if (!validatedTags.success) {
+        throw new Error("Invalid data provided to updateTags action.");
+    }
+    await writeTags(validatedTags.data);
+    revalidatePath('/');
+    revalidatePath('/dashboard');
 }
