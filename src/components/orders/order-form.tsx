@@ -289,21 +289,26 @@ export function OrderForm({ order }: { order?: Order }) {
                   </Button>
                   <Separator className="my-6" />
                    <div className="flex justify-between items-start">
-                     <FormField
-                        control={form.control}
-                        name="itbms"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-2">
-                               <FormControl>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                <FormLabel className="font-normal">ITBMS</FormLabel>
-                            </FormItem>
-                        )}
-                    />
+                      <div className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="itbms"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-2">
+                                <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">ITBMS</FormLabel>
+                                </FormItem>
+                            )}
+                        />
+                        <div className="text-sm text-muted-foreground">
+                            Abono sugerido: {formatCurrency(watchedOrderTotal * 0.5)}
+                        </div>
+                      </div>
                     <div className="w-[250px] space-y-2">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
