@@ -8,7 +8,7 @@ export default function Header() {
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Image
-              src="https://storage.googleapis.com/aifire.appspot.com/images%2Flogito.png"
+              src="https://i.ibb.co/wJMyC6V/logito.png"
               alt="VA cards & crafts logo"
               width={32}
               height={32}
