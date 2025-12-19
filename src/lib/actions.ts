@@ -11,22 +11,33 @@ import { readDb, writeDb, readTags, writeTags } from '@/lib/db';
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-export async function getOrders() {
+export async function getOrders(): Promise<Order[]> {
     await delay(300);
     const db = await readDb();
     
-    // Migrate old tags to new tags array
+    // Migrate old tags to new tags array, ensuring id is always preserved.
     const orders = db.orders.map(order => {
-        if (!order.tags) {
-            const newTags = [];
-            if (order.customTag1) newTags.push(order.customTag1);
-            if (order.customTag2) newTags.push(order.customTag2);
-            if (order.customTag3) newTags.push(order.customTag3);
-            if (order.customTag4) newTags.push(order.customTag4);
-            return { ...order, tags: newTags };
+        if (!order) return null; // handle potential null/undefined entries
+
+        const newOrder = { ...order };
+
+        if (!newOrder.tags) {
+            const newTags: string[] = [];
+            if (newOrder.customTag1) newTags.push(newOrder.customTag1);
+            if (newOrder.customTag2) newTags.push(newOrder.customTag2);
+            if (newOrder.customTag3) newTags.push(newOrder.customTag3);
+            if (newOrder.customTag4) newTags.push(newOrder.customTag4);
+            newOrder.tags = newTags;
         }
-        return order;
-    })
+        
+        // Ensure an ID exists, though the primary fix is in db.json
+        if (!newOrder.id) {
+            newOrder.id = `temp-id-${Math.random()}`;
+            console.warn("Order found without ID, temporary ID assigned:", newOrder.name);
+        }
+
+        return newOrder as Order;
+    }).filter((order): order is Order => order !== null);
     
     return orders;
 }
@@ -40,7 +51,7 @@ export async function getOrderById(id: string) {
     }
     // Migrate old tags to new tags array
     if (!order.tags) {
-        const newTags = [];
+        const newTags: string[] = [];
         if (order.customTag1) newTags.push(order.customTag1);
         if (order.customTag2) newTags.push(order.customTag2);
         if (order.customTag3) newTags.push(order.customTag3);
@@ -86,7 +97,7 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
     const originalOrder = db.orders[index];
 
     // No need to parse the whole schema, just merge the fields
-    const updatedOrder = {
+    const updatedOrderData = {
         ...originalOrder,
         ...data,
         productos: data.productos 
@@ -94,13 +105,16 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
             : originalOrder.productos,
     };
     
-    const validatedFields = orderSchema.safeParse(updatedOrder);
+    const validatedFields = orderSchema.safeParse(updatedOrderData);
      if (!validatedFields.success) {
         console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
     }
 
-    db.orders[index] = validatedFields.data;
+    db.orders[index] = {
+        ...validatedFields.data,
+        id: originalOrder.id, // Ensure original ID is preserved
+    };
     
     await writeDb(db);
     
