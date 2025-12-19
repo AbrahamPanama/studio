@@ -130,15 +130,11 @@ export function OrderForm({ order }: { order?: Order }) {
     const newTax = itbms ? newSubtotal * TAX_RATE : 0;
     const newOrderTotal = newSubtotal + newTax;
 
-    form.setValue('subtotal', newSubtotal);
-    form.setValue('tax', newTax);
-    form.setValue('orderTotal', newOrderTotal);
+    form.setValue('subtotal', newSubtotal, { shouldValidate: true, shouldDirty: true });
+    form.setValue('tax', newTax, { shouldValidate: true, shouldDirty: true });
+    form.setValue('orderTotal', newOrderTotal, { shouldValidate: true, shouldDirty: true });
 
-    toast({
-        title: "Calculated",
-        description: `New total is ${formatCurrency(newOrderTotal)}`,
-    });
-  }, [form, toast]);
+  }, [form]);
 
   React.useEffect(() => {
     handleCalculateTotals();
@@ -294,12 +290,12 @@ export function OrderForm({ order }: { order?: Order }) {
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" {...field} onBlur={handleCalculateTotals} /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" step="0.01" {...field} onBlur={handleCalculateTotals} /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -358,7 +354,13 @@ export function OrderForm({ order }: { order?: Order }) {
                         <Separator />
                         <div className="flex justify-between items-center font-semibold text-lg">
                             <div className="flex items-center gap-2">
-                                <Button type="button" variant="secondary" onClick={handleCalculateTotals}>
+                                <Button type="button" variant="secondary" onClick={() => {
+                                  handleCalculateTotals();
+                                  toast({
+                                      title: "Calculated",
+                                      description: `New total is ${formatCurrency(form.getValues('orderTotal'))}`,
+                                  });
+                                }}>
                                     <Calculator className="mr-2 h-4 w-4" />
                                     Calculate
                                 </Button>
