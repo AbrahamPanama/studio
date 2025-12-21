@@ -142,7 +142,7 @@ const OrderTableRow = ({
           {order.celular}
         </div>
       </TableCell>
-      <TableCell className="w-[160px]">
+      <TableCell>
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
                 <SelectValue asChild>
@@ -156,7 +156,7 @@ const OrderTableRow = ({
             </SelectContent>
         </Select>
       </TableCell>
-      <TableCell className="w-[160px]">
+      <TableCell>
         <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
                 <SelectValue />
@@ -173,7 +173,7 @@ const OrderTableRow = ({
             <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
-       <TableCell className="max-w-[250px]">
+       <TableCell>
         <Popover>
           <PopoverTrigger asChild>
             <div className="flex flex-wrap gap-1 cursor-pointer">
@@ -195,7 +195,7 @@ const OrderTableRow = ({
           </PopoverContent>
         </Popover>
       </TableCell>
-      <TableCell className="max-w-[250px]">
+      <TableCell>
         <Popover>
           <PopoverTrigger asChild>
             <div className="flex flex-wrap gap-1 cursor-pointer">
@@ -217,11 +217,11 @@ const OrderTableRow = ({
           </PopoverContent>
         </Popover>
       </TableCell>
-      <TableCell className="hidden md:table-cell w-[120px]">
+      <TableCell className="hidden md:table-cell">
        {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
-      <TableCell className="text-right w-[120px]">{formatCurrency(order.orderTotal)}</TableCell>
-      <TableCell className="w-[100px]">
+      <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
+      <TableCell>
         <div className="flex items-center justify-end gap-2">
             <Button asChild variant="ghost" size="icon">
                 <Link href={`/orders/${order.id}/edit`}>
@@ -261,6 +261,17 @@ const OrderTableRow = ({
   )
 }
 
+const ResizableHandle = ({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) => (
+  <div
+    className="absolute top-0 right-0 h-full w-2 cursor-col-resize z-10 select-none"
+    onMouseDown={onMouseDown}
+  >
+    <div className="w-px h-full bg-red-500/0 group-hover:bg-red-500 transition-colors" />
+  </div>
+);
+
+
+const COLUMN_IDS = ['customer', 'status', 'sub-status', 'items', 'tags-shipping', 'tags-other', 'delivery-deadline', 'total', 'actions'];
 
 export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   const searchParams = useSearchParams();
@@ -270,9 +281,76 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   const [orders, setOrders] = React.useState(initialOrders);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
+  
+  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>({});
+  const tableRef = React.useRef<HTMLTableElement>(null);
+  const isResizing = React.useRef<number | null>(null);
+  const router = useRouter();
 
   const searchTerm = searchParams.get('query')?.toString() || '';
   const [inputValue, setInputValue] = React.useState(searchTerm);
+  
+  React.useEffect(() => {
+    // Load widths from localStorage
+    const savedWidths = localStorage.getItem('orderTableColumnWidths');
+    if (savedWidths) {
+      setColumnWidths(JSON.parse(savedWidths));
+    } else {
+        // Set default widths if none are saved
+        const defaultWidths: Record<string, number> = {
+            'customer': 200,
+            'status': 160,
+            'sub-status': 160,
+            'items': 250,
+            'tags-shipping': 250,
+            'tags-other': 250,
+            'delivery-deadline': 120,
+            'total': 120,
+            'actions': 100,
+        };
+        setColumnWidths(defaultWidths);
+    }
+  }, []);
+
+  const saveWidths = (widths: Record<string, number>) => {
+    localStorage.setItem('orderTableColumnWidths', JSON.stringify(widths));
+  };
+
+  const handleMouseDown = React.useCallback((index: number) => (e: React.MouseEvent) => {
+    isResizing.current = index;
+    e.preventDefault();
+  }, []);
+
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (isResizing.current === null || !tableRef.current) return;
+    
+    const ths = tableRef.current.querySelectorAll('th');
+    const th = ths[isResizing.current];
+    if (!th) return;
+
+    const newWidth = e.clientX - th.getBoundingClientRect().left;
+    if (newWidth > 50) { // minimum width
+      setColumnWidths(prev => {
+        const newWidths = { ...prev, [COLUMN_IDS[isResizing.current as number]]: newWidth };
+        saveWidths(newWidths);
+        return newWidths;
+      });
+    }
+  }, []);
+
+  const handleMouseUp = React.useCallback(() => {
+    isResizing.current = null;
+  }, []);
+
+  React.useEffect(() => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
 
   React.useEffect(() => {
     getTags().then(setAllTags);
@@ -344,21 +422,21 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table ref={tableRef} style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            {COLUMN_IDS.map(id => (
+              <col key={id} style={{ width: columnWidths[id] ? `${columnWidths[id]}px` : undefined }} />
+            ))}
+          </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Customer</TableHead>
-              <TableHead className="w-[160px]">Status</TableHead>
-              <TableHead className="w-[160px]">Sub-Status</TableHead>
-              <TableHead className="w-[250px]">Items</TableHead>
-              <TableHead className="w-[250px]">Tags Shipping</TableHead>
-              <TableHead className="w-[250px]">Tags Other</TableHead>
-              <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
-              <TableHead className="text-right w-[120px]">Total</TableHead>
-              <TableHead className="w-[100px]">
-                <span className="sr-only">Actions</span>
-              </TableHead>
+              {COLUMN_IDS.map((id, index) => (
+                <TableHead key={id} className="group relative">
+                  <span className="capitalize">{id.replace(/-/g, ' ')}</span>
+                  {index < COLUMN_IDS.length - 1 && <ResizableHandle onMouseDown={handleMouseDown(index)} />}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -376,7 +454,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
+                <TableCell colSpan={COLUMN_IDS.length} className="h-24 text-center">
                   No orders found.
                 </TableCell>
               </TableRow>
