@@ -1,6 +1,49 @@
 {
   "orders": [
     {
+      "name": "Manuel Israel",
+      "email": "manauel@gmail.com",
+      "celular": "565502254",
+      "description": "",
+      "comentarios": "",
+      "estado": "On Hand/Working",
+      "subEstado": "Pendiente",
+      "entrega": "2025-12-21T22:55:57.426Z",
+      "entregaLimite": "2025-12-21T22:55:57.426Z",
+      "servicioEntrega": "Retiro taller",
+      "direccionEnvio": "Retiro Taller",
+      "abono": true,
+      "cancelo": false,
+      "totalAbono": 362.73,
+      "privacidad": "Por preguntar",
+      "tags": [],
+      "tagsOther": [],
+      "productos": [
+        {
+          "id": "p17663577976540",
+          "name": "Recordatorios de Graduación",
+          "description": "Modelo 707",
+          "quantity": 24,
+          "price": 9.5,
+          "materialsReady": true
+        },
+        {
+          "id": "p17663579284681",
+          "name": "Reconocimientos ",
+          "description": "Modelo 708",
+          "quantity": 18,
+          "price": 25,
+          "materialsReady": false
+        }
+      ],
+      "itbms": true,
+      "subtotal": 678,
+      "tax": 47.46000000000001,
+      "orderTotal": 725.46,
+      "id": "1766357797654",
+      "fechaIngreso": "2025-12-21T22:56:37.654Z"
+    },
+    {
       "name": "Veronica Zuñiga",
       "email": "vacardspanama@gmail.com",
       "celular": "+50762168911",
@@ -186,7 +229,7 @@
       "celular": "+50762168911",
       "description": "sample",
       "comentarios": "sampleee",
-      "estado": "On Hand/Working",
+      "estado": "Done",
       "subEstado": "Pendiente Arte",
       "entrega": "2025-12-12T05:00:00.000Z",
       "entregaLimite": "2025-12-05T05:00:00.000Z",
@@ -213,13 +256,15 @@
         {
           "id": "p17660753759160",
           "name": "Invitaciones",
+          "description": "",
           "quantity": 24,
           "price": 7.5,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660753759161",
           "name": "Imanes",
+          "description": "",
           "quantity": 12,
           "price": 5.5,
           "materialsReady": true
@@ -227,18 +272,23 @@
         {
           "id": "p17660760215772",
           "name": "cuadro de firmas ",
+          "description": "",
           "quantity": 1,
           "price": 175,
-          "materialsReady": false
+          "materialsReady": true
         },
         {
           "id": "p17660761656313",
           "name": "Graduación",
+          "description": "",
           "quantity": 1,
           "price": 95,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
+      "itbms": false,
+      "subtotal": 0,
+      "tax": 0,
       "orderTotal": 516,
       "id": "1766075375916",
       "fechaIngreso": "1970-01-01T00:00:00.000Z"
@@ -307,6 +357,7 @@
         {
           "id": "p3",
           "name": "Business Cards",
+          "description": "",
           "quantity": 500,
           "price": 0.5,
           "materialsReady": true
@@ -314,11 +365,15 @@
         {
           "id": "p17660758551971",
           "name": "Reconocimientos ",
+          "description": "",
           "quantity": 25,
           "price": 3.75,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
+      "itbms": false,
+      "subtotal": 0,
+      "tax": 0,
       "orderTotal": 250,
       "id": "2",
       "fechaIngreso": "1970-01-01T00:00:00.000Z"
