@@ -201,7 +201,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
-        <ProductEditPopover order={order} onStatusChange={(newStatus) => handleFieldUpdate('estado', newStatus)}>
+        <ProductEditPopover order={order} onStatusChange={(newStatus) => onStatusChange(order.id, newStatus)}>
             <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>

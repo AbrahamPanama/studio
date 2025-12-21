@@ -27,7 +27,7 @@
           "description": "",
           "quantity": 67,
           "price": 9.5,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
       "itbms": true,
@@ -95,7 +95,7 @@
       "celular": "+1 (234) 567-890",
       "description": "A sample order for 10 T-shirts and 20 mugs.",
       "comentarios": "Customer requested a specific blue color for the t-shirts.",
-      "estado": "Done",
+      "estado": "Packaging",
       "subEstado": "Check List",
       "entrega": "2024-07-05T00:00:00.000Z",
       "entregaLimite": "2024-07-24T05:00:00.000Z",
@@ -124,7 +124,7 @@
           "description": "",
           "quantity": 20,
           "price": 8,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
       "itbms": false,
