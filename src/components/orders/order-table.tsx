@@ -52,7 +52,6 @@ const OrderTableRow = ({
   onAllTagsUpdate, 
   onAllOtherTagsUpdate, 
   onDelete,
-  onStatusChange
 }: { 
   order: Order, 
   allTags: Tag[], 
@@ -60,18 +59,12 @@ const OrderTableRow = ({
   onAllTagsUpdate: (tags: Tag[]) => void, 
   onAllOtherTagsUpdate: (tags: Tag[]) => void, 
   onDelete: (id: string) => void,
-  onStatusChange: (id: string, status: Order['estado']) => void
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
   const router = useRouter();
 
   const [name, setName] = React.useState(order.name);
-  const [status, setStatus] = React.useState(order.estado);
-  const [subStatus, setSubStatus] = React.useState(order.subEstado);
-  const [deliveryDeadline, setDeliveryDeadline] = React.useState<Date | undefined>(
-    order.entregaLimite ? new Date(order.entregaLimite) : undefined
-  );
   
   const [hasMounted, setHasMounted] = React.useState(false);
   React.useEffect(() => {
@@ -82,7 +75,7 @@ const OrderTableRow = ({
     startTransition(async () => {
       await deleteOrder(order.id);
       toast({ title: 'Success', description: 'Order deleted.' });
-      onDelete(order.id);
+      onDelete(order.id); // This will update the parent component's state
     });
   }
 
@@ -94,9 +87,6 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        if (fieldName === 'estado') {
-          onStatusChange(order.id, value);
-        }
         router.refresh();
       } catch (error) {
         console.error(error);
@@ -105,11 +95,7 @@ const OrderTableRow = ({
           title: 'Error',
           description: `Failed to update ${fieldName.toString()}.`,
         });
-        // Revert optimistic updates on failure
-        if (fieldName === 'name') setName(order.name);
-        if (fieldName === 'estado') setStatus(order.estado);
-        if (fieldName === 'subEstado') setSubStatus(order.subEstado);
-        if (fieldName === 'entregaLimite') setDeliveryDeadline(order.entregaLimite ? new Date(order.entregaLimite) : undefined);
+        // On failure, router.refresh() won't be called, so UI should remain as is until next successful update
       }
     });
   };
@@ -126,24 +112,7 @@ const OrderTableRow = ({
       handleFieldUpdate('name', name);
     }
   };
-
-  const handleStatusChange = (newStatus: Order['estado']) => {
-    setStatus(newStatus);
-    handleFieldUpdate('estado', newStatus);
-  };
   
-  const handleSubStatusChange = (newSubStatus: Order['subEstado']) => {
-    setSubStatus(newSubStatus);
-    handleFieldUpdate('subEstado', newSubStatus);
-  };
-
-  const handleDeadlineChange = (newDeadline: Date | undefined) => {
-    if (newDeadline) {
-        setDeliveryDeadline(newDeadline);
-        handleFieldUpdate('entregaLimite', newDeadline);
-    }
-  }
-
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
       {p.name} {p.description && `(${p.description})`} - {p.quantity}
@@ -175,10 +144,10 @@ const OrderTableRow = ({
         </div>
       </TableCell>
       <TableCell className="w-[160px]">
-        <Select value={status} onValueChange={handleStatusChange} disabled={isPending}>
+        <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
                 <SelectValue asChild>
-                    <StatusBadge status={status} />
+                    <StatusBadge status={order.estado} />
                 </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +158,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell className="w-[160px]">
-        <Select value={subStatus} onValueChange={handleSubStatusChange} disabled={isPending}>
+        <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
                 <SelectValue />
             </SelectTrigger>
@@ -201,7 +170,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
-        <ProductEditPopover order={order} onStatusChange={(newStatus) => onStatusChange(order.id, newStatus)}>
+        <ProductEditPopover order={order}>
             <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
@@ -250,7 +219,7 @@ const OrderTableRow = ({
         </Popover>
       </TableCell>
       <TableCell className="hidden md:table-cell w-[120px]">
-       {hasMounted && <DatePicker value={deliveryDeadline} onChange={handleDeadlineChange} disabled={isPending} />}
+       {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right w-[120px]">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell className="w-[100px]">
@@ -311,6 +280,10 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
     getOtherTags().then(setAllOtherTags);
   }, []);
   
+  React.useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
+  
   const filteredOrders = React.useMemo(() => {
     if (!searchTerm) return orders;
     const lowercasedSearchTerm = searchTerm.toLowerCase();
@@ -352,10 +325,6 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
   };
   
-  const handleStatusChange = (id: string, status: Order['estado']) => {
-    setOrders(currentOrders => currentOrders.map(o => o.id === id ? {...o, estado: status} : o));
-  }
-
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
     replace(pathname + '?' + searchParams.toString(), { scroll: false });
@@ -365,10 +334,6 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
     setAllOtherTags(newTags);
     replace(pathname + '?' + searchParams.toString(), { scroll: false });
   }
-  
-  React.useEffect(() => {
-    setOrders(initialOrders);
-  }, [initialOrders]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -408,8 +373,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
                     onAllTagsUpdate={handleAllTagsUpdate}
                     onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                     onDelete={handleDelete} 
-                    onStatusChange={handleStatusChange}
-                    />
+                />
               ))
             ) : (
               <TableRow>

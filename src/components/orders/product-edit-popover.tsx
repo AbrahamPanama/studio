@@ -46,11 +46,9 @@ type PopoverFormValues = z.infer<typeof popoverFormSchema>;
 export function ProductEditPopover({
   order,
   children,
-  onStatusChange,
 }: {
   order: Order;
   children: React.ReactNode;
-  onStatusChange: (status: Order['estado']) => void;
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isStatusAlertOpen, setIsStatusAlertOpen] = React.useState(false);
@@ -69,10 +67,11 @@ export function ProductEditPopover({
     control: form.control,
     name: 'productos',
   });
-
+  
   React.useEffect(() => {
-    // Reset form when order changes or popover is opened
-    form.reset({ productos: order.productos.map(p => ({...p, description: p.description || ''})) });
+    if (isOpen) {
+        form.reset({ productos: order.productos.map(p => ({...p, description: p.description || ''})) });
+    }
   }, [order, isOpen, form]);
 
   const handleUpdate = (data: PopoverFormValues, newStatus?: Order['estado']) => {
@@ -89,13 +88,9 @@ export function ProductEditPopover({
           description: 'Products have been updated.' + (newStatus ? ` Status set to ${newStatus}.` : ''),
         });
         
-        if (newStatus) {
-            onStatusChange(newStatus);
-        }
-
+        router.refresh();
         setIsOpen(false);
         setIsStatusAlertOpen(false);
-        router.refresh();
       } catch (error) {
         console.error(error);
         toast({
@@ -109,7 +104,9 @@ export function ProductEditPopover({
 
   const onSubmit = (data: PopoverFormValues) => {
     const allReady = data.productos.every(p => p.materialsReady);
-    if (allReady && order.estado !== 'Done' && order.estado !== 'Packaging') {
+    const wasAllReady = order.productos.every(p => p.materialsReady);
+
+    if (allReady && !wasAllReady && order.estado !== 'Done' && order.estado !== 'Packaging') {
       setIsStatusAlertOpen(true);
     } else {
       handleUpdate(data);
@@ -142,28 +139,8 @@ export function ProductEditPopover({
                       className="grid grid-cols-[1fr_auto] items-center gap-4"
                     >
                       <div>
-                        <FormField
-                          control={form.control}
-                          name={`productos.${index}.name`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input {...field} readOnly className="border-0 bg-transparent shadow-none" />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`productos.${index}.description`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input {...field} readOnly className="border-0 bg-transparent shadow-none text-sm text-muted-foreground" />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
+                        <p className="font-medium">{item.name}</p>
+                        {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
                       </div>
                       <FormField
                         control={form.control}
