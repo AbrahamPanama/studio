@@ -169,9 +169,9 @@ const OrderTableRow = ({
             </SelectContent>
         </Select>
       </TableCell>
-      <TableCell className="w-[250px]">
+      <TableCell className="max-w-[250px]">
         <ProductEditPopover order={order}>
-            <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
+            <p className="cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
        <TableCell className="max-w-[250px]">
@@ -352,7 +352,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
               <TableHead className="w-[200px]">Customer</TableHead>
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
-              <TableHead className="w-[250px]">Items</TableHead>
+              <TableHead>Items</TableHead>
               <TableHead className="w-[250px]">Tags Shipping</TableHead>
               <TableHead className="w-[250px]">Tags Other</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
