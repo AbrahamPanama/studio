@@ -15,7 +15,26 @@ export function formatCurrency(amount: number) {
 
 export function sanitizePhoneNumber(phone: string): string {
   if (!phone) return '';
-  return phone.replace(/[^0-9]/g, '');
+  // Keep the '+' if it's there, remove all other non-digit characters
+  const cleaned = phone.replace(/[^0-9+]/g, '');
+  return cleaned;
+}
+
+export function formatPhoneNumber(phone: string): string {
+  if (!phone) return '';
+  let sanitized = sanitizePhoneNumber(phone);
+
+  if (sanitized.startsWith('+')) {
+    // Number already has a country code
+    const parts = sanitized.split('+');
+    const number = parts[1];
+    const countryCode = number.substring(0, 3);
+    const restOfNumber = number.substring(3);
+    return `+${countryCode} ${restOfNumber}`;
+  }
+  
+  // Default to +507 if no country code is present
+  return `+507 ${sanitized}`;
 }
 
 export function formatDate(date: string | number | Date): string {

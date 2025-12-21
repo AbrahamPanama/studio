@@ -35,7 +35,7 @@ import { Switch } from '@/components/ui/switch';
 import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, formatPhoneNumber } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Calculator } from 'lucide-react';
@@ -174,6 +174,11 @@ export function OrderForm({ order }: { order?: Order }) {
     }
   }, [watchedTotalAbono, form, orderTotal]);
 
+  const handlePhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const formattedNumber = formatPhoneNumber(e.target.value);
+    form.setValue('celular', formattedNumber, { shouldValidate: true });
+  };
+
 
   function onSubmit(data: OrderFormValues) {
     // Re-calculate one last time before submitting to ensure data is accurate
@@ -187,6 +192,7 @@ export function OrderForm({ order }: { order?: Order }) {
       try {
         const payload = {
           ...data,
+          celular: formatPhoneNumber(data.celular), // Ensure formatting on submit as well
           subtotal: finalSubtotal,
           tax: finalTax,
           orderTotal: finalOrderTotal,
@@ -249,7 +255,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="celular" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
-                      <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl>
+                      <FormControl><Input placeholder="+507 61234567" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
