@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   const orders = await getOrders();
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="max-w-screen-2xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <Card>
         <CardHeader>
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
