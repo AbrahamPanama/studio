@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -255,7 +256,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="celular" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
-                      <FormControl><Input placeholder="+507 61234567" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
+                      <FormControl><Input placeholder="+507 6216-8911" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
