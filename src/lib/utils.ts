@@ -22,20 +22,27 @@ export function sanitizePhoneNumber(phone: string): string {
 
 export function formatPhoneNumber(phone: string): string {
   if (!phone) return '';
-  let sanitized = sanitizePhoneNumber(phone);
+  let sanitized = phone.replace(/[^0-9]/g, ''); // Remove all non-digits
 
-  if (sanitized.startsWith('+')) {
-    // Number already has a country code
-    const parts = sanitized.split('+');
-    const number = parts[1];
-    const countryCode = number.substring(0, 3);
-    const restOfNumber = number.substring(3);
-    return `+${countryCode} ${restOfNumber}`;
+  // If it's a panamanian number (8 digits), format it.
+  if (sanitized.length === 8) {
+    return `+507 ${sanitized.slice(0, 4)}-${sanitized.slice(4)}`;
   }
   
-  // Default to +507 if no country code is present
-  return `+507 ${sanitized}`;
+  // If it includes country code, try to format
+  if (sanitized.startsWith('507') && sanitized.length === 11) {
+    const localNumber = sanitized.substring(3);
+    return `+507 ${localNumber.slice(0, 4)}-${localNumber.slice(4)}`;
+  }
+  
+  // Fallback for other numbers or if logic above fails
+  if (!phone.startsWith('+')) {
+     return `+507 ${sanitized}`;
+  }
+
+  return phone; // Return original if it doesn't fit expected patterns but has '+'
 }
+
 
 export function formatDate(date: string | number | Date): string {
   if (!date) return "";
