@@ -6,7 +6,7 @@
       "celular": "565502254",
       "description": "",
       "comentarios": "",
-      "estado": "On Hand/Working",
+      "estado": "Packaging",
       "subEstado": "Pendiente",
       "entrega": "2025-12-21T22:55:57.426Z",
       "entregaLimite": "2025-12-21T22:55:57.426Z",
@@ -33,7 +33,7 @@
           "description": "Modelo 708",
           "quantity": 18,
           "price": 25,
-          "materialsReady": false
+          "materialsReady": true
         }
       ],
       "itbms": true,
