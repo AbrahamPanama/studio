@@ -51,14 +51,16 @@ const OrderTableRow = ({
   allOtherTags, 
   onAllTagsUpdate, 
   onAllOtherTagsUpdate, 
-  onDelete 
+  onDelete,
+  onStatusChange
 }: { 
   order: Order, 
   allTags: Tag[], 
   allOtherTags: Tag[], 
   onAllTagsUpdate: (tags: Tag[]) => void, 
   onAllOtherTagsUpdate: (tags: Tag[]) => void, 
-  onDelete: (id: string) => void 
+  onDelete: (id: string) => void,
+  onStatusChange: (id: string, status: Order['estado']) => void
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
@@ -92,6 +94,9 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
+        if (fieldName === 'estado') {
+          onStatusChange(order.id, value);
+        }
         router.refresh();
       } catch (error) {
         console.error(error);
@@ -196,7 +201,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
-        <ProductEditPopover order={order}>
+        <ProductEditPopover order={order} onStatusChange={(newStatus) => handleFieldUpdate('estado', newStatus)}>
             <p className="line-clamp-3 cursor-pointer hover:text-primary">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
@@ -346,6 +351,10 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   const handleDelete = (id: string) => {
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
   };
+  
+  const handleStatusChange = (id: string, status: Order['estado']) => {
+    setOrders(currentOrders => currentOrders.map(o => o.id === id ? {...o, estado: status} : o));
+  }
 
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
@@ -398,7 +407,9 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
                     allOtherTags={allOtherTags}
                     onAllTagsUpdate={handleAllTagsUpdate}
                     onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
-                    onDelete={handleDelete} />
+                    onDelete={handleDelete} 
+                    onStatusChange={handleStatusChange}
+                    />
               ))
             ) : (
               <TableRow>
