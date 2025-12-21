@@ -116,7 +116,7 @@ export function ProductEditPopover({
     }
   };
 
-  const handleStatusChange = (newStatus: Order['estado']) => {
+  const handleStatusChangeFromAlert = (newStatus: Order['estado']) => {
     const data = form.getValues();
     handleUpdate(data, newStatus);
   }
@@ -206,10 +206,10 @@ export function ProductEditPopover({
               Just Save
             </AlertDialogCancel>
             <div className="flex gap-2">
-                <AlertDialogAction onClick={() => handleStatusChange('Packaging')} disabled={isPending}>
+                <AlertDialogAction onClick={() => handleStatusChangeFromAlert('Packaging')} disabled={isPending}>
                 Set to Packaging
                 </AlertDialogAction>
-                <AlertDialogAction onClick={() => handleStatusChange('Done')} disabled={isPending}>
+                <AlertDialogAction onClick={() => handleStatusChangeFromAlert('Done')} disabled={isPending}>
                 Set to Done
                 </AlertDialogAction>
             </div>
