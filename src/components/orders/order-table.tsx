@@ -95,7 +95,6 @@ const OrderTableRow = ({
           title: 'Error',
           description: `Failed to update ${fieldName.toString()}.`,
         });
-        // On failure, router.refresh() won't be called, so UI should remain as is until next successful update
       }
     });
   };
@@ -171,7 +170,7 @@ const OrderTableRow = ({
       </TableCell>
       <TableCell>
         <ProductEditPopover order={order}>
-            <p className="cursor-pointer hover:text-primary whitespace-nowrap">{productSummary}</p>
+            <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
        <TableCell className="max-w-[250px]">
@@ -327,12 +326,12 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
-    replace(pathname + '?' + searchParams.toString(), { scroll: false });
+    router.refresh();
   }
 
   const handleAllOtherTagsUpdate = (newTags: Tag[]) => {
     setAllOtherTags(newTags);
-    replace(pathname + '?' + searchParams.toString(), { scroll: false });
+    router.refresh();
   }
 
   return (
@@ -352,7 +351,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
               <TableHead className="w-[200px]">Customer</TableHead>
               <TableHead className="w-[160px]">Status</TableHead>
               <TableHead className="w-[160px]">Sub-Status</TableHead>
-              <TableHead>Items</TableHead>
+              <TableHead className="w-[250px]">Items</TableHead>
               <TableHead className="w-[250px]">Tags Shipping</TableHead>
               <TableHead className="w-[250px]">Tags Other</TableHead>
               <TableHead className="hidden md:table-cell w-[120px]">Delivery Deadline</TableHead>
