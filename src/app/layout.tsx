@@ -2,6 +2,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/layout/header';
+import { Suspense } from 'react';
+import Loading from './loading';
 
 export const metadata: Metadata = {
   title: 'VA OMS',
@@ -23,7 +25,11 @@ export default function RootLayout({
       <body className="font-body min-h-screen bg-background text-foreground">
         <div className="relative flex min-h-screen flex-col">
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1">
+            <Suspense fallback={<Loading />}>
+              {children}
+            </Suspense>
+          </main>
         </div>
         <Toaster />
       </body>
