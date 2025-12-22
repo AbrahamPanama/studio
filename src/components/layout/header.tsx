@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import logo from '@/logo.png';
 
 export default function Header() {
   return (
@@ -8,7 +9,7 @@ export default function Header() {
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Image
-                src="/logo.png"
+                src={logo}
                 alt="VA OMS Logo"
                 width={40}
                 height={40}
