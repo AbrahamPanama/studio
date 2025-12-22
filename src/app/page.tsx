@@ -18,12 +18,20 @@ export default async function DashboardPage() {
               <CardTitle className="text-2xl">Orders</CardTitle>
               <CardDescription>Manage and track all customer orders.</CardDescription>
             </div>
-            <Button asChild>
-              <Link href="/orders/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Order
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link href="/quotes/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  New Quote
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/orders/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  New Order
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

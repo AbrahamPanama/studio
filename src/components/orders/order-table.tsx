@@ -128,6 +128,7 @@ const OrderTableRow = ({
     .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
     .filter((t): t is Tag => !!t);
 
+  const editUrl = order.estado === 'Cotización' ? `/quotes/${order.id}/edit` : `/orders/${order.id}/edit`;
 
   return (
     <TableRow>
@@ -159,7 +160,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
-        <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending}>
+        <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending || order.estado === 'Cotización'}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
                 <SelectValue />
             </SelectTrigger>
@@ -226,7 +227,7 @@ const OrderTableRow = ({
       <TableCell>
         <div className="flex items-center justify-end gap-2">
             <Button asChild variant="ghost" size="icon">
-                <Link href={`/orders/${order.id}/edit`}>
+                <Link href={editUrl}>
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit Order</span>
                 </Link>

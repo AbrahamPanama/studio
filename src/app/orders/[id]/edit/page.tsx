@@ -10,5 +10,7 @@ export default async function EditOrderPage({ params }: { params: { id: string }
     return notFound();
   }
 
-  return <OrderForm order={order} />;
+  const formType = order.estado === 'Cotización' ? 'quote' : 'order';
+
+  return <OrderForm order={order} formType={formType} />;
 }

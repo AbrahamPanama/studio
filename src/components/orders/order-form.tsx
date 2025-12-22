@@ -47,8 +47,14 @@ type OrderFormValues = z.infer<typeof orderSchema>;
 
 const TAX_RATE = 0.07;
 
-export function OrderForm({ order }: { order?: Order }) {
+type OrderFormProps = {
+  order?: Order;
+  formType: 'order' | 'quote';
+};
+
+export function OrderForm({ order, formType }: OrderFormProps) {
   const isEditing = !!order;
+  const isQuote = formType === 'quote';
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
@@ -82,7 +88,7 @@ export function OrderForm({ order }: { order?: Order }) {
         celular: '',
         description: '',
         comentarios: '',
-        estado: 'New',
+        estado: isQuote ? 'Cotización' : 'New',
         subEstado: 'Pendiente',
         entrega: new Date(),
         entregaLimite: new Date(),
@@ -222,10 +228,10 @@ export function OrderForm({ order }: { order?: Order }) {
         
         if (isEditing && order) {
           await updateOrder(order.id, payload);
-          toast({ title: 'Success', description: 'Order updated successfully.' });
+          toast({ title: 'Success', description: `${isQuote ? 'Quote' : 'Order'} updated successfully.` });
         } else {
           await createOrder(payload);
-          toast({ title: 'Success', description: 'Order created successfully.' });
+          toast({ title: 'Success', description: `${isQuote ? 'Quote' : 'Order'} created successfully.` });
         }
         router.push('/');
       } catch (error) {
@@ -233,11 +239,15 @@ export function OrderForm({ order }: { order?: Order }) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: isEditing ? 'Failed to update order.' : 'Failed to create order.',
+          description: isEditing ? `Failed to update ${isQuote ? 'quote' : 'order'}.` : `Failed to create ${isQuote ? 'quote' : 'order'}.`,
         });
       }
     });
   }
+  
+  const title = isQuote
+    ? (isEditing ? `Edit Quote #${order?.orderNumber}` : 'Create New Quote')
+    : (isEditing ? `Edit Order #${order?.orderNumber}` : 'Create New Order');
 
   return (
     <Form {...form}>
@@ -245,13 +255,13 @@ export function OrderForm({ order }: { order?: Order }) {
         <div className="container mx-auto py-10">
           <div className="flex items-center justify-between mb-6">
             <div>
-                <h1 className="text-2xl font-bold">{isEditing ? `Edit Order #${order?.orderNumber}` : 'Create New Order'}</h1>
-                {isEditing && <p className="text-sm text-muted-foreground">Order ID: {order?.id}</p>}
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save Order'}
+                {isPending ? 'Saving...' : `Save ${isQuote ? 'Quote' : 'Order'}`}
               </Button>
             </div>
           </div>
@@ -298,7 +308,7 @@ export function OrderForm({ order }: { order?: Order }) {
               <Card>
                 <CardHeader>
                   <CardTitle>Products</CardTitle>
-                  <CardDescription>Add the products for this order.</CardDescription>
+                  <CardDescription>Add the products for this {formType}.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -430,7 +440,7 @@ export function OrderForm({ order }: { order?: Order }) {
                 <CardContent className="space-y-4">
                   <FormField control={form.control} name="description" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Order Description</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl><Textarea placeholder="Describe the order..." {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -447,149 +457,153 @@ export function OrderForm({ order }: { order?: Order }) {
             </div>
 
             <div className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status & Logistics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField control={form.control} name="estado" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Order Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a status" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {ORDER_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="subEstado" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sub-Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-status" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                   <div className="flex space-x-4">
-                    <FormField control={form.control} name="abono" render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
-                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel>Abonó</FormLabel>
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="cancelo" render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
-                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel>Canceló</FormLabel>
-                      </FormItem>
-                    )} />
-                  </div>
-                  <FormField control={form.control} name="totalAbono" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Abono</FormLabel>
-                      <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="entrega" render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Delivery Date (Entrega)</FormLabel>
-                      <FormControl>
-                        <DatePicker value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="entregaLimite" render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Delivery Deadline (Entrega Límite)</FormLabel>
-                      <FormControl>
-                         <DatePicker value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Service</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                   <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Shipping Address</FormLabel>
-                      <FormControl><Textarea placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </CardContent>
-              </Card>
+              {!isQuote && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Status & Logistics</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField control={form.control} name="estado" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Order Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a status" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {ORDER_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="subEstado" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sub-Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-status" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <div className="flex space-x-4">
+                        <FormField control={form.control} name="abono" render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel>Abonó</FormLabel>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="cancelo" render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel>Canceló</FormLabel>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <FormField control={form.control} name="totalAbono" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Abono</FormLabel>
+                          <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="entrega" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Delivery Date (Entrega)</FormLabel>
+                          <FormControl>
+                            <DatePicker value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="entregaLimite" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Delivery Deadline (Entrega Límite)</FormLabel>
+                          <FormControl>
+                            <DatePicker value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Delivery Service</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shipping Address</FormLabel>
+                          <FormControl><Textarea placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </CardContent>
+                  </Card>
 
-               <Card>
-                <CardHeader>
-                  <CardTitle>Meta Data</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField control={form.control} name="privacidad" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Privacy</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select privacy option" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {PRIVACY_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField
-                    control={form.control}
-                    name="tags"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tags Shipping</FormLabel>
-                        <TagManager
-                          allTags={allTags}
-                          selectedTags={field.value || []}
-                          onSelectedTagsChange={field.onChange}
-                          onTagsUpdate={setAllTags}
-                          onSave={updateTags}
-                        />
-                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tagsOther"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tags Other</FormLabel>
-                        <TagManager
-                          allTags={allOtherTags}
-                          selectedTags={field.value || []}
-                          onSelectedTagsChange={field.onChange}
-                          onTagsUpdate={setAllOtherTags}
-                          onSave={updateOtherTags}
-                        />
-                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Meta Data</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField control={form.control} name="privacidad" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Privacy</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select privacy option" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {PRIVACY_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField
+                        control={form.control}
+                        name="tags"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tags Shipping</FormLabel>
+                            <TagManager
+                              allTags={allTags}
+                              selectedTags={field.value || []}
+                              onSelectedTagsChange={field.onChange}
+                              onTagsUpdate={setAllTags}
+                              onSave={updateTags}
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="tagsOther"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tags Other</FormLabel>
+                            <TagManager
+                              allTags={allOtherTags}
+                              selectedTags={field.value || []}
+                              onSelectedTagsChange={field.onChange}
+                              onTagsUpdate={setAllOtherTags}
+                              onSave={updateOtherTags}
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -597,8 +611,3 @@ export function OrderForm({ order }: { order?: Order }) {
     </Form>
   );
 }
-
-    
-
-    
-
