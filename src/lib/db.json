@@ -3,6 +3,51 @@
     {
       "name": "Veronica Zuñiga",
       "email": "vacardspanama@gmail.com",
+      "celular": "+50762168911",
+      "description": "",
+      "comentarios": "",
+      "estado": "New",
+      "subEstado": "Pendiente",
+      "entrega": "2025-12-22T01:40:47.961Z",
+      "entregaLimite": "2025-12-22T01:40:47.961Z",
+      "servicioEntrega": "Uno Express",
+      "direccionEnvio": "Retiro Taller",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "privacidad": "Por preguntar",
+      "tags": [],
+      "tagsOther": [],
+      "productos": [
+        {
+          "name": "Invitaciones",
+          "description": "Modelo 707",
+          "quantity": 80,
+          "price": 6.75,
+          "materialsReady": false,
+          "isTaxable": true,
+          "id": "p17663677946210"
+        },
+        {
+          "name": "Envío",
+          "description": "Uno Express",
+          "quantity": 1,
+          "price": 7.5,
+          "materialsReady": false,
+          "isTaxable": false,
+          "id": "p17663677946211"
+        }
+      ],
+      "itbms": false,
+      "subtotal": 547.5,
+      "tax": 0,
+      "orderTotal": 547.5,
+      "id": "1766367794621",
+      "fechaIngreso": "2025-12-22T01:43:14.621Z"
+    },
+    {
+      "name": "Veronica Zuñiga",
+      "email": "vacardspanama@gmail.com",
       "celular": "+507 6216-8911",
       "description": "",
       "comentarios": "",

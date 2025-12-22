@@ -157,8 +157,13 @@ export function OrderForm({ order }: { order?: Order }) {
   }, [form]);
 
   React.useEffect(() => {
-    handleCalculateTotals();
-  }, [watchedProducts, watchedItbms, handleCalculateTotals]);
+    const subscription = form.watch((value, { name, type }) => {
+      if (name?.startsWith('productos') || name === 'itbms') {
+        handleCalculateTotals();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, handleCalculateTotals]);
 
 
   React.useEffect(() => {
@@ -587,5 +592,7 @@ export function OrderForm({ order }: { order?: Order }) {
     </Form>
   );
 }
+
+    
 
     
