@@ -79,7 +79,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-12">
           {orderGroups.map(({ status, orders }) => (
             <div key={status} className="space-y-4">
               <div className="flex items-center gap-2">
