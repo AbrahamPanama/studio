@@ -15,11 +15,31 @@ export async function getOrders(): Promise<Order[]> {
     await delay(300);
     const db = await readDb();
     
-    // Migrate old tags to new tags array, ensuring id is always preserved.
+    let needsWrite = false;
+    let maxOrderNum = 0;
+
+    // First, find the maximum existing order number
+    db.orders.forEach(order => {
+        if (order && order.orderNumber) {
+            const num = parseInt(order.orderNumber, 10);
+            if (num > maxOrderNum) {
+                maxOrderNum = num;
+            }
+        }
+    });
+    
+    // Migrate old tags and assign order numbers if missing
     const orders = db.orders.map(order => {
         if (!order) return null; // handle potential null/undefined entries
 
         const newOrder = { ...order };
+
+        // Assign order number if it's missing
+        if (!newOrder.orderNumber) {
+            needsWrite = true;
+            maxOrderNum++;
+            newOrder.orderNumber = maxOrderNum.toString().padStart(6, '0');
+        }
 
         if (!newOrder.tags) {
             const newTags: string[] = [];
@@ -34,7 +54,6 @@ export async function getOrders(): Promise<Order[]> {
             newOrder.tagsOther = [];
         }
         
-        // Ensure an ID exists, though the primary fix is in db.json
         if (!newOrder.id) {
             newOrder.id = `temp-id-${Math.random()}`;
             console.warn("Order found without ID, temporary ID assigned:", newOrder.name);
@@ -43,6 +62,11 @@ export async function getOrders(): Promise<Order[]> {
         return newOrder as Order;
     }).filter((order): order is Order => order !== null);
     
+    // If we had to add any order numbers, write the changes back to the DB
+    if (needsWrite) {
+        await writeDb({ orders: orders });
+    }
+
     return orders;
 }
 
@@ -53,6 +77,16 @@ export async function getOrderById(id: string) {
     if (!order) {
         return null;
     }
+
+    // Back-fill order number if missing
+    if (!order.orderNumber) {
+        // This is a rare case, ideally getOrders() would have fixed it.
+        // We'll assign a temporary one but won't save it here to avoid race conditions.
+        // The main list view is the source of truth for back-filling.
+        const maxOrderNum = db.orders.reduce((max, o) => Math.max(max, o.orderNumber ? parseInt(o.orderNumber, 10) : 0), 0);
+        order.orderNumber = (maxOrderNum + 1).toString().padStart(6, '0');
+    }
+
     // Ensure tags arrays exist
     if (!order.tags) {
         const newTags: string[] = [];
@@ -80,7 +114,7 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
 
     // Generate new progressive order number
     const maxOrderNumber = db.orders.reduce((max, order) => {
-        const currentNum = parseInt(order.orderNumber, 10);
+        const currentNum = order.orderNumber ? parseInt(order.orderNumber, 10) : 0;
         return currentNum > max ? currentNum : max;
     }, 0);
     const newOrderNumber = (maxOrderNumber + 1).toString().padStart(6, '0');
@@ -125,23 +159,24 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         tagsOther: data.tagsOther || originalOrder.tagsOther || [],
     };
     
-    // Use a more lenient schema for partial updates if needed, or ensure `data` is well-formed.
-    // For now, we'll parse against the full schema, which requires all fields.
-    const validatedFields = orderSchema.safeParse(mergedData);
+    // We parse against a partial schema first for flexibility, then merge with the original
+    const partialSchema = orderSchema.partial();
+    const validatedPartial = partialSchema.safeParse(data);
 
-     if (!validatedFields.success) {
-        // This gives more detailed output in the server console
-        console.error('Validation errors on update:', validatedFields.error.flatten().fieldErrors);
+     if (!validatedPartial.success) {
+        console.error('Validation errors on update:', validatedPartial.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
     }
-
-    db.orders[index] = {
-        ...originalOrder, // Start with original
-        ...validatedFields.data, // Overwrite with validated data
+    
+    const finalOrderData: Order = {
+        ...originalOrder,
+        ...validatedPartial.data,
         id: originalOrder.id, // Ensure original ID is preserved
         orderNumber: originalOrder.orderNumber, // Ensure original order number is preserved
         fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
     };
+
+    db.orders[index] = finalOrderData;
     
     await writeDb(db);
     

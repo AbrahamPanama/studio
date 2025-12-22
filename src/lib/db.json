@@ -43,7 +43,8 @@
       "tax": 0,
       "orderTotal": 231.5,
       "id": "1766368384029",
-      "fechaIngreso": "2025-12-22T01:53:04.029Z"
+      "fechaIngreso": "2025-12-22T01:53:04.029Z",
+      "orderNumber": "000001"
     },
     {
       "name": "Veronica Zuñiga",
@@ -88,7 +89,8 @@
       "tax": 42.525000000000006,
       "orderTotal": 656.525,
       "id": "1766367794621",
-      "fechaIngreso": "2025-12-22T01:43:14.621Z"
+      "fechaIngreso": "2025-12-22T01:43:14.621Z",
+      "orderNumber": "000002"
     },
     {
       "name": "Veronica Zuñiga",
@@ -142,7 +144,8 @@
       "tax": 0,
       "orderTotal": 936.4,
       "id": "1766366183131",
-      "fechaIngreso": "2025-12-22T01:16:23.131Z"
+      "fechaIngreso": "2025-12-22T01:16:23.131Z",
+      "orderNumber": "000003"
     },
     {
       "name": "Manuel Israel",
@@ -185,7 +188,8 @@
       "tax": 47.46000000000001,
       "orderTotal": 725.46,
       "id": "1766357797654",
-      "fechaIngreso": "2025-12-21T22:56:37.654Z"
+      "fechaIngreso": "2025-12-21T22:56:37.654Z",
+      "orderNumber": "000004"
     },
     {
       "name": "Veronica Zuñiga",
@@ -228,7 +232,8 @@
       "tax": 0,
       "orderTotal": 162.5,
       "id": "1766355469418",
-      "fechaIngreso": "2025-12-21T22:17:49.418Z"
+      "fechaIngreso": "2025-12-21T22:17:49.418Z",
+      "orderNumber": "000005"
     },
     {
       "name": "Abraham Israel Saenz Clark",
@@ -265,7 +270,8 @@
       "tax": 44.55500000000001,
       "orderTotal": 681.0550000000001,
       "id": "1766169945668",
-      "fechaIngreso": "2025-12-19T18:45:45.668Z"
+      "fechaIngreso": "2025-12-19T18:45:45.668Z",
+      "orderNumber": "000006"
     },
     {
       "name": "Abraham Israel Saenz Clark",
@@ -320,7 +326,8 @@
       "tax": 23.113300000000002,
       "orderTotal": 353.3033,
       "id": "1766168215345",
-      "fechaIngreso": "2025-12-19T18:16:55.345Z"
+      "fechaIngreso": "2025-12-19T18:16:55.345Z",
+      "orderNumber": "000007"
     },
     {
       "name": "John Doe",
@@ -365,7 +372,8 @@
       "tax": 0,
       "orderTotal": 310,
       "id": "1",
-      "fechaIngreso": "2023-10-26T10:00:00.000Z"
+      "fechaIngreso": "2023-10-26T10:00:00.000Z",
+      "orderNumber": "000008"
     },
     {
       "name": "Abraham Israel Saenz Clark",
@@ -435,7 +443,8 @@
       "tax": 0,
       "orderTotal": 516,
       "id": "1766075375916",
-      "fechaIngreso": "1970-01-01T00:00:00.000Z"
+      "fechaIngreso": "1970-01-01T00:00:00.000Z",
+      "orderNumber": "000009"
     },
     {
       "name": "Peter Jones",
@@ -474,7 +483,8 @@
       "tax": 0,
       "orderTotal": 200,
       "id": "3",
-      "fechaIngreso": "1970-01-01T00:00:00.000Z"
+      "fechaIngreso": "1970-01-01T00:00:00.000Z",
+      "orderNumber": "000010"
     },
     {
       "name": "Jane Smith",
@@ -520,7 +530,8 @@
       "tax": 0,
       "orderTotal": 250,
       "id": "2",
-      "fechaIngreso": "1970-01-01T00:00:00.000Z"
+      "fechaIngreso": "1970-01-01T00:00:00.000Z",
+      "orderNumber": "000011"
     }
   ]
 }

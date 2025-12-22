@@ -63,6 +63,7 @@ export function OrderForm({ order }: { order?: Order }) {
   const defaultValues: Partial<OrderFormValues> = isEditing
     ? {
         ...order,
+        orderNumber: order.orderNumber,
         entrega: order.entrega ? new Date(order.entrega) : new Date(),
         entregaLimite: order.entregaLimite ? new Date(order.entregaLimite) : new Date(),
         description: order.description || '',
@@ -600,3 +601,4 @@ export function OrderForm({ order }: { order?: Order }) {
     
 
     
+
