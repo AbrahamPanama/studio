@@ -121,6 +121,7 @@ export function OrderForm({ order }: { order?: Order }) {
         isTaxable: false,
     });
     form.setValue('servicioEntrega', 'Uno Express', { shouldValidate: true, shouldDirty: true });
+    form.setValue('direccionEnvio', '', { shouldValidate: true, shouldDirty: true });
   };
 
   const watchedProducts = form.watch('productos');
@@ -158,7 +159,7 @@ export function OrderForm({ order }: { order?: Order }) {
 
   React.useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
-      if (name?.startsWith('productos') || name === 'itbms') {
+      if (name?.startsWith('productos') || name === 'itbms' || type === 'change') {
         handleCalculateTotals();
       }
     });
