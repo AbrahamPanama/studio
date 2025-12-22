@@ -43,12 +43,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const allOrders = await getOrders();
   const query = searchParams.query || '';
 
-  const filteredOrders = allOrders.filter(order =>
-    (order.name || '').toLowerCase().includes(query.toLowerCase()) ||
-    (order.description || '').toLowerCase().includes(query.toLowerCase()) ||
-    (order.orderNumber || '').toLowerCase().includes(query.toLowerCase()) ||
-    order.productos.some(p => (p.name || '').toLowerCase().includes(query.toLowerCase()))
-  );
+  const filteredOrders = allOrders.filter(order => {
+    const lowerCaseQuery = query.toLowerCase();
+    return (
+      (order.name || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.description || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.orderNumber || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.celular || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.estado || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.subEstado || '').toLowerCase().includes(lowerCaseQuery) ||
+      (order.tags || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
+      (order.tagsOther || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
+      order.productos.some(p => (p.name || '').toLowerCase().includes(lowerCaseQuery))
+    );
+  });
 
   const orderGroups = groupAndSortOrders(filteredOrders);
   const defaultOpen = orderGroups.map(group => group.status);
