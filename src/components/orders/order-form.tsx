@@ -7,6 +7,7 @@ import type { z } from 'zod';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import html2canvas from 'html2canvas';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +41,7 @@ import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS 
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 
@@ -265,6 +266,22 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       }
     });
   };
+
+  const handleDownloadQuote = () => {
+    const quoteElement = document.getElementById('quote-capture-area');
+    if (quoteElement) {
+      html2canvas(quoteElement, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `quote-${order?.orderNumber || 'new'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  };
   
   const title = isQuote
     ? (isEditing ? `Edit Quote #${order?.orderNumber}` : 'Create New Quote')
@@ -273,7 +290,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-10" id="quote-capture-area">
           <div className="flex items-center space-x-2 mb-4">
               <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
               <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
@@ -283,7 +300,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <h1 className="text-2xl font-bold">{title}</h1>
                 {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
             </div>
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2">
+              {isQuote && (
+                <Button type="button" variant="outline" onClick={handleDownloadQuote}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Quote
+                </Button>
+              )}
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                {isEditing && isQuote && (
                 <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
