@@ -8,6 +8,7 @@ export const productSchema = z.object({
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   price: z.coerce.number().min(0, 'Price cannot be negative.'),
   materialsReady: z.boolean().default(false),
+  isTaxable: z.boolean().default(true),
 });
 
 export const orderSchema = z.object({

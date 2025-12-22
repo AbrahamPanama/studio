@@ -59,7 +59,7 @@ export function ProductEditPopover({
   const form = useForm<PopoverFormValues>({
     resolver: zodResolver(popoverFormSchema),
     defaultValues: {
-      productos: order.productos.map(p => ({...p, description: p.description || ''})),
+      productos: order.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })),
     },
   });
 
@@ -70,7 +70,7 @@ export function ProductEditPopover({
   
   React.useEffect(() => {
     if (isOpen) {
-        form.reset({ productos: order.productos.map(p => ({...p, description: p.description || ''})) });
+        form.reset({ productos: order.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })) });
     }
   }, [order, isOpen, form]);
 

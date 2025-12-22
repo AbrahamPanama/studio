@@ -5,7 +5,7 @@ export type Product = z.infer<typeof productSchema> & {
     id?: string;
 };
 
-export type Order = Omit<z.infer<typeof orderSchema>, 'tags' | 'tagsOther'> & {
+export type Order = Omit<z.infer<typeof orderSchema>, 'tags' | 'tagsOther' | 'productos'> & {
   id: string;
   fechaIngreso: Date;
   productos: Product[];

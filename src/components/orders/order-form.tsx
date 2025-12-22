@@ -29,7 +29,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/date-picker';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
@@ -73,7 +73,7 @@ export function OrderForm({ order }: { order?: Order }) {
         tags: order.tags || [],
         tagsOther: order.tagsOther || [],
         itbms: order.itbms || false,
-        productos: order.productos.map(p => ({...p, description: p.description || ''}))
+        productos: order.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false }))
       }
     : {
         name: '',
@@ -88,7 +88,7 @@ export function OrderForm({ order }: { order?: Order }) {
         servicioEntrega: 'Retiro taller',
         direccionEnvio: 'Retiro Taller',
         privacidad: 'Por preguntar',
-        productos: [{ name: '', description: '', quantity: 1, price: 0, materialsReady: false }],
+        productos: [{ name: '', description: '', quantity: 1, price: 0, materialsReady: false, isTaxable: true }],
         subtotal: 0,
         tax: 0,
         orderTotal: 0,
@@ -110,6 +110,17 @@ export function OrderForm({ order }: { order?: Order }) {
     control: form.control,
     name: 'productos',
   });
+  
+  const addEnvioItem = () => {
+    append({
+        name: 'Envío',
+        description: 'Uno Express',
+        quantity: 1,
+        price: 6.50,
+        materialsReady: false,
+        isTaxable: false,
+    });
+  };
 
   const watchedProducts = form.watch('productos');
   const watchedItbms = form.watch('itbms');
@@ -131,7 +142,11 @@ export function OrderForm({ order }: { order?: Order }) {
       return sum + (Number(product.quantity) || 0) * (Number(product.price) || 0);
     }, 0);
     
-    const newTax = itbms ? newSubtotal * TAX_RATE : 0;
+    const taxableSubtotal = products
+      .filter(p => p.isTaxable)
+      .reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
+
+    const newTax = itbms ? taxableSubtotal * TAX_RATE : 0;
     const newOrderTotal = newSubtotal + newTax;
 
     form.setValue('subtotal', newSubtotal, { shouldValidate: true, shouldDirty: true });
@@ -188,7 +203,10 @@ export function OrderForm({ order }: { order?: Order }) {
     const products = form.getValues('productos');
     const itbms = form.getValues('itbms');
     const finalSubtotal = products.reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
-    const finalTax = itbms ? finalSubtotal * TAX_RATE : 0;
+    const taxableSubtotal = products
+      .filter(p => p.isTaxable)
+      .reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
+    const finalTax = itbms ? taxableSubtotal * TAX_RATE : 0;
     const finalOrderTotal = finalSubtotal + finalTax;
 
     startTransition(async () => {
@@ -338,8 +356,11 @@ export function OrderForm({ order }: { order?: Order }) {
                     </Table>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', description: '', quantity: 1, price: 0, materialsReady: false })}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => append({ name: '', description: '', quantity: 1, price: 0, materialsReady: false, isTaxable: true })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={addEnvioItem}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Envío
                     </Button>
                   </div>
                   <Separator className="my-6" />
