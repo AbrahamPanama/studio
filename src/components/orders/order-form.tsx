@@ -452,7 +452,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="estado" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Order Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a status" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {ORDER_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
@@ -464,7 +464,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="subEstado" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sub-Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-status" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
@@ -515,7 +515,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Delivery Service</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
@@ -542,7 +542,7 @@ export function OrderForm({ order }: { order?: Order }) {
                   <FormField control={form.control} name="privacidad" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Privacy</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select privacy option" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {PRIVACY_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
