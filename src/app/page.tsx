@@ -1,4 +1,5 @@
 
+
 import { PlusCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 
@@ -9,6 +10,12 @@ import { getOrders } from '@/lib/actions';
 import type { Order } from '@/lib/types';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Input } from '@/components/ui/input';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Cotización', 'Done'];
@@ -44,6 +51,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   );
 
   const orderGroups = groupAndSortOrders(filteredOrders);
+  const defaultOpen = orderGroups.map(group => group.status);
 
   return (
     <div className="py-10 px-4 sm:px-6 lg:px-8">
@@ -79,16 +87,23 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-12">
-          {orderGroups.map(({ status, orders }) => (
-            <div key={status} className="space-y-4">
-              <div className="flex items-center gap-2">
-                <StatusBadge status={status} />
-                <span className="text-muted-foreground">({orders.length})</span>
-              </div>
-              <OrderTable orders={orders} />
-            </div>
-          ))}
+        <CardContent>
+          <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
+            {orderGroups.map(({ status, orders }) => (
+              <AccordionItem key={status} value={status} className="border-none">
+                 <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                        <StatusBadge status={status} />
+                        <span className="text-muted-foreground">({orders.length})</span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <OrderTable orders={orders} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+
           {orderGroups.length === 0 && (
             <div className="text-center py-10">
               <p className="text-muted-foreground">No orders found.</p>
