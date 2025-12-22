@@ -81,10 +81,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </CardHeader>
         <CardContent className="space-y-8">
           {orderGroups.map(({ status, orders }) => (
-            <div key={status}>
-              <div className="flex items-center gap-2 mb-4">
+            <div key={status} className="space-y-4">
+              <div className="flex items-center gap-2">
                 <StatusBadge status={status} />
-                <span className="font-semibold">{status}</span>
                 <span className="text-muted-foreground">({orders.length})</span>
               </div>
               <OrderTable orders={orders} />
