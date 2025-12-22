@@ -120,6 +120,7 @@ export function OrderForm({ order }: { order?: Order }) {
         materialsReady: false,
         isTaxable: false,
     });
+    form.setValue('servicioEntrega', 'Uno Express', { shouldValidate: true, shouldDirty: true });
   };
 
   const watchedProducts = form.watch('productos');
