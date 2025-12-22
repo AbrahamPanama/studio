@@ -36,11 +36,12 @@ import { Switch } from '@/components/ui/switch';
 import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
-import { cn, formatCurrency, formatPhoneNumber } from '@/lib/utils';
+import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Calculator } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
+import Link from 'next/link';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
@@ -115,6 +116,7 @@ export function OrderForm({ order }: { order?: Order }) {
   const watchedEntrega = form.watch('entrega');
   const watchedServicio = form.watch('servicioEntrega');
   const watchedTotalAbono = form.watch('totalAbono');
+  const watchedPhoneNumber = form.watch('celular');
 
   // Watch the calculated fields to update the UI
   const subtotal = form.watch('subtotal');
@@ -253,13 +255,20 @@ export function OrderForm({ order }: { order?: Order }) {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="celular" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl><Input placeholder="+507 6216-8911" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <div className="space-y-2">
+                    <FormField control={form.control} name="celular" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl><Input placeholder="+507 6216-8911" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <Button type="button" variant="outline" size="sm" asChild className={!watchedPhoneNumber ? 'pointer-events-none opacity-50' : ''}>
+                      <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank">
+                        WhatsApp
+                      </Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -304,12 +313,12 @@ export function OrderForm({ order }: { order?: Order }) {
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" {...field} onBlur={handleCalculateTotals} /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" {...field} onChange={(e) => { field.onChange(e); handleCalculateTotals(); } } /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" step="0.01" {...field} onBlur={handleCalculateTotals} /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" step="0.01" {...field} onChange={(e) => { field.onChange(e); handleCalculateTotals(); } } /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell className="text-right font-medium">

@@ -52,3 +52,12 @@ export function formatDate(date: string | number | Date): string {
     return "";
   }
 }
+
+
+export function getWhatsAppUrl(phoneNumber: string | undefined): string {
+  if (!phoneNumber) {
+    return '#';
+  }
+  const sanitizedNumber = phoneNumber.replace(/\D/g, '');
+  return `https://wa.me/${sanitizedNumber}`;
+}
