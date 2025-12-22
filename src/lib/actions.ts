@@ -117,14 +117,19 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         tagsOther: data.tagsOther || originalOrder.tagsOther || [],
     };
     
+    // Use a more lenient schema for partial updates if needed, or ensure `data` is well-formed.
+    // For now, we'll parse against the full schema, which requires all fields.
     const validatedFields = orderSchema.safeParse(mergedData);
+
      if (!validatedFields.success) {
-        console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
+        // This gives more detailed output in the server console
+        console.error('Validation errors on update:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
     }
 
     db.orders[index] = {
-        ...validatedFields.data,
+        ...originalOrder, // Start with original
+        ...validatedFields.data, // Overwrite with validated data
         id: originalOrder.id, // Ensure original ID is preserved
         fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
     };
@@ -179,3 +184,5 @@ export async function updateOtherTags(tags: Tag[]) {
     await writeOtherTags(validatedTags.data);
     revalidatePath('/');
 }
+
+    

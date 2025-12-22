@@ -158,7 +158,7 @@ export function OrderForm({ order }: { order?: Order }) {
 
   React.useEffect(() => {
     handleCalculateTotals();
-  }, [watchedItbms, handleCalculateTotals]);
+  }, [watchedProducts, watchedItbms, handleCalculateTotals]);
 
 
   React.useEffect(() => {
@@ -201,23 +201,16 @@ export function OrderForm({ order }: { order?: Order }) {
 
   function onSubmit(data: OrderFormValues) {
     // Re-calculate one last time before submitting to ensure data is accurate
-    const products = form.getValues('productos');
-    const itbms = form.getValues('itbms');
-    const finalSubtotal = products.reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
-    const taxableSubtotal = products
-      .filter(p => p.isTaxable)
-      .reduce((sum, p) => sum + (Number(p.quantity) || 0) * (Number(p.price) || 0), 0);
-    const finalTax = itbms ? taxableSubtotal * TAX_RATE : 0;
-    const finalOrderTotal = finalSubtotal + finalTax;
+    handleCalculateTotals();
+    
+    // We get the values after recalculating
+    const finalValues = form.getValues();
 
     startTransition(async () => {
       try {
         const payload = {
-          ...data,
-          celular: formatPhoneNumber(data.celular), // Ensure formatting on submit as well
-          subtotal: finalSubtotal,
-          tax: finalTax,
-          orderTotal: finalOrderTotal,
+          ...data, // original form data
+          ...finalValues // updated totals
         };
         
         if (isEditing && order) {
@@ -333,12 +326,12 @@ export function OrderForm({ order }: { order?: Order }) {
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" {...field} onChange={(e) => { field.onChange(e); handleCalculateTotals(); } } /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell>
                               <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
-                                <FormItem><FormControl><Input type="number" step="0.01" {...field} onChange={(e) => { field.onChange(e); handleCalculateTotals(); } } /></FormControl></FormItem>
+                                <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
                               )} />
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -594,3 +587,5 @@ export function OrderForm({ order }: { order?: Order }) {
     </Form>
   );
 }
+
+    
