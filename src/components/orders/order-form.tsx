@@ -39,7 +39,7 @@ import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS 
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calculator } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 
@@ -265,6 +265,7 @@ export function OrderForm({ order }: { order?: Order }) {
                     )} />
                      <Button type="button" variant="outline" size="sm" asChild className={!watchedPhoneNumber ? 'pointer-events-none opacity-50' : ''}>
                       <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank">
+                        <MessageSquare className="mr-2 h-4 w-4" />
                         WhatsApp
                       </Link>
                     </Button>
