@@ -270,16 +270,32 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const handleDownloadQuote = () => {
     const quoteElement = document.getElementById('quote-capture-area');
     if (quoteElement) {
-      html2canvas(quoteElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff', // Explicitly set a white background
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `quote-${order?.orderNumber || 'new'}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
+        // Temporarily remove shadow for cleaner capture
+        const originalClassName = quoteElement.className;
+        quoteElement.classList.remove('shadow-lg');
+
+        html2canvas(quoteElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            // These options can sometimes help with layout issues
+            scrollX: 0,
+            scrollY: -window.scrollY,
+            windowWidth: document.documentElement.offsetWidth,
+            windowHeight: document.documentElement.offsetHeight,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `quote-${order?.orderNumber || 'new'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            // Restore original class
+            quoteElement.className = originalClassName;
+        }).catch(err => {
+            console.error("html2canvas error:", err);
+             // Restore original class even if there's an error
+            quoteElement.className = originalClassName;
+        });
     }
   };
   
@@ -291,14 +307,12 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="container mx-auto py-10">
-           <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center space-x-2">
-                <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
-                <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
-            </div>
+          <div className="mb-8 flex items-center space-x-2">
+            <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
+            <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
           </div>
           <div id="quote-capture-area" className="bg-background p-8 rounded-lg shadow-lg">
-            <div className="flex items-center justify-between mb-8">
+            <div className="mb-8 flex items-center justify-between">
               <div>
                   <h1 className="text-2xl font-bold">{title}</h1>
                   {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
