@@ -278,7 +278,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
               <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
               <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
           </div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-8">
             <div>
                 <h1 className="text-2xl font-bold">{title}</h1>
                 {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
@@ -642,6 +642,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
 
     
 
