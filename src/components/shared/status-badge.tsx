@@ -6,7 +6,7 @@ import type { Order } from '@/lib/types';
 type Status = Order['estado'];
 
 export function StatusBadge({ status, className }: { status: Status; className?: string }) {
-  const commonClass = "capitalize whitespace-nowrap text-base text-white border-none";
+  const commonClass = "capitalize whitespace-nowrap text-white border-none";
 
   switch (status) {
     case 'Urgent':

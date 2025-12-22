@@ -93,7 +93,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
               <AccordionItem key={status} value={status} className="border-none">
                  <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
                     <div className="flex items-center gap-2">
-                        <StatusBadge status={status} />
+                        <StatusBadge status={status} className="text-base" />
                         <span className="text-muted-foreground">({orders.length})</span>
                     </div>
                 </AccordionTrigger>

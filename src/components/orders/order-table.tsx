@@ -149,7 +149,7 @@ const OrderTableRow = ({
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
                 <SelectValue asChild>
-                    <StatusBadge status={order.estado} />
+                    <StatusBadge status={order.estado} className="text-xs" />
                 </SelectValue>
             </SelectTrigger>
             <SelectContent>
