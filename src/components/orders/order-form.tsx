@@ -382,7 +382,8 @@ export function OrderForm({ order }: { order?: Order }) {
                             )}
                         />
                         <div className="text-sm text-muted-foreground">
-                            Abono sugerido: {formatCurrency(orderTotal * 0.5)}
+                            <p>Abono sugerido: {formatCurrency(orderTotal * 0.5)}</p>
+                            <p className="pt-2">Nota: El costo de envío no se incluye para el cálculo de ITBMS.</p>
                         </div>
                       </div>
                     <div className="w-[250px] space-y-2">
