@@ -39,7 +39,7 @@ import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS 
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calculator, MessageSquare } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 
@@ -58,6 +58,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
+  const [isConverting, startConverting] = React.useTransition();
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   
@@ -244,6 +245,25 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       }
     });
   }
+
+  const handleConvertToOrder = () => {
+    if (!isEditing || !order) return;
+
+    startConverting(async () => {
+      try {
+        await updateOrder(order.id, { estado: 'New' });
+        toast({ title: 'Success', description: 'Quote successfully converted to an order.' });
+        router.push('/');
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to convert quote to order.',
+        });
+      }
+    });
+  };
   
   const title = isQuote
     ? (isEditing ? `Edit Quote #${order?.orderNumber}` : 'Create New Quote')
@@ -258,8 +278,14 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <h1 className="text-2xl font-bold">{title}</h1>
                 {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+               {isEditing && isQuote && (
+                <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  {isConverting ? 'Converting...' : 'Convert to Order'}
+                </Button>
+              )}
               <Button type="submit" disabled={isPending}>
                 {isPending ? 'Saving...' : `Save ${isQuote ? 'Quote' : 'Order'}`}
               </Button>
@@ -611,3 +637,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    

@@ -20,22 +20,22 @@
       "tagsOther": [],
       "productos": [
         {
+          "id": "p17663694137570",
           "name": "Invitaciones",
           "description": "Modelo 707",
           "quantity": 25,
           "price": 3.5,
           "materialsReady": false,
-          "isTaxable": true,
-          "id": "p17663694137570"
+          "isTaxable": true
         },
         {
+          "id": "p17663694137571",
           "name": "Envío",
           "description": "Uno Express",
           "quantity": 1,
           "price": 6.5,
           "materialsReady": false,
-          "isTaxable": false,
-          "id": "p17663694137571"
+          "isTaxable": false
         }
       ],
       "itbms": true,
