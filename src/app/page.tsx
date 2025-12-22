@@ -37,10 +37,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const query = searchParams.query || '';
 
   const filteredOrders = allOrders.filter(order =>
-    order.name.toLowerCase().includes(query.toLowerCase()) ||
-    (order.description && order.description.toLowerCase().includes(query.toLowerCase())) ||
-    order.orderNumber.toLowerCase().includes(query.toLowerCase()) ||
-    order.productos.some(p => p.name.toLowerCase().includes(query.toLowerCase()))
+    (order.name || '').toLowerCase().includes(query.toLowerCase()) ||
+    (order.description || '').toLowerCase().includes(query.toLowerCase()) ||
+    (order.orderNumber || '').toLowerCase().includes(query.toLowerCase()) ||
+    order.productos.some(p => (p.name || '').toLowerCase().includes(query.toLowerCase()))
   );
 
   const orderGroups = groupAndSortOrders(filteredOrders);
