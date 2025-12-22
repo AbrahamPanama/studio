@@ -277,10 +277,6 @@ const ResizableHandle = ({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) =
 const COLUMN_IDS = ['customer', 'status', 'sub-status', 'items', 'tags-shipping', 'tags-other', 'delivery-deadline', 'total', 'actions'];
 
 export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { replace } = useRouter();
-  
   const [orders, setOrders] = React.useState(initialOrders);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
@@ -290,9 +286,6 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   const isResizing = React.useRef<number | null>(null);
   const router = useRouter();
 
-  const searchTerm = searchParams.get('query')?.toString() || '';
-  const [inputValue, setInputValue] = React.useState(searchTerm);
-  
   React.useEffect(() => {
     // Load widths from localStorage
     const savedWidths = localStorage.getItem('orderTableColumnWidths');
@@ -363,43 +356,6 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   React.useEffect(() => {
     setOrders(initialOrders);
   }, [initialOrders]);
-  
-  const filteredOrders = React.useMemo(() => {
-    if (!searchTerm) return orders;
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
-
-    return orders.filter(order => {
-        const nameMatch = order.name.toLowerCase().includes(lowercasedSearchTerm);
-        const descriptionMatch = order.description && order.description.toLowerCase().includes(lowercasedSearchTerm);
-        const emailMatch = order.email && order.email.toLowerCase().includes(lowercasedSearchTerm);
-        
-        const orderTags = (order.tags || [])
-          .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
-          .filter((t): t is Tag => !!t);
-        const tagMatch = orderTags.some(tag => tag.label.toLowerCase().includes(lowercasedSearchTerm));
-        
-        const orderOtherTags = (order.tagsOther || [])
-          .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
-          .filter((t): t is Tag => !!t);
-        const otherTagMatch = orderOtherTags.some(tag => tag.label.toLowerCase().includes(lowercasedSearchTerm));
-
-        return nameMatch || descriptionMatch || emailMatch || tagMatch || otherTagMatch;
-    });
-  }, [orders, searchTerm, allTags, allOtherTags]);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-        const params = new URLSearchParams(searchParams);
-        if (inputValue) {
-            params.set('query', inputValue);
-        } else {
-            params.delete('query');
-        }
-        replace(`${pathname}?${params.toString()}`);
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [inputValue, pathname, replace, searchParams]);
 
   const handleDelete = (id: string) => {
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
@@ -416,55 +372,45 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center">
-        <Input
-          placeholder="Search by name, email, description, or tag..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-      <div className="rounded-md border overflow-x-auto">
-        <Table ref={tableRef} style={{ tableLayout: 'fixed' }}>
-          <colgroup>
-            {COLUMN_IDS.map(id => (
-              <col key={id} style={{ width: columnWidths[id] ? `${columnWidths[id]}px` : undefined }} />
+    <div className="rounded-md border overflow-x-auto">
+      <Table ref={tableRef} style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          {COLUMN_IDS.map(id => (
+            <col key={id} style={{ width: columnWidths[id] ? `${columnWidths[id]}px` : undefined }} />
+          ))}
+        </colgroup>
+        <TableHeader>
+          <TableRow>
+            {COLUMN_IDS.map((id, index) => (
+              <TableHead key={id} className="group relative">
+                <span className="capitalize">{id.replace(/-/g, ' ')}</span>
+                {index < COLUMN_IDS.length - 1 && <ResizableHandle onMouseDown={handleMouseDown(index)} />}
+              </TableHead>
             ))}
-          </colgroup>
-          <TableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {orders.length > 0 ? (
+            orders.map((order) => (
+              <OrderTableRow 
+                  key={order.id} 
+                  order={order} 
+                  allTags={allTags}
+                  allOtherTags={allOtherTags}
+                  onAllTagsUpdate={handleAllTagsUpdate}
+                  onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
+                  onDelete={handleDelete} 
+              />
+            ))
+          ) : (
             <TableRow>
-              {COLUMN_IDS.map((id, index) => (
-                <TableHead key={id} className="group relative">
-                  <span className="capitalize">{id.replace(/-/g, ' ')}</span>
-                  {index < COLUMN_IDS.length - 1 && <ResizableHandle onMouseDown={handleMouseDown(index)} />}
-                </TableHead>
-              ))}
+              <TableCell colSpan={COLUMN_IDS.length} className="h-24 text-center">
+                No orders in this group.
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
-                <OrderTableRow 
-                    key={order.id} 
-                    order={order} 
-                    allTags={allTags}
-                    allOtherTags={allOtherTags}
-                    onAllTagsUpdate={handleAllTagsUpdate}
-                    onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
-                    onDelete={handleDelete} 
-                />
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={COLUMN_IDS.length} className="h-24 text-center">
-                  No orders found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }
