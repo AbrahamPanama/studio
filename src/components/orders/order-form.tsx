@@ -274,9 +274,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="container mx-auto py-10">
-          <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
-            <h2 className="text-2xl font-bold mt-2">VA Cards and Crafts</h2>
+          <div className="flex flex-col items-center justify-center text-center mb-6">
+            <div className="flex items-center space-x-2">
+                <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
+                <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
+            </div>
           </div>
           <div className="flex items-center justify-between mb-6">
             <div>
