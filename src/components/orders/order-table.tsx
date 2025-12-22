@@ -132,6 +132,7 @@ const OrderTableRow = ({
   return (
     <TableRow>
       <TableCell className="w-[200px]">
+        <div className="font-medium">#{order.orderNumber}</div>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}

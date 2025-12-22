@@ -77,10 +77,18 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     }
     
     const db = await readDb();
+
+    // Generate new progressive order number
+    const maxOrderNumber = db.orders.reduce((max, order) => {
+        const currentNum = parseInt(order.orderNumber, 10);
+        return currentNum > max ? currentNum : max;
+    }, 0);
+    const newOrderNumber = (maxOrderNumber + 1).toString().padStart(6, '0');
     
     const newOrder: Order = {
         ...validatedFields.data,
         id: String(Date.now()),
+        orderNumber: newOrderNumber,
         fechaIngreso: new Date(),
         productos: validatedFields.data.productos.map((p, i) => ({...p, id: `p${Date.now()}${i}`}))
     };
@@ -131,6 +139,7 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         ...originalOrder, // Start with original
         ...validatedFields.data, // Overwrite with validated data
         id: originalOrder.id, // Ensure original ID is preserved
+        orderNumber: originalOrder.orderNumber, // Ensure original order number is preserved
         fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
     };
     

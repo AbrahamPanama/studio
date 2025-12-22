@@ -243,7 +243,10 @@ export function OrderForm({ order }: { order?: Order }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="container mx-auto py-10">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">{isEditing ? 'Edit Order' : 'Create New Order'}</h1>
+            <div>
+                <h1 className="text-2xl font-bold">{isEditing ? `Edit Order #${order?.orderNumber}` : 'Create New Order'}</h1>
+                {isEditing && <p className="text-sm text-muted-foreground">Order ID: {order?.id}</p>}
+            </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
