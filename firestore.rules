@@ -1,0 +1,103 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict, role-based access control (RBAC) model.
+ * Access is granted exclusively to administrator users. A user is considered an admin if
+ * their UID corresponds to a document ID within the /roles_admin collection. All non-admin
+ * users, whether authenticated or not, are denied all access to the data.
+ *
+ * Data Structure: The database consists of two main top-level collections:
+ * - /orders: Contains all order documents and their nested /products subcollections.
+ * - /roles_admin: A dedicated collection for managing administrator privileges. The
+ *   presence of a document with a user's UID as the ID grants them admin status.
+ *
+ * Key Security Decisions:
+ * - Admin-Only System: All data operations (read, write, delete) on orders and products
+ *   are restricted to administrators. There is no concept of data ownership by regular users.
+ * - Database-Based Roles: Admin roles are managed within the Firestore database itself
+ *   (in /roles_admin), not through custom authentication claims. This allows for dynamic
+ *   role management without re-issuing tokens.
+ * - Client-Side Role Management Disabled: To prevent privilege escalation, the ability to
+ *   create, update, or delete documents in the /roles_admin collection is disabled for all
+ *   client-side requests. Admin roles must be managed from a trusted environment, such as
+ *   a backend server or the Firebase Console.
+ * - Relational Integrity on Create: The rules ensure that a new product created within an
+ *   order's subcollection has its internal `orderId` field correctly set to match the parent
+ *   order's ID.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user is an administrator.
+     * Admin status is granted if a document with the user's UID exists in the
+     * /roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages administrator roles. This collection is read-only for admins
+     *              and completely locked down for writes from the client to prevent
+     *              any user from elevating their own privileges.
+     * @path /roles_admin/{userId}
+     * @allow (get, list) An admin user (auth.uid exists in /roles_admin) can read or list admin documents.
+     * @deny (create) An admin user attempts to add a new admin. This is denied for security.
+     * @principle Prevents client-side privilege escalation by making role assignments read-only.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Defines access control for the primary 'orders' collection. Only
+     *              administrators are permitted to perform any operations on orders.
+     * @path /orders/{orderId}
+     * @allow (create) An admin user creates a new order document.
+     * @deny (get) A signed-in, non-admin user attempts to read an order.
+     * @principle Enforces a strict role-based access control where only admins can manage data.
+     */
+    match /orders/{orderId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+
+      /**
+       * @description Defines access control for products within an order. Access inherits
+       *              the admin-only policy from the parent order.
+       * @path /orders/{orderId}/products/{productId}
+       * @allow (get) An admin user reads a product document nested under an order.
+       * @deny (update) A non-admin user attempts to update a product.
+       * @principle Validates relational integrity by ensuring the product's internal `orderId` matches its path.
+       */
+      match /products/{productId} {
+        allow get: if isAdmin();
+        allow list: if isAdmin();
+        allow create: if isAdmin() && request.resource.data.orderId == orderId;
+        allow update: if isAdmin() && resource != null && request.resource.data.orderId == resource.data.orderId;
+        allow delete: if isAdmin() && resource != null;
+      }
+    }
+  }
+}

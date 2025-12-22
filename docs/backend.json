@@ -1,0 +1,245 @@
+{
+  "entities": {
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents an order in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "estado": {
+          "type": "string",
+          "description": "Status of the order (New, On Hand/Working, Urgent, Pending, Packaging, Done)."
+        },
+        "subEstado": {
+          "type": "string",
+          "description": "Sub-status of the order (Pendiente Arte, Pendiente, Corte, Pendiente Material, Check List)."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the customer."
+        },
+        "customerEmail": {
+          "type": "string",
+          "description": "Email address of the customer.",
+          "format": "email"
+        },
+        "customerCelular": {
+          "type": "string",
+          "description": "Phone number of the customer."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the order (max 300 characters)."
+        },
+        "fechaIngreso": {
+          "type": "string",
+          "description": "Date and time when the order was created.",
+          "format": "date-time"
+        },
+        "comentarios": {
+          "type": "string",
+          "description": "Additional comments about the order."
+        },
+        "entrega": {
+          "type": "string",
+          "description": "Date of delivery.",
+          "format": "date-time"
+        },
+        "entregaLimite": {
+          "type": "string",
+          "description": "Delivery deadline date.",
+          "format": "date-time"
+        },
+        "servicioEntrega": {
+          "type": "string",
+          "description": "Delivery service used (Uno Express, Delivery Rolando, Delivery Daniel, Delivery Otros, Uber, InDriver, Retiro taller)."
+        },
+        "direccionEnvio": {
+          "type": "string",
+          "description": "Shipping address."
+        },
+        "privacidad": {
+          "type": "string",
+          "description": "Privacy settings for the order (Por preguntar, Limitado Fecha, no respondió, ilimitado, Limitado Otros)."
+        },
+        "customTag1": {
+          "type": "string",
+          "description": "Custom tag 1."
+        },
+        "customTag2": {
+          "type": "string",
+          "description": "Custom tag 2."
+        },
+        "customTag3": {
+          "type": "string",
+          "description": "Custom tag 3."
+        },
+        "customTag4": {
+          "type": "string",
+          "description": "Custom tag 4."
+        },
+        "productos": {
+          "type": "array",
+          "description": "Array of products in the order.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "orderTotal": {
+          "type": "number",
+          "description": "Total value of the order."
+        }
+      },
+      "required": [
+        "id",
+        "estado",
+        "subEstado",
+        "customerName",
+        "customerEmail",
+        "customerCelular",
+        "description",
+        "fechaIngreso",
+        "comentarios",
+        "entrega",
+        "entregaLimite",
+        "servicioEntrega",
+        "direccionEnvio",
+        "privacidad",
+        "customTag1",
+        "customTag2",
+        "customTag3",
+        "customTag4",
+        "productos",
+        "orderTotal"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product within an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N Product)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the order."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product."
+        },
+        "materialsReady": {
+          "type": "boolean",
+          "description": "Indicates if the materials for the product are ready."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "name",
+        "quantity",
+        "price",
+        "materialsReady"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an administrator user of the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the administrator.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores order information. Includes fields for order status, customer details, logistics, and meta information.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product details for a specific order.  Each product belongs to one order.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            },
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Collection to store admin user IDs. Presence in this collection grants admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the admin user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the OrderFlow application, prioritizing security, scalability, and ease of debugging. It leverages structural segregation and denormalization to achieve authorization independence, eliminating the need for `get()` calls in security rules. This enhances the integrity of atomic operations (transactions/batches) and improves overall security.\n\n1.  **Authorization Independence (CRITICAL):** The structure avoids hierarchical authorization dependencies (`get()`) by storing roles in the database and relying on `request.auth.uid`. All authorization context is denormalized using specific collections, ensuring that access control can be validated independently.\n\n2.  **Clarity of Intent (Debuggability):** The structure is designed to make authorization intent explicit through standardized naming conventions, explicit state modeling, and predictable schema.\n\n3.  **DBAC (No Custom Claims):** Roles are stored in the database in the `/roles_admin/{uid}` collection, so authorization relies solely on `request.auth.uid` and avoids custom claims.\n\n4.  **QAPs (Rules are not Filters):** The structure enables secure `list` operations. Administrative access is controlled using the dedicated `/roles_admin/{uid}` collection, and user-owned data is organized under `/orders`.\n\n5.  **Invariants:** The structure supports the integrity of ownership and timestamps.\n\n**Explanation of Authorization Independence and QAPs:**\n\n*   **Authorization Independence:** The `/roles_admin/{uid}` collection allows us to quickly and efficiently verify if a user is an admin without needing to read any other documents. This completely decouples the authorization logic from the data itself. The data structure implements Authorization Independence by relying on the dedicated AdminUser collection and avoiding hierarchical dependencies.\n*   **QAPs:** The administrative role setup ensures that listing all orders is restricted to admins. Regular users do not have listing privileges at the root `/orders` collection. This segregation ensures that rules are not filters, as listing is only permitted for authorized roles."
+  }
+}
