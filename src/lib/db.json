@@ -3,6 +3,52 @@
     {
       "name": "Abraham Israel Saenz Clark",
       "email": "abraham.saenz@gmail.com",
+      "celular": "+50762168911",
+      "description": "",
+      "comentarios": "",
+      "estado": "Cotización",
+      "subEstado": "Pendiente",
+      "entrega": "2025-12-22T02:09:22.164Z",
+      "entregaLimite": "2025-12-22T02:09:22.164Z",
+      "servicioEntrega": "Uno Express",
+      "direccionEnvio": "",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "privacidad": "Por preguntar",
+      "tags": [],
+      "tagsOther": [],
+      "productos": [
+        {
+          "name": "Invitaciones",
+          "description": "Modelo 707",
+          "quantity": 25,
+          "price": 3.5,
+          "materialsReady": false,
+          "isTaxable": true,
+          "id": "p17663694137570"
+        },
+        {
+          "name": "Envío",
+          "description": "Uno Express",
+          "quantity": 1,
+          "price": 6.5,
+          "materialsReady": false,
+          "isTaxable": false,
+          "id": "p17663694137571"
+        }
+      ],
+      "itbms": true,
+      "subtotal": 94,
+      "tax": 6.125000000000001,
+      "orderTotal": 100.125,
+      "id": "1766369413757",
+      "orderNumber": "000012",
+      "fechaIngreso": "2025-12-22T02:10:13.757Z"
+    },
+    {
+      "name": "Abraham Israel Saenz Clark",
+      "email": "abraham.saenz@gmail.com",
       "celular": "+507 6272-9630",
       "description": "",
       "comentarios": "",
