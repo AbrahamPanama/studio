@@ -6,24 +6,24 @@ import type { Order } from '@/lib/types';
 type Status = Order['estado'];
 
 export function StatusBadge({ status, className }: { status: Status; className?: string }) {
-  const commonClass = "capitalize whitespace-nowrap text-base bg-white hover:bg-gray-50 border";
+  const commonClass = "capitalize whitespace-nowrap text-base text-white border-none";
 
   switch (status) {
     case 'Urgent':
-      return <Badge variant="outline" className={cn(commonClass, "text-red-500 border-red-500", className)}>Urgent</Badge>;
+      return <Badge className={cn(commonClass, "bg-red-500 hover:bg-red-600", className)}>Urgent</Badge>;
     case 'Done':
-      return <Badge variant="outline" className={cn(commonClass, "text-green-500 border-green-500", className)}>Done</Badge>;
+      return <Badge className={cn(commonClass, "bg-green-500 hover:bg-green-600", className)}>Done</Badge>;
     case 'New':
-      return <Badge variant="outline" className={cn(commonClass, "text-blue-500 border-blue-500", className)}>New</Badge>;
+      return <Badge className={cn(commonClass, "bg-blue-500 hover:bg-blue-600", className)}>New</Badge>;
     case 'On Hand/Working':
-      return <Badge variant="outline" className={cn(commonClass, "text-purple-500 border-purple-500", className)}>On Hand/Working</Badge>;
+      return <Badge className={cn(commonClass, "bg-purple-500 hover:bg-purple-600", className)}>On Hand/Working</Badge>;
     case 'Packaging':
-      return <Badge variant="outline" className={cn(commonClass, "text-yellow-500 border-yellow-500", className)}>Packaging</Badge>;
+      return <Badge className={cn(commonClass, "bg-yellow-500 hover:bg-yellow-600", className)}>Packaging</Badge>;
     case 'Cotización':
-      return <Badge variant="outline" className={cn(commonClass, "text-gray-500 border-gray-500", className)}>Cotización</Badge>;
+      return <Badge className={cn(commonClass, "bg-gray-500 hover:bg-gray-600", className)}>Cotización</Badge>;
     case 'Pending':
-      return <Badge variant="outline" className={cn(commonClass, "text-orange-500 border-orange-500", className)}>{status}</Badge>;
+      return <Badge className={cn(commonClass, "bg-orange-500 hover:bg-orange-600", className)}>{status}</Badge>;
     default:
-      return <Badge variant="outline" className={cn(commonClass, "text-gray-700 border-gray-400", className)}>{status}</Badge>;
+      return <Badge className={cn(commonClass, "bg-gray-700 hover:bg-gray-800", className)}>{status}</Badge>;
   }
 }
