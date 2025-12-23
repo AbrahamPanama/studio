@@ -16,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const groupAndSortOrders = (orders: Order[]) => {
@@ -96,21 +96,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                         <TabsTrigger 
                           value="active" 
                           asChild
-                          className="data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:text-black"
+                          className="data-[state=active]:bg-orange-500 data-[state=active]:text-black data-[state=active]:font-bold"
                         >
                           <Link href="/?tab=active">Active</Link>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="quotes" 
                           asChild
-                          className="data-[state=active]:bg-gray-500 data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:text-black"
+                          className="data-[state=active]:bg-gray-500 data-[state=active]:text-black data-[state=active]:font-bold"
                         >
                           <Link href="/?tab=quotes">Quotes</Link>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="completed" 
                           asChild
-                          className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:text-black"
+                          className="data-[state=active]:bg-green-500 data-[state=active]:text-black data-[state=active]:font-bold"
                         >
                           <Link href="/?tab=completed">Completed</Link>
                         </TabsTrigger>
