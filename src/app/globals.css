@@ -82,3 +82,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+    .tab-active-active {
+        @apply bg-orange-500 text-black font-bold;
+    }
+    .tab-active-quotes {
+        @apply bg-gray-500 text-black font-bold;
+    }
+    .tab-active-completed {
+        @apply bg-green-500 text-black font-bold;
+    }
+}

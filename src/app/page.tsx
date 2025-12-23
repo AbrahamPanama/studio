@@ -96,21 +96,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                         <TabsTrigger 
                           value="active" 
                           asChild
-                          className="data-[state=active]:bg-orange-500 data-[state=active]:text-black data-[state=active]:font-bold"
+                          className={tab === 'active' ? 'tab-active-active' : ''}
                         >
                           <Link href="/?tab=active">Active</Link>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="quotes" 
                           asChild
-                          className="data-[state=active]:bg-gray-500 data-[state=active]:text-black data-[state=active]:font-bold"
+                          className={tab === 'quotes' ? 'tab-active-quotes' : ''}
                         >
                           <Link href="/?tab=quotes">Quotes</Link>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="completed" 
                           asChild
-                          className="data-[state=active]:bg-green-500 data-[state=active]:text-black data-[state=active]:font-bold"
+                          className={tab === 'completed' ? 'tab-active-completed' : ''}
                         >
                           <Link href="/?tab=completed">Completed</Link>
                         </TabsTrigger>
