@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
@@ -127,17 +128,17 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
         </div>
         
         <div className="px-4 sm:px-6 mb-8">
-            <TabsList>
+             <TabsList>
                 <TabsTrigger value="active" asChild>
-                  <Link href="/?tab=active">{t('active')}</Link>
+                  <Link href="/?tab=active" className={cn(tab === 'active' && 'font-bold text-foreground')}>{t('active')}</Link>
                 </TabsTrigger>
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-6 mx-2" />
                 <TabsTrigger value="quotes" asChild>
-                  <Link href="/?tab=quotes">{t('quotes')}</Link>
+                  <Link href="/?tab=quotes" className={cn(tab === 'quotes' && 'font-bold text-foreground')}>{t('quotes')}</Link>
                 </TabsTrigger>
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-6 mx-2" />
                 <TabsTrigger value="completed" asChild>
-                  <Link href="/?tab=completed">{t('completed')}</Link>
+                  <Link href="/?tab=completed" className={cn(tab === 'completed' && 'font-bold text-foreground')}>{t('completed')}</Link>
                 </TabsTrigger>
             </TabsList>
         </div>
