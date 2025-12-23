@@ -1,13 +1,13 @@
 
 'use client';
 
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, PackageOpen } from 'lucide-react'; // Añadí PackageOpen para el estado vacío
 import Link from 'next/link';
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card'; // Simplificado, no necesitamos Header/Title/etc para los grupos
 import { OrderTable } from '@/components/orders/order-table';
 import { getOrders } from '@/lib/actions';
 import type { Order } from '@/lib/types';
@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/accordion"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
+// --- Helper Functions ---
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
   
@@ -58,7 +58,6 @@ const filterOrders = (orders: Order[], query: string, tab: string) => {
         tabFilteredOrders = orders.filter(o => o.estado === 'Done');
     }
 
-
     if (!query) {
         return tabFilteredOrders;
     }
@@ -79,45 +78,54 @@ const filterOrders = (orders: Order[], query: string, tab: string) => {
     });
 }
 
+// --- Main Content Component ---
 function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], query: string, tab: string}) {
   const { t } = useLanguage();
 
   const filteredOrders = filterOrders(allOrders, query, tab);
-
   const orderGroups = groupAndSortOrders(filteredOrders);
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-       <Tabs value={tab}>
-        <div className="flex items-end px-4 sm:px-6 mb-6">
-            <div className="flex-1">
+    // CAMBIO 1: Fondo global gris suave para dar profundidad
+    <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
+       <Tabs value={tab} className="space-y-8">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end gap-4 px-2">
+            <div className="flex-1 space-y-1">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('orders')}</h1>
-                <p className="text-muted-foreground mt-1">{t('manageOrders')}</p>
+                <p className="text-muted-foreground text-lg">{t('manageOrders')}</p>
             </div>
-            <div className="ml-auto flex items-center gap-4">
-                 <div className="hidden w-full max-w-sm items-center space-x-2 md:flex">
-                  <form className="flex w-full items-center space-x-2" action="/">
+            
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+                 <div className="w-full sm:w-80">
+                  <form className="relative" action="/">
                     <input type="hidden" name="tab" value={tab} />
-                    <div className="relative w-full">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input key={query} name="query" placeholder={t('searchPlaceholder')} className="pl-9" defaultValue={query} />
-                    </div>
-                    <Button type="submit">{t('search')}</Button>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <Input 
+                        key={query} 
+                        name="query" 
+                        placeholder={t('searchPlaceholder')} 
+                        className="pl-9 bg-white shadow-sm border-slate-200 focus-visible:ring-indigo-500" 
+                        defaultValue={query} 
+                    />
                     {query && (
-                      <Button asChild variant="outline">
-                        <Link href={`/?tab=${tab}`}>{t('clear')}</Link>
-                      </Button>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                             <Link href={`/?tab=${tab}`} className="text-xs text-muted-foreground hover:text-foreground bg-slate-100 px-2 py-1 rounded-md">
+                                {t('clear')}
+                             </Link>
+                        </div>
                     )}
                   </form>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                     <Link href="/quotes/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       {t('newQuote')}
                     </Link>
                   </Button>
-                  <Button asChild>
+                  <Button asChild variant="default" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
                     <Link href="/orders/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       {t('newOrder')}
@@ -127,36 +135,43 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
             </div>
         </div>
         
-        <div className="px-4 sm:px-6 mb-8">
-             <TabsList>
-                <TabsTrigger value="active" asChild>
+        {/* Navigation Tabs (Con tu solución de fuerza bruta integrada y estilizada) */}
+        <div className="border-b border-slate-200 px-2">
+             <TabsList className="h-auto p-0 bg-transparent gap-6">
+                <TabsTrigger value="active" asChild className="data-[state=active]:bg-transparent p-0">
                   <Link 
                     href="/?tab=active" 
                     className={cn(
-                      "px-4 py-2 transition-all", 
-                      tab === 'active' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                      "pb-3 text-sm transition-all border-b-2 px-1", 
+                      tab === 'active' 
+                        ? "font-bold text-indigo-600 border-indigo-600" 
+                        : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
                     )}
                   >
                     {t('active')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="quotes" asChild>
+                <TabsTrigger value="quotes" asChild className="data-[state=active]:bg-transparent p-0">
                   <Link 
                     href="/?tab=quotes"
                     className={cn(
-                      "px-4 py-2 transition-all", 
-                      tab === 'quotes' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                        "pb-3 text-sm transition-all border-b-2 px-1", 
+                        tab === 'quotes' 
+                          ? "font-bold text-indigo-600 border-indigo-600" 
+                          : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
                     )}
                   >
                     {t('quotes')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="completed" asChild>
+                <TabsTrigger value="completed" asChild className="data-[state=active]:bg-transparent p-0">
                   <Link 
                     href="/?tab=completed" 
                     className={cn(
-                      "px-4 py-2 transition-all", 
-                      tab === 'completed' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                        "pb-3 text-sm transition-all border-b-2 px-1", 
+                        tab === 'completed' 
+                          ? "font-bold text-indigo-600 border-indigo-600" 
+                          : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
                     )}
                   >
                     {t('completed')}
@@ -165,45 +180,54 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
             </TabsList>
         </div>
 
-
-        <div className="space-y-4 px-4 sm:px-6">
-             <TabsContent value={tab} className="mt-0">
-                  <div className="space-y-4">
-                      {orderGroups.map(({ status, orders }) => (
-                        <Card key={status} className="shadow-sm bg-white rounded-lg">
-                            <Accordion type="single" collapsible defaultValue="item-1">
+        {/* Orders Grid */}
+        <div className="space-y-6">
+             <TabsContent value={tab} className="mt-0 space-y-6 animate-in fade-in-50 duration-300">
+                  
+                  {orderGroups.map(({ status, orders }) => (
+                    // CAMBIO 2: Tarjetas limpias, bordes suaves, fondo blanco puro
+                    <div key={status} className="group">
+                        <Card className="border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white overflow-hidden rounded-xl">
+                            <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
                                 <AccordionItem value="item-1" className="border-b-0">
-                                <AccordionTrigger className="p-6 hover:no-underline">
-                                    <div className="flex items-center gap-3">
-                                        <StatusBadge status={status} className="text-sm" />
-                                        <span className="text-muted-foreground">({orders.length})</span>
+                                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50/50 transition-colors">
+                                    <div className="flex items-center justify-between w-full pr-4">
+                                        <div className="flex items-center gap-3">
+                                            <StatusBadge status={status} className="shadow-none px-3 py-1 text-xs font-semibold" />
+                                            <span className="text-slate-400 font-medium text-sm">
+                                                {orders.length} {orders.length === 1 ? 'Pedido' : 'Pedidos'}
+                                            </span>
+                                        </div>
+                                        {/* Aquí podrías poner el total monetario del grupo si quisieras */}
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-0 pb-2">
-                                <OrderTable orders={orders} />
+                                <AccordionContent className="px-0 pb-0 border-t border-slate-100">
+                                    <OrderTable orders={orders} />
                                 </AccordionContent>
                             </AccordionItem>
                             </Accordion>
                         </Card>
-                      ))}
+                    </div>
+                  ))}
 
-                      {orderGroups.length === 0 && (
-                          <Card>
-                            <CardContent className="py-10">
-                                <div className="text-center">
-                                <p className="text-muted-foreground">{t('noOrders')}</p>
-                                </div>
-                            </CardContent>
-                          </Card>
-                      )}
-                  </div>
+                  {/* Empty State Rediseñado */}
+                  {orderGroups.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
+                        <div className="bg-slate-50 p-4 rounded-full mb-4">
+                            <PackageOpen className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900">{t('noOrders')}</h3>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm text-center">
+                            No hay pedidos en esta categoría actualmente.
+                        </p>
+                      </div>
+                  )}
             </TabsContent>
         </div>
       </Tabs>
     </div>
   );
 }
-
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
@@ -220,10 +244,9 @@ export default function DashboardPage() {
     }, []);
 
     if (loading) {
-        return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>
+        // Un skeleton loader simple sería ideal aquí, pero por ahora centramos el texto
+        return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading orders...</p></div>
     }
 
     return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} />;
 }
-
-    
