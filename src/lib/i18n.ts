@@ -2,6 +2,8 @@
 export const translations = {
   en: {
     orders: 'Orders',
+    quote: 'Quote',
+    order: 'Order',
     manageOrders: 'Manage and track all customer orders.',
     active: 'Active',
     quotes: 'Quotes',
@@ -95,6 +97,8 @@ export const translations = {
   },
   es: {
     orders: 'Pedidos',
+    quote: 'Cotización',
+    order: 'Pedido',
     manageOrders: 'Gestiona y sigue todos los pedidos de los clientes.',
     active: 'Activos',
     quotes: 'Cotizaciones',
