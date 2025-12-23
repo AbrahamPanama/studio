@@ -74,7 +74,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
               <form className="flex w-full items-center space-x-2" action="/">
                 <div className="relative w-full">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
+                  <Input key={query} name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
                 </div>
                 <Button type="submit">Search</Button>
                 {query && (
