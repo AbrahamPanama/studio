@@ -362,8 +362,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 {isEditing && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-6">
+            <div className={cn("grid gap-6", !isQuote && "lg:grid-cols-3")}>
+              <div className={cn("space-y-6", !isQuote && "lg:col-span-2")}>
                 <Card>
                   <CardHeader>
                     <CardTitle>{t('formTitleCustomerInfo')}</CardTitle>
@@ -552,9 +552,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 </Card>
               </div>
 
-              <div className="space-y-6">
-                {!isQuote && (
-                  <>
+              {!isQuote && (
+                <div className="space-y-6">
                     <Card>
                       <CardHeader>
                         <CardTitle>{t('formTitleStatusLogistics')}</CardTitle>
@@ -698,9 +697,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         />
                       </CardContent>
                     </Card>
-                  </>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
