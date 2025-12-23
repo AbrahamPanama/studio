@@ -439,7 +439,8 @@
           "description": "",
           "quantity": 10,
           "price": 15,
-          "materialsReady": true
+          "materialsReady": true,
+          "isTaxable": true
         },
         {
           "id": "p2",
@@ -447,11 +448,12 @@
           "description": "",
           "quantity": 20,
           "price": 8,
-          "materialsReady": true
+          "materialsReady": true,
+          "isTaxable": true
         }
       ],
       "itbms": false,
-      "subtotal": 0,
+      "subtotal": 310,
       "tax": 0,
       "orderTotal": 310,
       "id": "1",

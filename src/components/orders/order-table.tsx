@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { differenceInDays, isPast } from 'date-fns';
 
 import type { Order, Tag } from '@/lib/types';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -131,26 +132,26 @@ const OrderTableRow = ({
 
   const editUrl = order.estado === 'Cotización' ? `/quotes/${order.id}/edit` : `/orders/${order.id}/edit`;
 
+  const deadline = order.entregaLimite ? new Date(order.entregaLimite) : null;
+  const deadlineStyle = React.useMemo(() => {
+    if (!deadline) return '';
+    if (isPast(deadline)) return 'text-red-600 font-medium';
+    if (differenceInDays(deadline, new Date()) <= 3) return 'text-amber-600 font-medium';
+    return '';
+  }, [deadline]);
+
   return (
     <TableRow>
       <TableCell className="w-[200px]">
-        <div className="font-medium">#{order.orderNumber}</div>
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={handleNameBlur}
-          className="font-medium border-0 focus-visible:ring-1 focus-visible:ring-ring"
-          disabled={isPending}
-        />
-        <div className="text-sm text-muted-foreground flex items-center">
-          {order.celular}
-        </div>
+        <div className="font-medium text-foreground">{name}</div>
+        <div className="text-sm font-mono text-muted-foreground">#{order.orderNumber}</div>
+        <div className="text-sm text-muted-foreground">{order.celular}</div>
       </TableCell>
       <TableCell>
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
             <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
                 <SelectValue asChild>
-                    <StatusBadge status={order.estado} className="text-xs" />
+                    <StatusBadge status={order.estado} className="text-sm" />
                 </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -221,13 +222,13 @@ const OrderTableRow = ({
           </PopoverContent>
         </Popover>
       </TableCell>
-      <TableCell className="hidden md:table-cell">
+      <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
        {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-2">
-            <Button asChild variant="ghost" size="icon">
+        <div className="flex items-center justify-end gap-1">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Link href={editUrl}>
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit Order</span>
@@ -235,7 +236,7 @@ const OrderTableRow = ({
             </Button>
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Delete Order</span>
                 </Button>
@@ -270,7 +271,7 @@ const ResizableHandle = ({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) =
     className="absolute top-0 right-0 h-full w-2 cursor-col-resize z-10 select-none"
     onMouseDown={onMouseDown}
   >
-    <div className="w-px h-full bg-red-500/0 group-hover:bg-red-500 transition-colors" />
+    <div className="w-px h-full bg-border/50 group-hover:bg-primary transition-colors" />
   </div>
 );
 
@@ -301,7 +302,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
             'items': 250,
             'tags-shipping': 250,
             'tags-other': 250,
-            'delivery-deadline': 120,
+            'delivery-deadline': 150,
             'total': 120,
             'actions': 100,
         };
@@ -373,7 +374,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="w-full overflow-x-auto">
       <Table ref={tableRef} style={{ tableLayout: 'fixed' }}>
         <colgroup>
           {COLUMN_IDS.map(id => (
@@ -381,9 +382,9 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
           ))}
         </colgroup>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             {COLUMN_IDS.map((id, index) => (
-              <TableHead key={id} className="group relative">
+              <TableHead key={id} className="group relative whitespace-nowrap">
                 <span className="capitalize">{id.replace(/-/g, ' ')}</span>
                 {index < COLUMN_IDS.length - 1 && <ResizableHandle onMouseDown={handleMouseDown(index)} />}
               </TableHead>

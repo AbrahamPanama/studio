@@ -82,48 +82,22 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
   const filteredOrders = filterOrders(allOrders, query, tab);
 
   const orderGroups = groupAndSortOrders(filteredOrders);
-  const defaultOpen = orderGroups.map(group => group.status);
 
   return (
-    <div className="py-10 px-4 sm:px-6 lg:px-8">
+    <div className="py-8 px-4 sm:px-6 lg:px-8">
        <Tabs value={tab}>
-        <div className="flex items-end px-4 sm:px-6">
+        <div className="flex items-end px-4 sm:px-6 mb-6">
             <div className="flex-1">
-                <h1 className="text-2xl font-bold tracking-tight">{t('orders')}</h1>
-                <p className="text-muted-foreground">{t('manageOrders')}</p>
-                 <div className="mt-4">
-                    <TabsList>
-                        <TabsTrigger
-                          value="active"
-                          asChild
-                          className="tab-active-active"
-                        >
-                          <Link href="/?tab=active">{t('active')}</Link>
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="quotes"
-                          asChild
-                          className="tab-active-quotes"
-                        >
-                          <Link href="/?tab=quotes">{t('quotes')}</Link>
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="completed"
-                          asChild
-                          className="tab-active-completed"
-                        >
-                          <Link href="/?tab=completed">{t('completed')}</Link>
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <h1 className="text-3xl font-bold tracking-tight">{t('orders')}</h1>
+                <p className="text-muted-foreground mt-1">{t('manageOrders')}</p>
             </div>
             <div className="ml-auto flex items-center gap-4">
                  <div className="hidden w-full max-w-sm items-center space-x-2 md:flex">
                   <form className="flex w-full items-center space-x-2" action="/">
                     <input type="hidden" name="tab" value={tab} />
                     <div className="relative w-full">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input key={query} name="query" placeholder={t('searchPlaceholder')} className="pl-8" defaultValue={query} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input key={query} name="query" placeholder={t('searchPlaceholder')} className="pl-9" defaultValue={query} />
                     </div>
                     <Button type="submit">{t('search')}</Button>
                     {query && (
@@ -149,34 +123,53 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
                 </div>
             </div>
         </div>
+        
+        <div className="px-4 sm:px-6 mb-8">
+            <TabsList>
+                <TabsTrigger value="active" asChild>
+                  <Link href="/?tab=active">{t('active')}</Link>
+                </TabsTrigger>
+                <TabsTrigger value="quotes" asChild>
+                  <Link href="/?tab=quotes">{t('quotes')}</Link>
+                </TabsTrigger>
+                <TabsTrigger value="completed" asChild>
+                  <Link href="/?tab=completed">{t('completed')}</Link>
+                </TabsTrigger>
+            </TabsList>
+        </div>
 
-        <div className="mt-6 px-4 sm:px-6">
-             <TabsContent value={tab}>
-                <Card>
-                    <CardContent className="pt-6">
-                        <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
-                            {orderGroups.map(({ status, orders }) => (
-                            <AccordionItem key={status} value={status} className="border-none">
-                                <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                                    <div className="flex items-center gap-2">
-                                        <StatusBadge status={status} className="text-base" />
+
+        <div className="space-y-4 px-4 sm:px-6">
+             <TabsContent value={tab} className="mt-0">
+                  <div className="space-y-4">
+                      {orderGroups.map(({ status, orders }) => (
+                        <Card key={status} className="shadow-sm">
+                            <Accordion type="single" collapsible defaultValue="item-1">
+                                <AccordionItem value="item-1" className="border-b-0">
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <div className="flex items-center gap-3">
+                                        <StatusBadge status={status} className="text-sm" />
                                         <span className="text-muted-foreground">({orders.length})</span>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="pt-4">
+                                <AccordionContent className="px-0 pb-2">
                                 <OrderTable orders={orders} />
                                 </AccordionContent>
                             </AccordionItem>
-                            ))}
-                        </Accordion>
+                            </Accordion>
+                        </Card>
+                      ))}
 
-                        {orderGroups.length === 0 && (
-                            <div className="text-center py-10">
-                            <p className="text-muted-foreground">{t('noOrders')}</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                      {orderGroups.length === 0 && (
+                          <Card>
+                            <CardContent className="py-10">
+                                <div className="text-center">
+                                <p className="text-muted-foreground">{t('noOrders')}</p>
+                                </div>
+                            </CardContent>
+                          </Card>
+                      )}
+                  </div>
             </TabsContent>
         </div>
       </Tabs>
