@@ -312,9 +312,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? (isEditing ? t('formTitleEditQuote', { orderNumber: order?.orderNumber }) : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder', { orderNumber: order?.orderNumber }) : t('formTitleNewOrder'));
 
-  const translatedFormType = isQuote
-    ? (language === 'es' ? 'cotización' : 'quote')
-    : (language === 'es' ? 'pedido' : 'order');
+  const translatedFormType = isQuote ? t('quotes') : t('orders');
 
   return (
     <Form {...form}>
@@ -408,7 +406,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>{t('formTitleProducts')}</CardTitle>
-                    <CardDescription>{t('formDescriptionProducts', { formType: translatedFormType })}</CardDescription>
+                    <CardDescription>{t('formDescriptionProducts', { formType: translatedFormType.toLowerCase() })}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-md border">
@@ -597,7 +595,19 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           <FormField control={form.control} name="cancelo" render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
                               <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                              <FormLabel>{t('formLabelPaidFull')}</FormLabel>
+      'use client';
+
+import { createContext, useContext, type ReactNode } from 'react';
+
+/**
+ * Provides access to the parent form context.
+ */
+export const FormContext = createContext({});
+
+export function useFormContext() {
+  return useContext(FormContext);
+}
+                        <FormLabel>{t('formLabelPaidFull')}</FormLabel>
                             </FormItem>
                           )} />
                         </div>
@@ -710,3 +720,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
