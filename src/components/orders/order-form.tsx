@@ -31,7 +31,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
@@ -238,14 +238,16 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         if (isEditing && order) {
           await updateOrder(order.id, payload);
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
+          router.push('/');
         } else {
-          await createOrder({
+          const { id: newOrderId } = await createOrder({
             ...payload,
             createdBy: user?.email || 'Unknown',
           });
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
+          const redirectUrl = isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`;
+          router.push(redirectUrl);
         }
-        router.push('/');
       } catch (error) {
         console.error(error);
         toast({
@@ -312,7 +314,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? (isEditing ? t('formTitleEditQuote') : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder') : t('formTitleNewOrder'));
 
-  const pageTitle = isEditing ? `${title}: ${order.orderNumber}` : title;
+  const pageTitle = isEditing ? `${title}: #${order.orderNumber}` : title;
 
   const translatedFormType = isQuote ? t('quote') : t('order');
 
@@ -364,6 +366,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold">{pageTitle}</h1>
                     {isEditing && !isQuote && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
+                    {isEditing && isQuote && order.orderNumber && (
+                        <p className="text-sm text-muted-foreground">
+                            {t('quote')} #: {order.orderNumber}
+                        </p>
+                    )}
                 </div>
 
                 <div className={cn("grid gap-6", !isQuote && "lg:grid-cols-3")}>
@@ -409,7 +416,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleProducts')}</CardTitle>
                       <CardDescription>
-                        {(t('formDescriptionProducts') || '').replace('{formType}', (translatedFormType || '').toLowerCase())}
+                         {(t('formDescriptionProducts') || '').replace('{formType}', (translatedFormType || '').toLowerCase())}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -417,49 +424,49 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[40px] text-center px-1 py-1">{t('formTableReady')}</TableHead>
-                              <TableHead className="py-1">{t('formTableProductName')}</TableHead>
-                              <TableHead className="py-1">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[80px] py-1">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[100px] py-1">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[120px] text-right py-1">{t('formTableSubtotal')}</TableHead>
-                              <TableHead className="w-[40px] px-1 py-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
+                              <TableHead className="w-[40px] text-center p-1">{t('formTableReady')}</TableHead>
+                              <TableHead className="p-1">{t('formTableProductName')}</TableHead>
+                              <TableHead className="p-1">{t('formTableDescription')}</TableHead>
+                              <TableHead className="w-[60px] p-1">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[90px] p-1">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[100px] text-right p-1">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="w-[40px] p-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {fields.map((item, index) => (
                               <TableRow key={item.id}>
-                                <TableCell className="text-center px-1 py-0.5">
+                                <TableCell className="text-center p-1">
                                   <FormField control={form.control} name={`productos.${index}.materialsReady`} render={({ field }) => (
                                     <FormItem>
                                       <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isQuote} /></FormControl>
                                     </FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="py-0.5 pr-1">
+                                <TableCell className="p-1 pr-1">
                                   <FormField control={form.control} name={`productos.${index}.name`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductName')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="py-0.5 pr-1">
+                                <TableCell className="p-1 pr-1">
                                   <FormField control={form.control} name={`productos.${index}.description`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductDesc')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="py-0.5 pr-1">
+                                <TableCell className="p-1 pr-1">
                                   <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="py-0.5 pr-1">
+                                <TableCell className="p-1 pr-1">
                                   <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="text-right font-medium py-0.5 pr-1">
+                                <TableCell className="text-right font-medium p-1 pr-1">
                                   {formatCurrency((watchedProducts[index]?.quantity || 0) * (watchedProducts[index]?.price || 0))}
                                 </TableCell>
-                                <TableCell className="px-1 py-0.5">
+                                <TableCell className="p-1">
                                   {fields.length > 1 && (
                                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                       <Trash2 className="h-4 w-4 text-destructive" />

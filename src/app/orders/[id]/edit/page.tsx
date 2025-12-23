@@ -12,5 +12,11 @@ export default async function EditOrderPage({ params }: { params: { id: string }
 
   const formType = order.estado === 'Cotización' ? 'quote' : 'order';
 
+  // This is a safeguard. If a quote is accessed via /orders/, redirect to /quotes/
+  if (formType === 'quote') {
+    const { redirect } = await import('next/navigation');
+    redirect(`/quotes/${params.id}/edit`);
+  }
+
   return <OrderForm order={order} formType={formType} />;
 }

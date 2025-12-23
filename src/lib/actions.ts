@@ -103,7 +103,7 @@ export async function getOrderById(id: string) {
     return order;
 }
 
-export async function createOrder(data: z.infer<typeof orderSchema>) {
+export async function createOrder(data: z.infer<typeof orderSchema>): Promise<{ id: string }> {
     await delay(500);
     const validatedFields = orderSchema.safeParse(data);
     if (!validatedFields.success) {
@@ -133,7 +133,8 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     await writeDb(db);
     
     revalidatePath('/');
-    // Redirect is handled client-side in the form component
+    
+    return { id: newOrder.id };
 }
 
 export async function updateOrder(id: string, data: Partial<z.infer<typeof orderSchema>>) {
@@ -185,6 +186,7 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
+    revalidatePath(`/quotes/${id}/edit`);
 }
 
 export async function deleteOrder(id: string) {
