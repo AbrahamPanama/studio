@@ -77,6 +77,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                   <Input name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
                 </div>
                 <Button type="submit">Search</Button>
+                {query && (
+                  <Button asChild variant="outline">
+                    <Link href="/">Clear</Link>
+                  </Button>
+                )}
               </form>
             </div>
             <div className="flex gap-2">
