@@ -85,12 +85,12 @@
 
 @layer components {
     .tab-active-active {
-        @apply bg-orange-500 text-black font-bold;
+        @apply bg-orange-500 text-white font-bold;
     }
     .tab-active-quotes {
-        @apply bg-gray-500 text-black font-bold;
+        @apply bg-green-500 text-yellow-300 font-bold;
     }
     .tab-active-completed {
-        @apply bg-green-500 text-black font-bold;
+        @apply bg-gray-500 text-black font-bold;
     }
 }
