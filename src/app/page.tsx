@@ -16,9 +16,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const groupAndSortOrders = (orders: Order[]) => {
-  const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Cotización', 'Done'];
+  const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
   
   const grouped: Partial<Record<Order['estado'], Order[]>> = {};
 
@@ -39,24 +41,45 @@ const groupAndSortOrders = (orders: Order[]) => {
   return sortedGroups;
 };
 
-export default async function DashboardPage({ searchParams }: { searchParams: { query?: string } }) {
+const filterOrders = (orders: Order[], query: string, tab: string) => {
+    const activeStatuses: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New'];
+
+    let tabFilteredOrders = orders;
+    if (tab === 'active') {
+        tabFilteredOrders = orders.filter(o => activeStatuses.includes(o.estado));
+    } else if (tab === 'quotes') {
+        tabFilteredOrders = orders.filter(o => o.estado === 'Cotización');
+    } else if (tab === 'completed') {
+        tabFilteredOrders = orders.filter(o => o.estado === 'Done');
+    }
+
+
+    if (!query) {
+        return tabFilteredOrders;
+    }
+
+    return tabFilteredOrders.filter(order => {
+        const lowerCaseQuery = query.toLowerCase();
+        return (
+        (order.name || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.description || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.orderNumber || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.celular || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.estado || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.subEstado || '').toLowerCase().includes(lowerCaseQuery) ||
+        (order.tags || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
+        (order.tagsOther || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
+        order.productos.some(p => (p.name || '').toLowerCase().includes(lowerCaseQuery))
+        );
+    });
+}
+
+export default async function DashboardPage({ searchParams }: { searchParams: { query?: string, tab?: string } }) {
   const allOrders = await getOrders();
   const query = searchParams.query || '';
+  const tab = searchParams.tab || 'active';
 
-  const filteredOrders = allOrders.filter(order => {
-    const lowerCaseQuery = query.toLowerCase();
-    return (
-      (order.name || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.description || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.orderNumber || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.celular || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.estado || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.subEstado || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.tags || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
-      (order.tagsOther || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
-      order.productos.some(p => (p.name || '').toLowerCase().includes(lowerCaseQuery))
-    );
-  });
+  const filteredOrders = filterOrders(allOrders, query, tab);
 
   const orderGroups = groupAndSortOrders(filteredOrders);
   const defaultOpen = orderGroups.map(group => group.status);
@@ -72,6 +95,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             </div>
              <div className="flex w-full max-w-sm items-center space-x-2">
               <form className="flex w-full items-center space-x-2" action="/">
+                <input type="hidden" name="tab" value={tab} />
                 <div className="relative w-full">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input key={query} name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
@@ -79,7 +103,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 <Button type="submit">Search</Button>
                 {query && (
                   <Button asChild variant="outline">
-                    <Link href="/">Clear</Link>
+                    <Link href={`/?tab=${tab}`}>Clear</Link>
                   </Button>
                 )}
               </form>
@@ -101,27 +125,36 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           </div>
         </CardHeader>
         <CardContent>
-          <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
-            {orderGroups.map(({ status, orders }) => (
-              <AccordionItem key={status} value={status} className="border-none">
-                 <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                        <StatusBadge status={status} className="text-base" />
-                        <span className="text-muted-foreground">({orders.length})</span>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4">
-                  <OrderTable orders={orders} />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+            <Tabs value={tab}>
+                <TabsList className="mb-4">
+                    <TabsTrigger value="active" asChild><Link href="/?tab=active">Active</Link></TabsTrigger>
+                    <TabsTrigger value="quotes" asChild><Link href="/?tab=quotes">Quotes</Link></TabsTrigger>
+                    <TabsTrigger value="completed" asChild><Link href="/?tab=completed">Completed</Link></TabsTrigger>
+                </TabsList>
+                <TabsContent value={tab}>
+                     <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
+                        {orderGroups.map(({ status, orders }) => (
+                        <AccordionItem key={status} value={status} className="border-none">
+                            <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                                <div className="flex items-center gap-2">
+                                    <StatusBadge status={status} className="text-base" />
+                                    <span className="text-muted-foreground">({orders.length})</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                            <OrderTable orders={orders} />
+                            </AccordionContent>
+                        </AccordionItem>
+                        ))}
+                    </Accordion>
 
-          {orderGroups.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground">No orders found.</p>
-            </div>
-          )}
+                    {orderGroups.length === 0 && (
+                        <div className="text-center py-10">
+                        <p className="text-muted-foreground">No orders found for this view.</p>
+                        </div>
+                    )}
+                </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
     </div>

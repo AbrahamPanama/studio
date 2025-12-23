@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -405,7 +406,7 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
           ) : (
             <TableRow>
               <TableCell colSpan={COLUMN_IDS.length} className="h-24 text-center">
-                No orders in this group.
+                No orders for this view.
               </TableCell>
             </TableRow>
           )}

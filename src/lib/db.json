@@ -43,7 +43,7 @@
       "celular": "+50762168911",
       "description": "",
       "comentarios": "",
-      "estado": "New",
+      "estado": "Done",
       "subEstado": "Pendiente",
       "entrega": "2025-12-22T02:09:22.164Z",
       "entregaLimite": "2025-12-22T02:09:22.164Z",
@@ -62,7 +62,7 @@
           "description": "Modelo 707",
           "quantity": 25,
           "price": 3.5,
-          "materialsReady": false,
+          "materialsReady": true,
           "isTaxable": true
         },
         {
@@ -71,7 +71,7 @@
           "description": "Uno Express",
           "quantity": 1,
           "price": 6.5,
-          "materialsReady": false,
+          "materialsReady": true,
           "isTaxable": false
         }
       ],
