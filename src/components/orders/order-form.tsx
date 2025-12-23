@@ -58,7 +58,7 @@ type OrderFormProps = {
 
 export function OrderForm({ order, formType }: OrderFormProps) {
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isEditing = !!order;
   const isQuote = formType === 'quote';
   const router = useRouter();
@@ -312,6 +312,10 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? (isEditing ? t('formTitleEditQuote', { orderNumber: order?.orderNumber }) : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder', { orderNumber: order?.orderNumber }) : t('formTitleNewOrder'));
 
+  const translatedFormType = isQuote
+    ? (language === 'es' ? 'cotización' : 'quote')
+    : (language === 'es' ? 'pedido' : 'order');
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -404,7 +408,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>{t('formTitleProducts')}</CardTitle>
-                    <CardDescription>{t('formDescriptionProducts', { formType: formType })}</CardDescription>
+                    <CardDescription>{t('formDescriptionProducts', { formType: translatedFormType })}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-md border">
