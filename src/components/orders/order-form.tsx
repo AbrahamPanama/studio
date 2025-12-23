@@ -407,7 +407,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                   <CardHeader>
                     <CardTitle>{t('formTitleProducts')}</CardTitle>
                     <CardDescription>
-                      {t('formDescriptionProducts').replace('{formType}', translatedFormType.toLowerCase())}
+                      {t('formDescriptionProducts').replace('{formType}', (translatedFormType || '').toLowerCase())}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -710,3 +710,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
