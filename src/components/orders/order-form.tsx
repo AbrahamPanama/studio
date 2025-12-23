@@ -595,18 +595,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           <FormField control={form.control} name="cancelo" render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
                               <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-      'use client';
-
-import { createContext, useContext, type ReactNode } from 'react';
-
-/**
- * Provides access to the parent form context.
- */
-export const FormContext = createContext({});
-
-export function useFormContext() {
-  return useContext(FormContext);
-}
                         <FormLabel>{t('formLabelPaidFull')}</FormLabel>
                             </FormItem>
                           )} />
@@ -720,5 +708,3 @@ export function useFormContext() {
     </Form>
   );
 }
-
-    
