@@ -71,7 +71,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
               <CardDescription>Manage and track all customer orders.</CardDescription>
             </div>
              <div className="flex w-full max-w-sm items-center space-x-2">
-              <form className="flex w-full items-center space-x-2">
+              <form className="flex w-full items-center space-x-2" action="/">
                 <div className="relative w-full">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
