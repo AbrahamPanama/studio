@@ -87,7 +87,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   return (
     <div className="py-10 px-4 sm:px-6 lg:px-8">
        <Tabs value={tab}>
-        <div className="flex items-center px-4 sm:px-6">
+        <div className="flex items-end px-4 sm:px-6">
             <div className="flex-1">
                 <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
                 <p className="text-muted-foreground">Manage and track all customer orders.</p>
