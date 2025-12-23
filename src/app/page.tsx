@@ -91,7 +91,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
        <Tabs value={tab}>
         <div className="flex items-end px-4 sm:px-6 mb-6">
             <div className="flex-1">
-                <h1 className="text-3xl font-bold tracking-tight">{t('orders')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('orders')}</h1>
                 <p className="text-muted-foreground mt-1">{t('manageOrders')}</p>
             </div>
             <div className="ml-auto flex items-center gap-4">
@@ -130,15 +130,37 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
         <div className="px-4 sm:px-6 mb-8">
              <TabsList>
                 <TabsTrigger value="active" asChild>
-                  <Link href="/?tab=active">{t('active')}</Link>
+                  <Link 
+                    href="/?tab=active" 
+                    className={cn(
+                      "px-4 py-2 transition-all", 
+                      tab === 'active' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                    )}
+                  >
+                    {t('active')}
+                  </Link>
                 </TabsTrigger>
-                <Separator orientation="vertical" className="h-6 mx-2" />
                 <TabsTrigger value="quotes" asChild>
-                  <Link href="/?tab=quotes">{t('quotes')}</Link>
+                  <Link 
+                    href="/?tab=quotes"
+                    className={cn(
+                      "px-4 py-2 transition-all", 
+                      tab === 'quotes' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                    )}
+                  >
+                    {t('quotes')}
+                  </Link>
                 </TabsTrigger>
-                <Separator orientation="vertical" className="h-6 mx-2" />
                 <TabsTrigger value="completed" asChild>
-                  <Link href="/?tab=completed">{t('completed')}</Link>
+                  <Link 
+                    href="/?tab=completed" 
+                    className={cn(
+                      "px-4 py-2 transition-all", 
+                      tab === 'completed' ? "font-bold text-black border-b-2 border-primary" : "font-medium text-muted-foreground"
+                    )}
+                  >
+                    {t('completed')}
+                  </Link>
                 </TabsTrigger>
             </TabsList>
         </div>
@@ -148,7 +170,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
              <TabsContent value={tab} className="mt-0">
                   <div className="space-y-4">
                       {orderGroups.map(({ status, orders }) => (
-                        <Card key={status} className="shadow-sm">
+                        <Card key={status} className="shadow-sm bg-white rounded-lg">
                             <Accordion type="single" collapsible defaultValue="item-1">
                                 <AccordionItem value="item-1" className="border-b-0">
                                 <AccordionTrigger className="p-6 hover:no-underline">
@@ -203,3 +225,5 @@ export default function DashboardPage() {
 
     return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} />;
 }
+
+    
