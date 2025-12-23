@@ -407,7 +407,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleProducts')}</CardTitle>
                       <CardDescription>
-                        {t('formDescriptionProducts').replace('{formType}', (translatedFormType || ''))}
+                        {t('formDescriptionProducts').replace('{formType}', (translatedFormType || '').toLowerCase())}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -415,49 +415,49 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[50px] text-center">{t('formTableReady')}</TableHead>
+                              <TableHead className="w-[50px] text-center px-2">{t('formTableReady')}</TableHead>
                               <TableHead>{t('formTableProductName')}</TableHead>
                               <TableHead>{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[120px]">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[120px]">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[120px] text-right">{t('formTableSubtotal')}</TableHead>
-                              <TableHead className="w-[50px]"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
+                              <TableHead className="w-[80px]">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[100px]">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[100px] text-right">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="w-[50px] px-2"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {fields.map((item, index) => (
                               <TableRow key={item.id}>
-                                <TableCell className="text-center">
+                                <TableCell className="text-center px-2">
                                   <FormField control={form.control} name={`productos.${index}.materialsReady`} render={({ field }) => (
                                     <FormItem>
                                       <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                     </FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-2 pr-2">
                                   <FormField control={form.control} name={`productos.${index}.name`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductName')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-2 pr-2">
                                   <FormField control={form.control} name={`productos.${index}.description`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductDesc')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-2 pr-2">
                                   <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-2 pr-2">
                                   <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="text-right font-medium">
+                                <TableCell className="text-right font-medium py-2 pr-2">
                                   {formatCurrency((watchedProducts[index]?.quantity || 0) * (watchedProducts[index]?.price || 0))}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="px-2 py-2">
                                   {fields.length > 1 && (
                                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -711,3 +711,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
