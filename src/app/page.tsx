@@ -18,7 +18,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
 
 const groupAndSortOrders = (orders: Order[]) => {
@@ -151,7 +151,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
         </div>
 
         <div className="mt-6 px-4 sm:px-6">
-             <Tabs.Content value={tab}>
+             <TabsContent value={tab}>
                 <Card>
                     <CardContent className="pt-6">
                         <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
@@ -177,7 +177,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
                         )}
                     </CardContent>
                 </Card>
-            </Tabs.Content>
+            </TabsContent>
         </div>
       </Tabs>
     </div>
