@@ -309,8 +309,10 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   };
   
   const title = isQuote
-    ? (isEditing ? t('formTitleEditQuote', { orderNumber: order?.orderNumber }) : t('formTitleNewQuote'))
-    : (isEditing ? t('formTitleEditOrder', { orderNumber: order?.orderNumber }) : t('formTitleNewOrder'));
+    ? (isEditing ? t('formTitleEditQuote') : t('formTitleNewQuote'))
+    : (isEditing ? t('formTitleEditOrder') : t('formTitleNewOrder'));
+
+  const pageTitle = isEditing ? `${title}: ${order.orderNumber}` : title;
 
   const translatedFormType = isQuote ? t('quote') : t('order');
 
@@ -318,54 +320,54 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-          <div className="max-w-7xl mx-auto">
-            <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
-              <div className="mb-6 flex items-start justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
-                    <div>
-                      <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
-                      {isEditing && (
-                        <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-3 w-3" />
-                            <span>{t('formCreatedBy')}: {order?.createdBy || 'N/A'}</span>
+          <div className="max-w-5xl mx-auto">
+             <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
+                <div className="mb-6 flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
+                      <div>
+                        <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
+                        {isEditing && (
+                          <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3 w-3" />
+                              <span>{t('formCreatedBy')}: {order?.createdBy || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3 w-3" />
+                              <span>{t('formCreatedOn')}: {order?.fechaIngreso ? formatDate(order.fechaIngreso) : 'N/A'}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3 w-3" />
-                            <span>{t('formCreatedOn')}: {order?.fechaIngreso ? formatDate(order.fechaIngreso) : 'N/A'}</span>
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isQuote && (
-                      <Button type="button" variant="outline" onClick={handleDownloadQuote}>
-                        <Download className="mr-2 h-4 w-4" />
-                        {t('formButtonDownloadQuote')}
+                    <div className="flex items-center gap-2">
+                      {isQuote && (
+                        <Button type="button" variant="outline" onClick={handleDownloadQuote}>
+                          <Download className="mr-2 h-4 w-4" />
+                          {t('formButtonDownloadQuote')}
+                        </Button>
+                      )}
+                      <Button type="button" variant="outline" onClick={() => router.back()}>{t('formButtonCancel')}</Button>
+                      {isEditing && isQuote && (
+                        <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
+                        </Button>
+                      )}
+                      <Button type="submit" disabled={isPending}>
+                        {isPending ? t('formButtonSaving') : t(isQuote ? 'formButtonSaveQuote' : 'formButtonSaveOrder')}
                       </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={() => router.back()}>{t('formButtonCancel')}</Button>
-                    {isEditing && isQuote && (
-                      <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
-                        <ArrowRightLeft className="mr-2 h-4 w-4" />
-                        {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
-                      </Button>
-                    )}
-                    <Button type="submit" disabled={isPending}>
-                      {isPending ? t('formButtonSaving') : t(isQuote ? 'formButtonSaveQuote' : 'formButtonSaveOrder')}
-                    </Button>
-                  </div>
-              </div>
-              
-              <div className="mb-4">
-                  <h1 className="text-2xl font-bold">{title}</h1>
-                  {isEditing && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
-              </div>
+                    </div>
+                </div>
+                
+                <div className="mb-4">
+                    <h1 className="text-2xl font-bold">{pageTitle}</h1>
+                    {isEditing && !isQuote && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
+                </div>
 
-              <div className={cn("grid gap-6", !isQuote && "lg:grid-cols-3")}>
-                <div className={cn("space-y-6", !isQuote && "lg:col-span-2")}>
+                <div className={cn("grid gap-6", !isQuote && "lg:grid-cols-3")}>
+                  <div className={cn("space-y-6", !isQuote && "lg:col-span-2")}>
                   <Card>
                     <CardHeader>
                       <CardTitle>{t('formTitleCustomerInfo')}</CardTitle>
@@ -416,11 +418,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-[40px] text-center px-1 py-1">{t('formTableReady')}</TableHead>
-                              <TableHead className="w-auto py-1">{t('formTableProductName')}</TableHead>
-                              <TableHead className="w-auto py-1">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[60px] py-1">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[80px] py-1">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[100px] text-right py-1">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="py-1">{t('formTableProductName')}</TableHead>
+                              <TableHead className="py-1">{t('formTableDescription')}</TableHead>
+                              <TableHead className="w-[80px] py-1">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[100px] py-1">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[120px] text-right py-1">{t('formTableSubtotal')}</TableHead>
                               <TableHead className="w-[40px] px-1 py-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
@@ -554,156 +556,156 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                       )} />
                     </CardContent>
                   </Card>
-                </div>
-
-                {!isQuote && (
-                  <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>{t('formTitleStatusLogistics')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <FormField control={form.control} name="estado" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelOrderStatus')}</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectStatus')} /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  {ORDER_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="subEstado" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelSubStatus')}</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectSubStatus')} /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <div className="flex space-x-4">
-                            <FormField control={form.control} name="abono" render={({ field }) => (
-                              <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
-                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                <FormLabel>{t('formLabelPaidPartial')}</FormLabel>
-                              </FormItem>
-                            )} />
-                            <FormField control={form.control} name="cancelo" render={({ field }) => (
-                              <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
-                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                          <FormLabel>{t('formLabelPaidFull')}</FormLabel>
-                              </FormItem>
-                            )} />
-                          </div>
-                          <FormField control={form.control} name="totalAbono" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelTotalPaid')}</FormLabel>
-                              <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="entrega" render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>{t('formLabelDeliveryDate')}</FormLabel>
-                              <FormControl>
-                                <DatePicker value={field.value} onChange={field.onChange} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="entregaLimite" render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>{t('formLabelDeliveryDeadline')}</FormLabel>
-                              <FormControl>
-                                <DatePicker value={field.value} onChange={field.onChange} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelDeliveryService')}</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectService')} /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
-                              <FormControl><Textarea placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>{t('formTitleMetaData')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <FormField control={form.control} name="privacidad" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelPrivacy')}</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectPrivacy')} /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  {PRIVACY_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField
-                            control={form.control}
-                            name="tags"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{t('formLabelTagsShipping')}</FormLabel>
-                                <TagManager
-                                  allTags={allTags}
-                                  selectedTags={field.value || []}
-                                  onSelectedTagsChange={field.onChange}
-                                  onTagsUpdate={setAllTags}
-                                  onSave={updateTags}
-                                />
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="tagsOther"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{t('formLabelTagsOther')}</FormLabel>
-                                <TagManager
-                                  allTags={allOtherTags}
-                                  selectedTags={field.value || []}
-                                  onSelectedTagsChange={field.onChange}
-                                  onTagsUpdate={setAllOtherTags}
-                                  onSave={updateOtherTags}
-                                />
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </CardContent>
-                      </Card>
                   </div>
-                )}
-              </div>
+                  
+                  {!isQuote && (
+                    <div className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{t('formTitleStatusLogistics')}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField control={form.control} name="estado" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelOrderStatus')}</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectStatus')} /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {ORDER_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="subEstado" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelSubStatus')}</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectSubStatus')} /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <div className="flex space-x-4">
+                              <FormField control={form.control} name="abono" render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                                  <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                  <FormLabel>{t('formLabelPaidPartial')}</FormLabel>
+                                </FormItem>
+                              )} />
+                              <FormField control={form.control} name="cancelo" render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">
+                                  <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel>{t('formLabelPaidFull')}</FormLabel>
+                                </FormItem>
+                              )} />
+                            </div>
+                            <FormField control={form.control} name="totalAbono" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelTotalPaid')}</FormLabel>
+                                <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="entrega" render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>{t('formLabelDeliveryDate')}</FormLabel>
+                                <FormControl>
+                                  <DatePicker value={field.value} onChange={field.onChange} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="entregaLimite" render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>{t('formLabelDeliveryDeadline')}</FormLabel>
+                                <FormControl>
+                                  <DatePicker value={field.value} onChange={field.onChange} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelDeliveryService')}</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectService')} /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
+                                <FormControl><Textarea placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{t('formTitleMetaData')}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField control={form.control} name="privacidad" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelPrivacy')}</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectPrivacy')} /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {PRIVACY_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField
+                              control={form.control}
+                              name="tags"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t('formLabelTagsShipping')}</FormLabel>
+                                  <TagManager
+                                    allTags={allTags}
+                                    selectedTags={field.value || []}
+                                    onSelectedTagsChange={field.onChange}
+                                    onTagsUpdate={setAllTags}
+                                    onSave={updateTags}
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="tagsOther"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t('formLabelTagsOther')}</FormLabel>
+                                  <TagManager
+                                    allTags={allOtherTags}
+                                    selectedTags={field.value || []}
+                                    onSelectedTagsChange={field.onChange}
+                                    onTagsUpdate={setAllOtherTags}
+                                    onSave={updateOtherTags}
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                    </div>
+                  )}
+                </div>
             </div>
           </div>
         </div>
@@ -711,8 +713,3 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
-
-    
-    
-
-    

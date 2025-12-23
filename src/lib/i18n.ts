@@ -32,9 +32,9 @@ export const translations = {
     toastQuoteConvertFailed: 'Failed to convert quote to order.',
 
     // Order Form
-    formTitleEditQuote: 'Edit Quote #{orderNumber}',
+    formTitleEditQuote: 'Edit Quote',
     formTitleNewQuote: 'Create New Quote',
-    formTitleEditOrder: 'Edit Order #{orderNumber}',
+    formTitleEditOrder: 'Edit Order',
     formTitleNewOrder: 'Create New Order',
     formCreatedBy: 'Created by',
     formCreatedOn: 'Created on',
@@ -127,9 +127,9 @@ export const translations = {
     toastQuoteConvertFailed: 'Error al convertir la cotización a pedido.',
 
     // Order Form
-    formTitleEditQuote: 'Editar Cotización #{orderNumber}',
+    formTitleEditQuote: 'Editar Cotización',
     formTitleNewQuote: 'Crear Nueva Cotización',
-    formTitleEditOrder: 'Editar Pedido #{orderNumber}',
+    formTitleEditOrder: 'Editar Pedido',
     formTitleNewOrder: 'Crear Nuevo Pedido',
     formCreatedBy: 'Creado por',
     formCreatedOn: 'Creado el',
