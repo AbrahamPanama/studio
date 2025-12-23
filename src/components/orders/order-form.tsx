@@ -312,7 +312,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? (isEditing ? t('formTitleEditQuote', { orderNumber: order?.orderNumber }) : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder', { orderNumber: order?.orderNumber }) : t('formTitleNewOrder'));
 
-  const translatedFormType = isQuote ? t('quotes') : t('orders');
+  const translatedFormType = isQuote ? t('quote') : t('order');
 
   return (
     <Form {...form}>
@@ -406,7 +406,9 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle>{t('formTitleProducts')}</CardTitle>
-                    <CardDescription>{t('formDescriptionProducts', { formType: translatedFormType.toLowerCase() })}</CardDescription>
+                    <CardDescription>
+                      {t('formDescriptionProducts').replace('{formType}', translatedFormType.toLowerCase())}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-md border">
