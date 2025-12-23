@@ -93,9 +93,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 <p className="text-muted-foreground">Manage and track all customer orders.</p>
                  <div className="mt-4">
                     <TabsList>
-                        <TabsTrigger value="active" asChild><Link href="/?tab=active">Active</Link></TabsTrigger>
-                        <TabsTrigger value="quotes" asChild><Link href="/?tab=quotes">Quotes</Link></TabsTrigger>
-                        <TabsTrigger value="completed" asChild><Link href="/?tab=completed">Completed</Link></TabsTrigger>
+                        <TabsTrigger 
+                          value="active" 
+                          asChild
+                          className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                        >
+                          <Link href="/?tab=active">Active</Link>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="quotes" 
+                          asChild
+                          className="data-[state=active]:bg-gray-500 data-[state=active]:text-white"
+                        >
+                          <Link href="/?tab=quotes">Quotes</Link>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="completed" 
+                          asChild
+                          className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+                        >
+                          <Link href="/?tab=completed">Completed</Link>
+                        </TabsTrigger>
                     </TabsList>
                 </div>
             </div>
