@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/accordion"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
+import { Separator } from '@/components/ui/separator';
 
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
@@ -130,9 +131,11 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
                 <TabsTrigger value="active" asChild>
                   <Link href="/?tab=active">{t('active')}</Link>
                 </TabsTrigger>
+                <Separator orientation="vertical" className="h-6" />
                 <TabsTrigger value="quotes" asChild>
                   <Link href="/?tab=quotes">{t('quotes')}</Link>
                 </TabsTrigger>
+                <Separator orientation="vertical" className="h-6" />
                 <TabsTrigger value="completed" asChild>
                   <Link href="/?tab=completed">{t('completed')}</Link>
                 </TabsTrigger>
