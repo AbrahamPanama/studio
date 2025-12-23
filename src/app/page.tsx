@@ -1,7 +1,9 @@
-
+'use client';
 
 import { PlusCircle, Search } from 'lucide-react';
 import Link from 'next/link';
+import React from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,8 +18,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/contexts/language-context';
 
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
@@ -74,10 +76,8 @@ const filterOrders = (orders: Order[], query: string, tab: string) => {
     });
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: { query?: string, tab?: string } }) {
-  const allOrders = await getOrders();
-  const query = searchParams.query || '';
-  const tab = searchParams.tab || 'active';
+function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], query: string, tab: string}) {
+  const { t } = useLanguage();
 
   const filteredOrders = filterOrders(allOrders, query, tab);
 
@@ -89,30 +89,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
        <Tabs value={tab}>
         <div className="flex items-end px-4 sm:px-6">
             <div className="flex-1">
-                <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
-                <p className="text-muted-foreground">Manage and track all customer orders.</p>
+                <h1 className="text-2xl font-bold tracking-tight">{t('orders')}</h1>
+                <p className="text-muted-foreground">{t('manageOrders')}</p>
                  <div className="mt-4">
                     <TabsList>
-                        <TabsTrigger 
-                          value="active" 
+                        <TabsTrigger
+                          value="active"
                           asChild
-                          className={tab === 'active' ? 'tab-active-active' : ''}
+                          className="tab-active-active"
                         >
-                          <Link href="/?tab=active">Active</Link>
+                          <Link href="/?tab=active">{t('active')}</Link>
                         </TabsTrigger>
-                        <TabsTrigger 
-                          value="quotes" 
+                        <TabsTrigger
+                          value="quotes"
                           asChild
-                          className={tab === 'quotes' ? 'tab-active-quotes' : ''}
+                          className="tab-active-quotes"
                         >
-                          <Link href="/?tab=quotes">Quotes</Link>
+                          <Link href="/?tab=quotes">{t('quotes')}</Link>
                         </TabsTrigger>
-                        <TabsTrigger 
-                          value="completed" 
+                        <TabsTrigger
+                          value="completed"
                           asChild
-                          className={tab === 'completed' ? 'tab-active-completed' : ''}
+                          className="tab-active-completed"
                         >
-                          <Link href="/?tab=completed">Completed</Link>
+                          <Link href="/?tab=completed">{t('completed')}</Link>
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -123,12 +123,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                     <input type="hidden" name="tab" value={tab} />
                     <div className="relative w-full">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input key={query} name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
+                      <Input key={query} name="query" placeholder={t('searchPlaceholder')} className="pl-8" defaultValue={query} />
                     </div>
-                    <Button type="submit">Search</Button>
+                    <Button type="submit">{t('search')}</Button>
                     {query && (
                       <Button asChild variant="outline">
-                        <Link href={`/?tab=${tab}`}>Clear</Link>
+                        <Link href={`/?tab=${tab}`}>{t('clear')}</Link>
                       </Button>
                     )}
                   </form>
@@ -137,13 +137,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                   <Button asChild variant="outline">
                     <Link href="/quotes/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      New Quote
+                      {t('newQuote')}
                     </Link>
                   </Button>
                   <Button asChild>
                     <Link href="/orders/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      New Order
+                      {t('newOrder')}
                     </Link>
                   </Button>
                 </div>
@@ -151,7 +151,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
 
         <div className="mt-6 px-4 sm:px-6">
-             <TabsContent value={tab}>
+             <Tabs.Content value={tab}>
                 <Card>
                     <CardContent className="pt-6">
                         <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
@@ -172,14 +172,36 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
                         {orderGroups.length === 0 && (
                             <div className="text-center py-10">
-                            <p className="text-muted-foreground">No orders found for this view.</p>
+                            <p className="text-muted-foreground">{t('noOrders')}</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
-            </TabsContent>
+            </Tabs.Content>
         </div>
       </Tabs>
     </div>
   );
+}
+
+
+export default function DashboardPage() {
+    const searchParams = useSearchParams();
+    const query = searchParams.get('query') || '';
+    const tab = searchParams.get('tab') || 'active';
+    const [allOrders, setAllOrders] = React.useState<Order[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        getOrders().then(orders => {
+            setAllOrders(orders);
+            setLoading(false);
+        });
+    }, []);
+
+    if (loading) {
+        return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>
+    }
+
+    return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} />;
 }

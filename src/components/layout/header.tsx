@@ -1,7 +1,21 @@
+
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useLanguage } from '@/contexts/language-context';
+
 
 export default function Header() {
+  const { language, setLanguage } = useLanguage();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center pl-10">
@@ -12,6 +26,18 @@ export default function Header() {
               VA OMS
             </span>
           </Link>
+        </div>
+
+        <div className="flex flex-1 items-center justify-end">
+            <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+              </SelectContent>
+            </Select>
         </div>
       </div>
     </header>
