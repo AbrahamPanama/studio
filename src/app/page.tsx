@@ -1,3 +1,4 @@
+
 'use client';
 
 import { PlusCircle, Search } from 'lucide-react';
@@ -108,7 +109,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
                   </form>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild variant="outline">
+                  <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
                     <Link href="/quotes/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       {t('newQuote')}
