@@ -314,11 +314,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="container mx-auto py-10">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="container mx-auto py-6">
           
-          <div id="quote-capture-area" className="bg-background p-8 rounded-lg shadow-lg">
-             <div className="mb-8 flex items-start justify-between">
+          <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
+             <div className="mb-6 flex items-start justify-between">
                 <div className="flex items-center space-x-2">
                   <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
                   <div>
@@ -362,8 +362,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 {isEditing && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-8">
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>{t('formTitleCustomerInfo')}</CardTitle>
@@ -552,7 +552,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 </Card>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {!isQuote && (
                   <>
                     <Card>
