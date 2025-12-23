@@ -38,10 +38,11 @@ import { Switch } from '@/components/ui/switch';
 import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
-import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl } from '@/lib/utils';
+import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl, formatDate } from '@/lib/utils';
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 
@@ -55,6 +56,7 @@ type OrderFormProps = {
 };
 
 export function OrderForm({ order, formType }: OrderFormProps) {
+  const { user } = useUser();
   const isEditing = !!order;
   const isQuote = formType === 'quote';
   const router = useRouter();
@@ -83,6 +85,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         tags: order.tags || [],
         tagsOther: order.tagsOther || [],
         itbms: order.itbms || false,
+        createdBy: order.createdBy,
         productos: order.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false }))
       }
     : {
@@ -108,6 +111,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         totalAbono: 0,
         tags: [],
         tagsOther: [],
+        createdBy: user?.email || undefined,
       };
 
   const form = useForm<OrderFormValues>({
@@ -233,7 +237,10 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           await updateOrder(order.id, payload);
           toast({ title: 'Success', description: `${isQuote ? 'Quote' : 'Order'} updated successfully.` });
         } else {
-          await createOrder(payload);
+          await createOrder({
+            ...payload,
+            createdBy: user?.email || 'Unknown',
+          });
           toast({ title: 'Success', description: `${isQuote ? 'Quote' : 'Order'} created successfully.` });
         }
         router.push('/');
@@ -307,34 +314,50 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="container mx-auto py-10">
-          <div className="mb-8 flex items-center space-x-2">
-            <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
-            <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
-          </div>
+          
           <div id="quote-capture-area" className="bg-background p-8 rounded-lg shadow-lg">
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                  <h1 className="text-2xl font-bold">{title}</h1>
-                  {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
-              </div>
-              <div className="flex items-center gap-2">
-                {isQuote && (
-                  <Button type="button" variant="outline" onClick={handleDownloadQuote}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Quote
+             <div className="mb-8 flex items-start justify-between">
+                <div className="flex items-center space-x-2">
+                  <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
+                  <div>
+                    <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
+                     {isEditing && (
+                      <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3 w-3" />
+                          <span>Created by: {order?.createdBy || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3" />
+                          <span>Created on: {order?.fechaIngreso ? formatDate(order.fechaIngreso) : 'N/A'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isQuote && (
+                    <Button type="button" variant="outline" onClick={handleDownloadQuote}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Quote
+                    </Button>
+                  )}
+                  <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+                  {isEditing && isQuote && (
+                    <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
+                      {isConverting ? 'Converting...' : 'Convert to Order'}
+                    </Button>
+                  )}
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? 'Saving...' : `Save ${isQuote ? 'Quote' : 'Order'}`}
                   </Button>
-                )}
-                <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-                {isEditing && isQuote && (
-                  <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
-                    <ArrowRightLeft className="mr-2 h-4 w-4" />
-                    {isConverting ? 'Converting...' : 'Convert to Order'}
-                  </Button>
-                )}
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? 'Saving...' : `Save ${isQuote ? 'Quote' : 'Order'}`}
-                </Button>
-              </div>
+                </div>
+            </div>
+            
+            <div className="mb-4">
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {isEditing && <p className="text-sm text-muted-foreground">ID: {order?.id}</p>}
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">

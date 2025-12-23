@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { orderSchema, productSchema, tagSchema } from '@/lib/schema';
 
@@ -19,6 +20,7 @@ export type Order = Omit<z.infer<typeof orderSchema>, 'tags' | 'tagsOther' | 'pr
   customTag2?: string;
   customTag3?: string;
   customTag4?: string;
+  createdBy?: string;
 };
 
 export type Tag = z.infer<typeof tagSchema>;

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { ORDER_STATUSES, ORDER_SUB_STATUSES, DELIVERY_SERVICES, PRIVACY_OPTIONS } from './constants';
 
@@ -41,6 +42,8 @@ export const orderSchema = z.object({
   subtotal: z.coerce.number().default(0),
   tax: z.coerce.number().default(0),
   orderTotal: z.coerce.number().default(0),
+
+  createdBy: z.string().optional(),
 });
 
 export const tagSchema = z.object({

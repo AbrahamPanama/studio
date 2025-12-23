@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -124,7 +125,8 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
         id: String(Date.now()),
         orderNumber: newOrderNumber,
         fechaIngreso: new Date(),
-        productos: validatedFields.data.productos.map((p, i) => ({...p, id: `p${Date.now()}${i}`}))
+        productos: validatedFields.data.productos.map((p, i) => ({...p, id: `p${Date.now()}${i}`})),
+        createdBy: validatedFields.data.createdBy,
     };
     
     db.orders.unshift(newOrder);
@@ -174,6 +176,7 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         id: originalOrder.id, // Ensure original ID is preserved
         orderNumber: originalOrder.orderNumber, // Ensure original order number is preserved
         fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
+        createdBy: originalOrder.createdBy, // Preserve original creator
     };
 
     db.orders[index] = finalOrderData;
