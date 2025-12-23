@@ -86,77 +86,82 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
   return (
     <div className="py-10 px-4 sm:px-6 lg:px-8">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle className="text-2xl">Orders</CardTitle>
-              <CardDescription>Manage and track all customer orders.</CardDescription>
-            </div>
-             <div className="flex w-full max-w-sm items-center space-x-2">
-              <form className="flex w-full items-center space-x-2" action="/">
-                <input type="hidden" name="tab" value={tab} />
-                <div className="relative w-full">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input key={query} name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
+       <Tabs value={tab}>
+        <div className="flex items-center px-4 sm:px-6">
+            <div className="flex-1">
+                <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+                <p className="text-muted-foreground">Manage and track all customer orders.</p>
+                 <div className="mt-4">
+                    <TabsList>
+                        <TabsTrigger value="active" asChild><Link href="/?tab=active">Active</Link></TabsTrigger>
+                        <TabsTrigger value="quotes" asChild><Link href="/?tab=quotes">Quotes</Link></TabsTrigger>
+                        <TabsTrigger value="completed" asChild><Link href="/?tab=completed">Completed</Link></TabsTrigger>
+                    </TabsList>
                 </div>
-                <Button type="submit">Search</Button>
-                {query && (
-                  <Button asChild variant="outline">
-                    <Link href={`/?tab=${tab}`}>Clear</Link>
-                  </Button>
-                )}
-              </form>
             </div>
-            <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <Link href="/quotes/new">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Quote
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link href="/orders/new">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Order
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-            <Tabs value={tab}>
-                <TabsList className="mb-4">
-                    <TabsTrigger value="active" asChild><Link href="/?tab=active">Active</Link></TabsTrigger>
-                    <TabsTrigger value="quotes" asChild><Link href="/?tab=quotes">Quotes</Link></TabsTrigger>
-                    <TabsTrigger value="completed" asChild><Link href="/?tab=completed">Completed</Link></TabsTrigger>
-                </TabsList>
-                <TabsContent value={tab}>
-                     <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
-                        {orderGroups.map(({ status, orders }) => (
-                        <AccordionItem key={status} value={status} className="border-none">
-                            <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                                <div className="flex items-center gap-2">
-                                    <StatusBadge status={status} className="text-base" />
-                                    <span className="text-muted-foreground">({orders.length})</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pt-4">
-                            <OrderTable orders={orders} />
-                            </AccordionContent>
-                        </AccordionItem>
-                        ))}
-                    </Accordion>
-
-                    {orderGroups.length === 0 && (
-                        <div className="text-center py-10">
-                        <p className="text-muted-foreground">No orders found for this view.</p>
-                        </div>
+            <div className="ml-auto flex items-center gap-4">
+                 <div className="hidden w-full max-w-sm items-center space-x-2 md:flex">
+                  <form className="flex w-full items-center space-x-2" action="/">
+                    <input type="hidden" name="tab" value={tab} />
+                    <div className="relative w-full">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input key={query} name="query" placeholder="Search orders..." className="pl-8" defaultValue={query} />
+                    </div>
+                    <Button type="submit">Search</Button>
+                    {query && (
+                      <Button asChild variant="outline">
+                        <Link href={`/?tab=${tab}`}>Clear</Link>
+                      </Button>
                     )}
-                </TabsContent>
-            </Tabs>
-        </CardContent>
-      </Card>
+                  </form>
+                </div>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline">
+                    <Link href="/quotes/new">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Quote
+                    </Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/orders/new">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Order
+                    </Link>
+                  </Button>
+                </div>
+            </div>
+        </div>
+
+        <div className="mt-6 px-4 sm:px-6">
+             <TabsContent value={tab}>
+                <Card>
+                    <CardContent className="pt-6">
+                        <Accordion type="multiple" defaultValue={defaultOpen} className="w-full space-y-4">
+                            {orderGroups.map(({ status, orders }) => (
+                            <AccordionItem key={status} value={status} className="border-none">
+                                <AccordionTrigger className="py-2 px-4 rounded-md transition-all hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                                    <div className="flex items-center gap-2">
+                                        <StatusBadge status={status} className="text-base" />
+                                        <span className="text-muted-foreground">({orders.length})</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-4">
+                                <OrderTable orders={orders} />
+                                </AccordionContent>
+                            </AccordionItem>
+                            ))}
+                        </Accordion>
+
+                        {orderGroups.length === 0 && (
+                            <div className="text-center py-10">
+                            <p className="text-muted-foreground">No orders found for this view.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
