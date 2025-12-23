@@ -318,7 +318,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
               <div className="mb-6 flex items-start justify-between">
                   <div className="flex items-center space-x-2">
@@ -415,13 +415,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[40px] text-center px-1">{t('formTableReady')}</TableHead>
-                              <TableHead>{t('formTableProductName')}</TableHead>
-                              <TableHead>{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[60px]">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[90px]">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[90px] text-right">{t('formTableSubtotal')}</TableHead>
-                              <TableHead className="w-[40px] px-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
+                              <TableHead className="w-[40px] text-center px-1 py-2">{t('formTableReady')}</TableHead>
+                              <TableHead className="py-2">{t('formTableProductName')}</TableHead>
+                              <TableHead className="py-2">{t('formTableDescription')}</TableHead>
+                              <TableHead className="w-[80px] py-2">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[100px] py-2">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[100px] text-right py-2">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="w-[40px] px-1 py-2"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -712,4 +712,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   );
 }
 
+    
     
