@@ -58,6 +58,11 @@ import { useLanguage } from '@/contexts/language-context';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
+interface OrderFormProps {
+  order?: Order;
+  formType: 'order' | 'quote';
+}
+
 const TAX_RATE = 0.07;
 
 const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNumber: string, isQuote: boolean, t: any }) => {
@@ -73,7 +78,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
             {/* Ensure /logo.png exists in public folder */}
             <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
             <div>
-                <h1 className="text-2xl font-bold text-indigo-900">VA Cards and Crafts</h1>
+                <h1 className="text-xl font-bold text-indigo-900">VA Cards and Crafts</h1>
                 <p className="text-sm text-slate-500">Creando momentos inolvidables que duran toda la vida</p>
             </div>
         </div>
@@ -404,7 +409,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const title = isQuote
     ? (isEditing ? t('formTitleEditQuote') : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder') : t('formTitleNewOrder'));
-
+  
   const pageTitle = isEditing ? `${title}: #${currentOrder.orderNumber}` : title;
 
   const translatedFormType = t(isQuote ? 'quote' : 'order');
@@ -414,7 +419,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
             <div className="max-w-6xl mx-auto">
-                <div id="form-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
+                <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex items-center space-x-4">
                       <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
@@ -455,13 +460,14 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 </div>
                 
                 <div className="mb-4">
-                    <h1 className="text-2xl font-bold">{pageTitle}</h1>
-                     {isEditing && (
-                        <p className="text-sm text-muted-foreground">
-                            {t(isQuote ? 'quote' : 'order')} #: {currentOrder.orderNumber}
-                        </p>
-                    )}
+                  <h1 className="text-2xl font-bold">{pageTitle}</h1>
+                  {isEditing && currentOrder?.orderNumber && (
+                    <p className="text-sm text-muted-foreground">
+                      {t(isQuote ? 'quote' : 'order')} #: {currentOrder.orderNumber}
+                    </p>
+                  )}
                 </div>
+
 
                 <div className={cn("grid gap-6", !isQuote && "lg:grid-cols-3")}>
                   <div className={cn("space-y-6", !isQuote && "lg:col-span-2")}>
@@ -843,5 +849,3 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
-
-    
