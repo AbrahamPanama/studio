@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,7 +52,7 @@ import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl, formatDate } fro
 import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags, getOrderById } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown, Copy } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
@@ -382,18 +383,21 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     form.setValue('celularSecundario', formattedNumber, { shouldValidate: true });
   };
 
-  const handleDownloadQuote = () => {
-    // Target the clean component instead of the dirty form
+  const generateCanvas = () => {
     const quoteElement = document.getElementById('clean-quote-container');
-    if (!quoteElement) return;
+    if (!quoteElement) return Promise.reject("Quote element not found");
 
-    const { dismiss } = toast({ title: "Generating...", description: "Creating image..." });
-
-    html2canvas(quoteElement, {
+    return html2canvas(quoteElement, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
-    }).then(canvas => {
+    });
+  }
+
+  const handleDownloadQuote = () => {
+    const { dismiss } = toast({ title: "Generating...", description: "Creating image..." });
+
+    generateCanvas().then(canvas => {
         const safeName = (currentOrder?.name || 'quote').replace(/[^a-zA-Z0-9]/g, '');
         const safePhone = (currentOrder?.celular || '').replace(/[^0-9]/g, '');
         const fileName = `${isQuote ? 'Quote' : 'Order'}-${currentOrder?.orderNumber || 'draft'}-${safeName}-${safePhone}.png`;
@@ -407,6 +411,40 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         console.error(err);
         dismiss();
         toast({ variant: 'destructive', title: 'Error', description: 'Could not generate image.' });
+    });
+  };
+
+  const handleCopyToClipboard = () => {
+    const { dismiss } = toast({ title: "Generating...", description: "Copying image to clipboard..." });
+
+    generateCanvas().then(canvas => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                dismiss();
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not generate image blob.' });
+                return;
+            }
+            if (!navigator.clipboard?.write) {
+                dismiss();
+                toast({ variant: 'destructive', title: 'Error', description: 'Clipboard API not supported in this browser.' });
+                return;
+            }
+            
+            navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]).then(() => {
+                dismiss();
+                toast({ title: 'Success!', description: 'Image copied to clipboard.' });
+            }).catch(err => {
+                dismiss();
+                console.error('Clipboard write error:', err);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not copy image to clipboard.' });
+            });
+        }, 'image/png');
+    }).catch(err => {
+        console.error(err);
+        dismiss();
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate canvas.' });
     });
   };
 
@@ -941,19 +979,26 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         Quote # {currentOrder?.orderNumber} has been created successfully. What would you like to do next?
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className='sm:justify-between'>
+                <DialogFooter className='sm:justify-between flex-col sm:flex-row gap-2'>
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">
                             Close
                         </Button>
                     </DialogClose>
-                    <Button type="button" onClick={() => {
-                        handleDownloadQuote();
-                        setShowPostSaveDialog(false);
-                    }}>
-                        <ImageDown className="mr-2 h-4 w-4" />
-                        Download Image
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" onClick={() => {
+                            handleCopyToClipboard();
+                        }}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Image
+                        </Button>
+                        <Button type="button" onClick={() => {
+                            handleDownloadQuote();
+                        }}>
+                            <ImageDown className="mr-2 h-4 w-4" />
+                            Download Image
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
