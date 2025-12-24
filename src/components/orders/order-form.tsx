@@ -65,6 +65,81 @@ type OrderFormProps = {
   formType: 'order' | 'quote';
 };
 
+const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNumber: string, isQuote: boolean, t: any }) => {
+  const subtotal = data.productos?.reduce((acc: number, p: any) => acc + (Number(p.quantity) * Number(p.price)), 0) || 0;
+  const tax = data.itbms ? subtotal * 0.07 : 0;
+  const total = subtotal + tax;
+
+  return (
+    <div id="clean-quote-container" className="bg-white p-8 w-[800px] text-slate-900 font-sans border border-slate-200">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-8 border-b pb-6 border-slate-200">
+        <div className="flex items-center gap-4">
+            {/* Ensure /logo.png exists in public folder */}
+            <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
+            <div>
+                <h1 className="text-2xl font-bold text-indigo-900">VA Cards and Crafts</h1>
+                <p className="text-sm text-slate-500">Creating memorable moments</p>
+            </div>
+        </div>
+        <div className="text-right">
+            <h2 className="text-xl font-bold text-slate-700 uppercase">{isQuote ? 'Quote' : 'Order'}</h2>
+            <p className="text-slate-500 font-mono text-lg">#{orderNumber || 'DRAFT'}</p>
+            <p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      {/* Customer Info Grid */}
+      <div className="mb-8 bg-slate-50 p-4 rounded-lg">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Information</h3>
+        <div className="grid grid-cols-2 gap-y-4 text-sm">
+            <div><span className="block text-slate-500 text-xs">Full Name</span><span className="font-semibold">{data.name || '-'}</span></div>
+            <div><span className="block text-slate-500 text-xs">Email</span><span>{data.email || '-'}</span></div>
+            <div><span className="block text-slate-500 text-xs">Phone</span><span>{data.celular || '-'}</span></div>
+        </div>
+      </div>
+
+      {/* Products Table */}
+      <div className="mb-8">
+        <table className="w-full text-sm">
+            <thead>
+                <tr className="bg-slate-100 text-slate-700">
+                    <th className="py-2 text-left pl-3 rounded-l-md">Product</th>
+                    <th className="py-2 text-left">Description</th>
+                    <th className="py-2 text-center">Qty</th>
+                    <th className="py-2 text-right">Price</th>
+                    <th className="py-2 text-right pr-3 rounded-r-md">Total</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+                {data.productos?.map((p: any, i: number) => (
+                    <tr key={i}>
+                        <td className="py-3 pl-3 font-medium">{p.name}</td>
+                        <td className="py-3 text-slate-500">{p.description}</td>
+                        <td className="py-3 text-center">{p.quantity}</td>
+                        <td className="py-3 text-right">${Number(p.price).toFixed(2)}</td>
+                        <td className="py-3 text-right pr-3 font-semibold">${(Number(p.quantity) * Number(p.price)).toFixed(2)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+      </div>
+
+      {/* Totals Section */}
+      <div className="flex justify-end mb-8">
+        <div className="w-64 space-y-2">
+            <div className="flex justify-between text-slate-600 text-sm"><span>Subtotal:</span><span>${subtotal.toFixed(2)}</span></div>
+            {data.itbms && <div className="flex justify-between text-slate-600 text-sm"><span>ITBMS (7%):</span><span>${tax.toFixed(2)}</span></div>}
+            <div className="flex justify-between text-lg font-bold text-indigo-900 border-t border-slate-200 pt-2 mt-2">
+                <span>Total:</span><span>${total.toFixed(2)}</span>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export function OrderForm({ order, formType }: OrderFormProps) {
   const { user } = useUser();
   const { t, language } = useLanguage();
@@ -138,6 +213,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     name: 'productos',
   });
   
+  const watchedValues = form.watch();
+
   const addEnvioItem = () => {
     append({
         name: 'Envío',
@@ -234,36 +311,33 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     form.setValue('celular', formattedNumber, { shouldValidate: true });
   };
 
-  const handleDownloadQuote = React.useCallback(() => {
-    const quoteElement = document.getElementById('quote-capture-area');
-    if (quoteElement && currentOrder) {
-        const originalClassName = quoteElement.className;
-        quoteElement.classList.remove('shadow-lg');
+  const handleDownloadQuote = () => {
+    // Target the clean component instead of the dirty form
+    const quoteElement = document.getElementById('clean-quote-container');
+    if (!quoteElement) return;
 
-        const safeName = (currentOrder.name || '').replace(/[^a-zA-Z0-9]/g, '');
-        const safePhone = (currentOrder.celular || '').replace(/[^0-9]/g, '');
-        const fileName = `quote-${currentOrder.orderNumber}-${safeName}-${safePhone}.png`;
+    const { dismiss } = toast({ title: "Generating...", description: "Creating image..." });
 
-        html2canvas(quoteElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: -window.scrollY,
-            windowWidth: document.documentElement.offsetWidth,
-            windowHeight: document.documentElement.offsetHeight,
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = fileName;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            quoteElement.className = originalClassName;
-        }).catch(err => {
-            console.error("html2canvas error:", err);
-            quoteElement.className = originalClassName;
-        });
-    }
-  }, [currentOrder]);
+    html2canvas(quoteElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+    }).then(canvas => {
+        const safeName = (currentOrder?.name || 'quote').replace(/[^a-zA-Z0-9]/g, '');
+        const safePhone = (currentOrder?.celular || '').replace(/[^0-9]/g, '');
+        const fileName = `${isQuote ? 'Quote' : 'Order'}-${currentOrder?.orderNumber || 'draft'}-${safeName}-${safePhone}.png`;
+        
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        dismiss();
+    }).catch(err => {
+        console.error(err);
+        dismiss();
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate image.' });
+    });
+  };
 
 
   function onSubmit(data: OrderFormValues) {
@@ -338,14 +412,14 @@ export function OrderForm({ order, formType }: OrderFormProps) {
 
   const pageTitle = isEditing ? `${title}: #${currentOrder.orderNumber}` : title;
 
-  const translatedFormType = isQuote ? t('quote') : t('order');
+  const translatedFormType = isQuote ? (t('quote') || 'quote') : (t('order') || 'order');
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-          <div className="max-w-5xl mx-auto">
-             <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
+            <div className="max-w-7xl mx-auto">
+                <div id="form-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex items-center space-x-4">
                       <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
@@ -387,10 +461,9 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold">{pageTitle}</h1>
-                    {isEditing && !isQuote && <p className="text-sm text-muted-foreground">{t('formId')}: {currentOrder?.id}</p>}
-                    {isEditing && isQuote && currentOrder.orderNumber && (
+                     {isEditing && (
                         <p className="text-sm text-muted-foreground">
-                            {t('quote')} #: {currentOrder.orderNumber}
+                            {isQuote ? t('quote') : t('order')} #: {currentOrder.orderNumber}
                         </p>
                     )}
                 </div>
@@ -438,21 +511,21 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleProducts')}</CardTitle>
                       <CardDescription>
-                         {(t('formDescriptionProducts') || '').replace('{formType}', (translatedFormType || '').toLowerCase())}
+                         {t('formDescriptionProducts').replace('{formType}', translatedFormType.toLowerCase())}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="rounded-md border">
+                       <div className="rounded-md border">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[40px] text-center p-1">{t('formTableReady')}</TableHead>
-                              <TableHead className="p-1">{t('formTableProductName')}</TableHead>
-                              <TableHead className="p-1">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[80px] p-1">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[100px] p-1">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[100px] text-right p-1">{t('formTableSubtotal')}</TableHead>
-                              <TableHead className="w-[40px] p-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
+                              <TableHead className="w-[60px] text-center p-2">{t('formTableReady')}</TableHead>
+                              <TableHead className="p-2">{t('formTableProductName')}</TableHead>
+                              <TableHead className="p-2">{t('formTableDescription')}</TableHead>
+                              <TableHead className="w-[70px] p-2">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[90px] p-2">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[90px] text-right p-2">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="w-[40px] p-2"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -738,6 +811,15 @@ export function OrderForm({ order, formType }: OrderFormProps) {
             </div>
           </div>
         </div>
+      {/* Hidden Print View */}
+      <div className="absolute left-[-9999px] top-0 overflow-hidden">
+          <PrintableQuote 
+              data={watchedValues} 
+              orderNumber={currentOrder?.orderNumber || ''} 
+              isQuote={isQuote} 
+              t={t} 
+          />
+      </div>
       </form>
        <Dialog open={showPostSaveDialog} onOpenChange={setShowPostSaveDialog}>
             <DialogContent>
