@@ -71,7 +71,7 @@ export async function getOrders(): Promise<Order[]> {
     return orders;
 }
 
-export async function getOrderById(id: string) {
+export async function getOrderById(id: string): Promise<Order | null> {
     await delay(300);
     const db = await readDb();
     let order = db.orders.find(o => o.id === id);
@@ -233,5 +233,7 @@ export async function updateOtherTags(tags: Tag[]) {
     await writeOtherTags(validatedTags.data);
     revalidatePath('/');
 }
+
+    
 
     

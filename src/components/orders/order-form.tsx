@@ -19,6 +19,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -39,10 +48,10 @@ import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl, formatDate } from '@/lib/utils';
-import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags } from '@/lib/actions';
+import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags, getOrderById } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
@@ -59,7 +68,8 @@ type OrderFormProps = {
 export function OrderForm({ order, formType }: OrderFormProps) {
   const { user } = useUser();
   const { t, language } = useLanguage();
-  const isEditing = !!order;
+  const [currentOrder, setCurrentOrder] = React.useState(order);
+  const isEditing = !!currentOrder;
   const isQuote = formType === 'quote';
   const router = useRouter();
   const { toast } = useToast();
@@ -67,7 +77,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const [isConverting, startConverting] = React.useTransition();
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
-  
+  const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
+
   React.useEffect(() => {
     getTags().then(setAllTags);
     getOtherTags().then(setAllOtherTags);
@@ -75,20 +86,20 @@ export function OrderForm({ order, formType }: OrderFormProps) {
 
   const defaultValues: Partial<OrderFormValues> = isEditing
     ? {
-        ...order,
-        orderNumber: order.orderNumber,
-        entrega: order.entrega ? new Date(order.entrega) : new Date(),
-        entregaLimite: order.entregaLimite ? new Date(order.entregaLimite) : new Date(),
-        description: order.description || '',
-        comentarios: order.comentarios || '',
-        abono: order.abono || false,
-        cancelo: order.cancelo || false,
-        totalAbono: order.totalAbono || 0,
-        tags: order.tags || [],
-        tagsOther: order.tagsOther || [],
-        itbms: order.itbms || false,
-        createdBy: order.createdBy,
-        productos: order.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false }))
+        ...currentOrder,
+        orderNumber: currentOrder.orderNumber,
+        entrega: currentOrder.entrega ? new Date(currentOrder.entrega) : new Date(),
+        entregaLimite: currentOrder.entregaLimite ? new Date(currentOrder.entregaLimite) : new Date(),
+        description: currentOrder.description || '',
+        comentarios: currentOrder.comentarios || '',
+        abono: currentOrder.abono || false,
+        cancelo: currentOrder.cancelo || false,
+        totalAbono: currentOrder.totalAbono || 0,
+        tags: currentOrder.tags || [],
+        tagsOther: currentOrder.tagsOther || [],
+        itbms: currentOrder.itbms || false,
+        createdBy: currentOrder.createdBy,
+        productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false }))
       }
     : {
         name: '',
@@ -147,7 +158,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const watchedTotalAbono = form.watch('totalAbono');
   const watchedPhoneNumber = form.watch('celular');
 
-  // Watch the calculated fields to update the UI
   const subtotal = form.watch('subtotal');
   const tax = form.watch('tax');
   const orderTotal = form.watch('orderTotal');
@@ -215,28 +225,60 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }
   }, [watchedTotalAbono, form, orderTotal]);
 
+  React.useEffect(() => {
+        form.reset(defaultValues);
+  }, [currentOrder, form]);
+
   const handlePhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formattedNumber = formatPhoneNumber(e.target.value);
     form.setValue('celular', formattedNumber, { shouldValidate: true });
   };
 
+  const handleDownloadQuote = React.useCallback(() => {
+    const quoteElement = document.getElementById('quote-capture-area');
+    if (quoteElement && currentOrder) {
+        const originalClassName = quoteElement.className;
+        quoteElement.classList.remove('shadow-lg');
+
+        const safeName = (currentOrder.name || '').replace(/[^a-zA-Z0-9]/g, '');
+        const safePhone = (currentOrder.celular || '').replace(/[^0-9]/g, '');
+        const fileName = `quote-${currentOrder.orderNumber}-${safeName}-${safePhone}.png`;
+
+        html2canvas(quoteElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: -window.scrollY,
+            windowWidth: document.documentElement.offsetWidth,
+            windowHeight: document.documentElement.offsetHeight,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            quoteElement.className = originalClassName;
+        }).catch(err => {
+            console.error("html2canvas error:", err);
+            quoteElement.className = originalClassName;
+        });
+    }
+  }, [currentOrder]);
+
 
   function onSubmit(data: OrderFormValues) {
-    // Re-calculate one last time before submitting to ensure data is accurate
     handleCalculateTotals();
-    
-    // We get the values after recalculating
     const finalValues = form.getValues();
 
     startTransition(async () => {
       try {
         const payload = {
-          ...data, // original form data
-          ...finalValues // updated totals
+          ...data,
+          ...finalValues
         };
         
-        if (isEditing && order) {
-          await updateOrder(order.id, payload);
+        if (isEditing && currentOrder) {
+          await updateOrder(currentOrder.id, payload);
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
           router.push('/');
         } else {
@@ -245,8 +287,20 @@ export function OrderForm({ order, formType }: OrderFormProps) {
             createdBy: user?.email || 'Unknown',
           });
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
-          const redirectUrl = isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`;
-          router.push(redirectUrl);
+          const newOrderData = await getOrderById(newOrderId);
+          
+          if (newOrderData) {
+            setCurrentOrder(newOrderData);
+             // Update URL without a full reload to show the dialog
+            window.history.replaceState(null, '', `/quotes/${newOrderId}/edit`);
+            if (isQuote) {
+              setShowPostSaveDialog(true);
+            }
+          } else {
+             // Fallback redirect if fetching fails
+            const redirectUrl = isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`;
+            router.push(redirectUrl);
+          }
         }
       } catch (error) {
         console.error(error);
@@ -260,11 +314,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   }
 
   const handleConvertToOrder = () => {
-    if (!isEditing || !order) return;
+    if (!isEditing || !currentOrder) return;
 
     startConverting(async () => {
       try {
-        await updateOrder(order.id, { estado: 'New' });
+        await updateOrder(currentOrder.id, { estado: 'New' });
         toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
         router.push('/');
       } catch (error) {
@@ -278,43 +332,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   };
 
-  const handleDownloadQuote = () => {
-    const quoteElement = document.getElementById('quote-capture-area');
-    if (quoteElement) {
-        // Temporarily remove shadow for cleaner capture
-        const originalClassName = quoteElement.className;
-        quoteElement.classList.remove('shadow-lg');
-
-        html2canvas(quoteElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            // These options can sometimes help with layout issues
-            scrollX: 0,
-            scrollY: -window.scrollY,
-            windowWidth: document.documentElement.offsetWidth,
-            windowHeight: document.documentElement.offsetHeight,
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `quote-${order?.orderNumber || 'new'}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-
-            // Restore original class
-            quoteElement.className = originalClassName;
-        }).catch(err => {
-            console.error("html2canvas error:", err);
-             // Restore original class even if there's an error
-            quoteElement.className = originalClassName;
-        });
-    }
-  };
-  
   const title = isQuote
     ? (isEditing ? t('formTitleEditQuote') : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder') : t('formTitleNewOrder'));
 
-  const pageTitle = isEditing ? `${title}: #${order.orderNumber}` : title;
+  const pageTitle = isEditing ? `${title}: #${currentOrder.orderNumber}` : title;
 
   const translatedFormType = isQuote ? t('quote') : t('order');
 
@@ -333,11 +355,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           <div className="text-xs text-muted-foreground mt-1 space-y-1">
                             <div className="flex items-center gap-1.5">
                               <User className="h-3 w-3" />
-                              <span>{t('formCreatedBy')}: {order?.createdBy || 'N/A'}</span>
+                              <span>{t('formCreatedBy')}: {currentOrder?.createdBy || 'N/A'}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Calendar className="h-3 w-3" />
-                              <span>{t('formCreatedOn')}: {order?.fechaIngreso ? formatDate(order.fechaIngreso) : 'N/A'}</span>
+                              <span>{t('formCreatedOn')}: {currentOrder?.fechaIngreso ? formatDate(currentOrder.fechaIngreso) : 'N/A'}</span>
                             </div>
                           </div>
                         )}
@@ -345,7 +367,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       {isQuote && (
-                        <Button type="button" variant="outline" onClick={handleDownloadQuote}>
+                        <Button type="button" variant="outline" onClick={handleDownloadQuote} disabled={!isEditing}>
                           <Download className="mr-2 h-4 w-4" />
                           {t('formButtonDownloadQuote')}
                         </Button>
@@ -365,10 +387,10 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold">{pageTitle}</h1>
-                    {isEditing && !isQuote && <p className="text-sm text-muted-foreground">{t('formId')}: {order?.id}</p>}
-                    {isEditing && isQuote && order.orderNumber && (
+                    {isEditing && !isQuote && <p className="text-sm text-muted-foreground">{t('formId')}: {currentOrder?.id}</p>}
+                    {isEditing && isQuote && currentOrder.orderNumber && (
                         <p className="text-sm text-muted-foreground">
-                            {t('quote')} #: {order.orderNumber}
+                            {t('quote')} #: {currentOrder.orderNumber}
                         </p>
                     )}
                 </div>
@@ -427,8 +449,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                               <TableHead className="w-[40px] text-center p-1">{t('formTableReady')}</TableHead>
                               <TableHead className="p-1">{t('formTableProductName')}</TableHead>
                               <TableHead className="p-1">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[60px] p-1">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[90px] p-1">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[80px] p-1">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[100px] p-1">{t('formTableUnitPrice')}</TableHead>
                               <TableHead className="w-[100px] text-right p-1">{t('formTableSubtotal')}</TableHead>
                               <TableHead className="w-[40px] p-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
@@ -717,6 +739,32 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           </div>
         </div>
       </form>
+       <Dialog open={showPostSaveDialog} onOpenChange={setShowPostSaveDialog}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Quote Saved!</DialogTitle>
+                    <DialogDescription>
+                        Quote # {currentOrder?.orderNumber} has been created successfully. What would you like to do next?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className='sm:justify-between'>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Close
+                        </Button>
+                    </DialogClose>
+                    <Button type="button" onClick={() => {
+                        handleDownloadQuote();
+                        setShowPostSaveDialog(false);
+                    }}>
+                        <ImageDown className="mr-2 h-4 w-4" />
+                        Download Image
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </Form>
   );
 }
+
+    
