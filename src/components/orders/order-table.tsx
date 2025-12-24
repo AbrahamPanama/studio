@@ -78,7 +78,7 @@ const OrderTableRow = ({
     startTransition(async () => {
       await deleteOrder(order.id);
       toast({ title: 'Success', description: 'Order deleted.' });
-      onDelete(order.id); // This will update the parent component's state
+      onDelete(order.id); // This will trigger the refresh on the parent
     });
   }
 
@@ -278,7 +278,7 @@ const ResizableHandle = ({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) =
 
 const COLUMN_IDS = ['customer', 'status', 'sub-status', 'items', 'tags-shipping', 'tags-other', 'delivery-deadline', 'total', 'actions'];
 
-export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
+export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order[], onRefresh: () => void }) {
   const [orders, setOrders] = React.useState(initialOrders);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
@@ -360,7 +360,10 @@ export function OrderTable({ orders: initialOrders }: { orders: Order[] }) {
   }, [initialOrders]);
 
   const handleDelete = (id: string) => {
+    // Optimistically remove the order from the local state
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
+    // Trigger the parent component to refetch all data
+    onRefresh();
   };
   
   const handleAllTagsUpdate = (newTags: Tag[]) => {

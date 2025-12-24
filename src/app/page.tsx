@@ -79,7 +79,7 @@ const filterOrders = (orders: Order[], query: string, tab: string) => {
 }
 
 // --- Main Content Component ---
-function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], query: string, tab: string}) {
+function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders: Order[], query: string, tab: string, onRefresh: () => void}) {
   const { t } = useLanguage();
 
   const filteredOrders = filterOrders(allOrders, query, tab);
@@ -202,7 +202,7 @@ function DashboardPageContent({ allOrders, query, tab }: { allOrders: Order[], q
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-0 pb-0 border-t border-slate-100">
-                                    <OrderTable orders={orders} />
+                                    <OrderTable orders={orders} onRefresh={onRefresh} />
                                 </AccordionContent>
                             </AccordionItem>
                             </Accordion>
@@ -236,17 +236,22 @@ export default function DashboardPage() {
     const [allOrders, setAllOrders] = React.useState<Order[]>([]);
     const [loading, setLoading] = React.useState(true);
 
-    React.useEffect(() => {
+    const fetchOrders = React.useCallback(() => {
+        setLoading(true);
         getOrders().then(orders => {
             setAllOrders(orders);
             setLoading(false);
         });
     }, []);
 
+    React.useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
+
     if (loading) {
         // Un skeleton loader simple sería ideal aquí, pero por ahora centramos el texto
         return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading orders...</p></div>
     }
 
-    return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} />;
+    return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} onRefresh={fetchOrders} />;
 }
