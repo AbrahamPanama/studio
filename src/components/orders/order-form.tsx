@@ -488,7 +488,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
                 <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex items-center space-x-4">
@@ -959,3 +959,5 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    

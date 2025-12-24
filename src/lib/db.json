@@ -2,6 +2,55 @@
   "orders": [
     {
       "name": "Abraham Israel Saenz Clark",
+      "companyName": "VA Cards",
+      "email": "abraham.saenz@gmail.com",
+      "celular": "+50762168911",
+      "celularSecundario": "",
+      "ruc": "8555133232632 / 52",
+      "description": "",
+      "comentarios": "",
+      "estado": "Cotización",
+      "subEstado": "Pendiente",
+      "entrega": "2025-12-24T02:20:36.385Z",
+      "entregaLimite": "2025-12-24T02:20:36.385Z",
+      "servicioEntrega": "Retiro taller",
+      "direccionEnvio": "Retiro Taller",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "privacidad": "Por preguntar",
+      "tags": [],
+      "tagsOther": [],
+      "productos": [
+        {
+          "id": "p17665428919600",
+          "name": "Invitaciones",
+          "description": "Azules",
+          "quantity": 50,
+          "price": 3.5,
+          "materialsReady": false,
+          "isTaxable": true
+        },
+        {
+          "name": "Invitaciones",
+          "description": "Modelo 708",
+          "quantity": 25,
+          "price": 5.5,
+          "materialsReady": false,
+          "isTaxable": true
+        }
+      ],
+      "itbms": true,
+      "subtotal": 312.5,
+      "tax": 21.875000000000004,
+      "orderTotal": 334.375,
+      "createdBy": "abraham.saenz@gmail.com",
+      "id": "1766542891960",
+      "orderNumber": "000015",
+      "fechaIngreso": "2025-12-24T02:21:31.960Z"
+    },
+    {
+      "name": "Abraham Israel Saenz Clark",
       "email": "abraham.saenz@gmail.com",
       "celular": "+50762168911",
       "description": "",
