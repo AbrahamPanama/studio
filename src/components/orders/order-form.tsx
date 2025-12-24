@@ -60,11 +60,6 @@ type OrderFormValues = z.infer<typeof orderSchema>;
 
 const TAX_RATE = 0.07;
 
-type OrderFormProps = {
-  order?: Order;
-  formType: 'order' | 'quote';
-};
-
 const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNumber: string, isQuote: boolean, t: any }) => {
   const subtotal = data.productos?.reduce((acc: number, p: any) => acc + (Number(p.quantity) * Number(p.price)), 0) || 0;
   const tax = data.itbms ? subtotal * 0.07 : 0;
@@ -79,7 +74,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
             <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
             <div>
                 <h1 className="text-2xl font-bold text-indigo-900">VA Cards and Crafts</h1>
-                <p className="text-sm text-slate-500">Creating memorable moments</p>
+                <p className="text-sm text-slate-500">Creando momentos inolvidables que duran toda la vida</p>
             </div>
         </div>
         <div className="text-right">
@@ -412,13 +407,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
 
   const pageTitle = isEditing ? `${title}: #${currentOrder.orderNumber}` : title;
 
-  const translatedFormType = isQuote ? (t('quote') || 'quote') : (t('order') || 'order');
+  const translatedFormType = t(isQuote ? 'quote' : 'order');
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 <div id="form-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex items-center space-x-4">
@@ -463,7 +458,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <h1 className="text-2xl font-bold">{pageTitle}</h1>
                      {isEditing && (
                         <p className="text-sm text-muted-foreground">
-                            {isQuote ? t('quote') : t('order')} #: {currentOrder.orderNumber}
+                            {t(isQuote ? 'quote' : 'order')} #: {currentOrder.orderNumber}
                         </p>
                     )}
                 </div>
@@ -511,7 +506,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleProducts')}</CardTitle>
                       <CardDescription>
-                         {t('formDescriptionProducts').replace('{formType}', translatedFormType.toLowerCase())}
+                         {t('formDescriptionProducts', { formType: translatedFormType.toLowerCase() })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -519,13 +514,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[60px] text-center p-2">{t('formTableReady')}</TableHead>
-                              <TableHead className="p-2">{t('formTableProductName')}</TableHead>
-                              <TableHead className="p-2">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[70px] p-2">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[90px] p-2">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[90px] text-right p-2">{t('formTableSubtotal')}</TableHead>
-                              <TableHead className="w-[40px] p-2"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
+                              <TableHead className="w-[60px] text-center p-1">{t('formTableReady')}</TableHead>
+                              <TableHead className="p-1">{t('formTableProductName')}</TableHead>
+                              <TableHead className="p-1">{t('formTableDescription')}</TableHead>
+                              <TableHead className="w-[90px] p-1">{t('formTableQuantity')}</TableHead>
+                              <TableHead className="w-[110px] p-1">{t('formTableUnitPrice')}</TableHead>
+                              <TableHead className="w-[120px] text-right p-1">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="w-[40px] p-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
