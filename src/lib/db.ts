@@ -1,3 +1,4 @@
+
 'use server';
 
 import fs from 'fs/promises';
@@ -189,9 +190,15 @@ export async function readDb(): Promise<{ orders: Order[] }> {
 export async function writeDb(data: { orders: Order[] }): Promise<void> {
   await fs.writeFile(dbPath, JSON.stringify({
     orders: data.orders.sort((a, b) => {
+      // Handle cases where fechaIngreso might be null or undefined
       const dateA = a.fechaIngreso ? new Date(a.fechaIngreso).getTime() : 0;
       const dateB = b.fechaIngreso ? new Date(b.fechaIngreso).getTime() : 0;
-      return dateB - dateA;
+      
+      // If either date is invalid (getTime() returns NaN), treat it as 0
+      const validDateA = !isNaN(dateA) ? dateA : 0;
+      const validDateB = !isNaN(dateB) ? dateB : 0;
+
+      return validDateB - validDateA;
     })
   }, null, 2), 'utf8');
 }
@@ -237,3 +244,5 @@ export async function readOtherTags(): Promise<Tag[]> {
 export async function writeOtherTags(tags: Tag[]): Promise<void> {
     await fs.writeFile(tagsOtherPath, JSON.stringify({ tags }, null, 2), 'utf8');
 }
+
+    
