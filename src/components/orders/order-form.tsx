@@ -191,8 +191,8 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
         <ul className="list-disc pl-4 space-y-1">
             <li>Esta cotización es válida por 15 días calendario.</li>
             <li>Para iniciar el trabajo se requiere un abono del 50%.</li>
-            <li>Cheques a nombre de: <strong>Veronica de Sáenz</strong></li>
         </ul>
+        <p className="mt-2"><strong>Banco General</strong> | Ahorros <strong>0405014701358</strong> Verónica de Sáenz. Enviar comprobante.</p>
       </div>
     </div>
   );
@@ -237,6 +237,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })),
         ruc: currentOrder.ruc || '',
         celularSecundario: currentOrder.celularSecundario || '',
+        direccionEnvio: currentOrder.direccionEnvio || '',
       }
     : {
         name: '',
@@ -959,5 +960,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
 
     
