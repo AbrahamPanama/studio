@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Order": {
@@ -92,6 +93,14 @@
         "orderTotal": {
           "type": "number",
           "description": "Total value of the order."
+        },
+        "ruc": {
+          "type": "string",
+          "description": "Customer's RUC (Registro Único de Contribuyente)."
+        },
+        "celularSecundario": {
+          "type": "string",
+          "description": "Secondary contact phone number."
         }
       },
       "required": [

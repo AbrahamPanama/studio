@@ -69,71 +69,129 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
   const subtotal = data.productos?.reduce((acc: number, p: any) => acc + (Number(p.quantity) * Number(p.price)), 0) || 0;
   const tax = data.itbms ? subtotal * 0.07 : 0;
   const total = subtotal + tax;
+  const currentDate = new Date().toLocaleDateString('es-PA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  
+  // Validity logic: 15 days from now
+  const validUntil = new Date();
+  validUntil.setDate(validUntil.getDate() + 15);
 
   return (
-    <div id="clean-quote-container" className="bg-white p-8 w-[800px] text-slate-900 font-sans border border-slate-200">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-8 border-b pb-6 border-slate-200">
-        <div className="flex items-center gap-4">
-            {/* Ensure /logo.png exists in public folder */}
-            <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
-            <div>
-                <h1 className="text-xl font-bold text-indigo-900">VA Cards and Crafts</h1>
-                <p className="text-sm text-slate-500">Creando momentos inolvidables que duran toda la vida</p>
+    <div id="clean-quote-container" className="bg-white p-10 w-[850px] text-slate-900 font-sans leading-normal">
+      
+      {/* 1. CORPORATE HEADER */}
+      <div className="flex justify-between items-start mb-2">
+        <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold text-black uppercase tracking-tight">Veronica de Sáenz</h1>
+            <div className="text-sm font-medium text-slate-800 space-y-0.5">
+                <p><span className="font-bold w-24 inline-block">RUC:</span> 8-825-429 DV 59</p>
+                <p><span className="font-bold w-24 inline-block">Dirección:</span> Fuentes del Chase, La Chorrera, Casa C-53</p>
+                <p><span className="font-bold w-24 inline-block">Teléfono:</span> 6216-8911</p>
+                <p><span className="font-bold w-24 inline-block">Email:</span> vacardspanama@gmail.com</p>
             </div>
         </div>
-        <div className="text-right">
-            <h2 className="text-xl font-bold text-slate-700 uppercase">{isQuote ? 'Quote' : 'Order'}</h2>
-            <p className="text-slate-500 font-mono text-lg">#{orderNumber || 'DRAFT'}</p>
-            <p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString()}</p>
+        {/* Logo aligned right */}
+        <div className="w-32 flex justify-end">
+             <img src="/logo.png" alt="VA Cards Logo" className="w-24 h-auto object-contain" />
         </div>
       </div>
 
-      {/* Customer Info Grid */}
-      <div className="mb-8 bg-slate-50 p-4 rounded-lg">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Information</h3>
-        <div className="grid grid-cols-2 gap-y-4 text-sm">
-            <div><span className="block text-slate-500 text-xs">Full Name</span><span className="font-semibold">{data.name || '-'}</span></div>
-            <div><span className="block text-slate-500 text-xs">Email</span><span>{data.email || '-'}</span></div>
-            <div><span className="block text-slate-500 text-xs">Phone</span><span>{data.celular || '-'}</span></div>
+      {/* Heavy Corporate Divider */}
+      <div className="border-b-[3px] border-black mb-6 mt-4"></div>
+
+      {/* 2. CUSTOMER & DOCUMENT INFO */}
+      <div className="flex justify-between items-start mb-8">
+        {/* Left Block: Customer Info */}
+        <div className="w-[60%]">
+            <h3 className="font-bold text-black text-sm uppercase mb-2 border-b border-slate-300 inline-block pb-0.5">Cliente</h3>
+            <div className="text-sm text-slate-700 space-y-1">
+                <p className="font-bold text-lg text-black uppercase">{data.name || 'Cliente General'}</p>
+                {data.ruc && <p><span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">RUC:</span> {data.ruc}</p>}
+                {data.direccionEnvio && (
+                    <p className="leading-tight"><span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">Dirección:</span> {data.direccionEnvio}</p>
+                )}
+                <p>
+                    <span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">Teléfono:</span> 
+                    {data.celular} 
+                    {data.celularSecundario && ` / ${data.celularSecundario}`}
+                </p>
+                <p><span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">Email:</span> {data.email}</p>
+            </div>
+        </div>
+
+        {/* Right Block: Order Metadata */}
+        <div className="w-[35%] text-right">
+            <div className="mb-4">
+                <h2 className="text-xl font-extrabold text-slate-900 uppercase tracking-wide">
+                    {isQuote ? 'COTIZACIÓN #' : 'ORDEN #'} <span className="text-indigo-700">{orderNumber || 'BORRADOR'}</span>
+                </h2>
+                <p className="text-sm font-bold text-slate-600 mt-1">FECHA: {currentDate}</p>
+            </div>
+            
+            {/* Validity Box */}
+            <div className="border border-black text-xs text-center ml-auto w-32">
+                <div className="bg-slate-100 border-b border-black font-bold py-1">Válido hasta</div>
+                <div className="py-1 font-mono">{validUntil.toLocaleDateString('es-PA')}</div>
+            </div>
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* 3. ITEMS TABLE */}
       <div className="mb-8">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-collapse">
             <thead>
-                <tr className="bg-slate-100 text-slate-700">
-                    <th className="py-2 text-left pl-3 rounded-l-md">Product</th>
-                    <th className="py-2 text-left">Description</th>
-                    <th className="py-2 text-center">Qty</th>
-                    <th className="py-2 text-right">Price</th>
-                    <th className="py-2 text-right pr-3 rounded-r-md">Total</th>
+                <tr className="border-b-2 border-black text-black">
+                    <th className="py-2 text-left font-bold w-[45%]">DESCRIPCIÓN</th>
+                    <th className="py-2 text-center font-bold">CANT.</th>
+                    <th className="py-2 text-right font-bold">PRECIO UNIT.</th>
+                    <th className="py-2 text-right font-bold">TOTAL</th>
                 </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="text-slate-700">
                 {data.productos?.map((p: any, i: number) => (
-                    <tr key={i}>
-                        <td className="py-3 pl-3 font-medium">{p.name}</td>
-                        <td className="py-3 text-slate-500">{p.description}</td>
-                        <td className="py-3 text-center">{p.quantity}</td>
-                        <td className="py-3 text-right">${Number(p.price).toFixed(2)}</td>
-                        <td className="py-3 text-right pr-3 font-semibold">${(Number(p.quantity) * Number(p.price)).toFixed(2)}</td>
+                    <tr key={i} className="border-b border-slate-200">
+                        <td className="py-3 pr-2">
+                            <span className="font-bold block text-black">{p.name}</span>
+                            <span className="text-xs text-slate-500 block mt-0.5">{p.description}</span>
+                        </td>
+                        <td className="py-3 text-center align-top pt-3">{p.quantity}</td>
+                        <td className="py-3 text-right align-top pt-3">${Number(p.price).toFixed(2)}</td>
+                        <td className="py-3 text-right font-bold text-black align-top pt-3">
+                            ${(Number(p.quantity) * Number(p.price)).toFixed(2)}
+                        </td>
                     </tr>
                 ))}
             </tbody>
         </table>
       </div>
 
-      {/* Totals Section */}
-      <div className="flex justify-end mb-8">
-        <div className="w-64 space-y-2">
-            <div className="flex justify-between text-slate-600 text-sm"><span>Subtotal:</span><span>${subtotal.toFixed(2)}</span></div>
-            {data.itbms && <div className="flex justify-between text-slate-600 text-sm"><span>ITBMS (7%):</span><span>${tax.toFixed(2)}</span></div>}
-            <div className="flex justify-between text-lg font-bold text-indigo-900 border-t border-slate-200 pt-2 mt-2">
-                <span>Total:</span><span>${total.toFixed(2)}</span>
+      {/* 4. FINANCIAL TOTALS */}
+      <div className="flex justify-end mb-12">
+        <div className="w-64 space-y-1 text-sm">
+            <div className="flex justify-between text-slate-600 py-1">
+                <span>Subtotal:</span>
+                <span className="font-medium">${subtotal.toFixed(2)}</span>
+            </div>
+            {data.itbms && (
+                <div className="flex justify-between text-slate-600 py-1">
+                    <span>ITBMS (7%):</span>
+                    <span className="font-medium">${tax.toFixed(2)}</span>
+                </div>
+            )}
+            <div className="flex justify-between text-lg font-extrabold text-black border-t-2 border-black pt-2 mt-2">
+                <span>TOTAL:</span>
+                <span>${total.toFixed(2)}</span>
             </div>
         </div>
+      </div>
+
+      {/* 5. FOOTER / TERMS */}
+      <div className="border-t border-slate-300 pt-4 text-xs text-slate-500">
+        <p className="font-bold text-black mb-1">Términos y Condiciones:</p>
+        <ul className="list-disc pl-4 space-y-1">
+            <li>Esta cotización es válida por 15 días calendario.</li>
+            <li>Para iniciar el trabajo se requiere un abono del 50%.</li>
+            <li>Cheques a nombre de: <strong>Veronica de Sáenz</strong></li>
+        </ul>
       </div>
     </div>
   );
@@ -174,12 +232,16 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         tagsOther: currentOrder.tagsOther || [],
         itbms: currentOrder.itbms || false,
         createdBy: currentOrder.createdBy,
-        productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false }))
+        productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })),
+        ruc: currentOrder.ruc || '',
+        celularSecundario: currentOrder.celularSecundario || '',
       }
     : {
         name: '',
         email: '',
         celular: '',
+        celularSecundario: '',
+        ruc: '',
         description: '',
         comentarios: '',
         estado: isQuote ? 'Cotización' : 'New',
@@ -366,7 +428,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           if (newOrderData) {
             setCurrentOrder(newOrderData);
              // Update URL without a full reload to show the dialog
-            window.history.replaceState(null, '', `/quotes/${newOrderId}/edit`);
+            window.history.replaceState(null, '', isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`);
             if (isQuote) {
               setShowPostSaveDialog(true);
             }
@@ -410,7 +472,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? (isEditing ? t('formTitleEditQuote') : t('formTitleNewQuote'))
     : (isEditing ? t('formTitleEditOrder') : t('formTitleNewOrder'));
   
-  const pageTitle = isEditing ? `${title}: #${currentOrder.orderNumber}` : title;
+  const pageTitle = isEditing ? `${title}: #${currentOrder?.orderNumber}` : title;
 
   const translatedFormType = t(isQuote ? 'quote' : 'order');
 
@@ -425,6 +487,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                       <Image src="/logo.png" alt="VA Cards and Crafts Logo" width={60} height={60} />
                       <div>
                         <h2 className="text-2xl font-bold">VA Cards and Crafts</h2>
+                        {isEditing && currentOrder?.orderNumber && (
+                          <p className="text-sm text-muted-foreground">
+                            {t(isQuote ? 'quote' : 'order')} #: {currentOrder.orderNumber}
+                          </p>
+                        )}
                         {isEditing && (
                           <div className="text-xs text-muted-foreground mt-1 space-y-1">
                             <div className="flex items-center gap-1.5">
@@ -461,11 +528,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 
                 <div className="mb-4">
                   <h1 className="text-2xl font-bold">{pageTitle}</h1>
-                  {isEditing && currentOrder?.orderNumber && (
-                    <p className="text-sm text-muted-foreground">
-                      {t(isQuote ? 'quote' : 'order')} #: {currentOrder.orderNumber}
-                    </p>
-                  )}
                 </div>
 
 
@@ -480,6 +542,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <FormItem>
                           <FormLabel>{t('formLabelFullName')}</FormLabel>
                           <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="ruc" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RUC</FormLabel>
+                          <FormControl><Input placeholder="RUC" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -505,6 +574,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           </Link>
                         </Button>
                       </div>
+                      <FormField control={form.control} name="celularSecundario" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secondary Phone</FormLabel>
+                          <FormControl><Input placeholder="+507..." {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </CardContent>
                   </Card>
 

@@ -17,6 +17,8 @@ export const orderSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.').max(100),
   email: z.string().email('Invalid email address.').optional().or(z.literal('')),
   celular: z.string().min(1, 'Phone number is required.'),
+  celularSecundario: z.string().optional(),
+  ruc: z.string().optional(),
   description: z.string().max(300, 'Description cannot exceed 300 characters.').optional(),
   comentarios: z.string().optional(),
   
