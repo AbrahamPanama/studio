@@ -15,6 +15,7 @@ export const productSchema = z.object({
 export const orderSchema = z.object({
   orderNumber: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.').max(100),
+  companyName: z.string().optional(),
   email: z.string().email('Invalid email address.').optional().or(z.literal('')),
   celular: z.string().min(1, 'Phone number is required.'),
   celularSecundario: z.string().optional(),

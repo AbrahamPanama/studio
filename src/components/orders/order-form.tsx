@@ -105,6 +105,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
             <h3 className="font-bold text-black text-sm uppercase mb-2 border-b border-slate-300 inline-block pb-0.5">Cliente</h3>
             <div className="text-sm text-slate-700 space-y-1">
                 <p className="font-bold text-lg text-black uppercase">{data.name || 'Cliente General'}</p>
+                {data.companyName && <p className="text-xs font-semibold text-slate-500 uppercase">{data.companyName}</p>}
                 {data.ruc && <p><span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">RUC:</span> {data.ruc}</p>}
                 {data.direccionEnvio && (
                     <p className="leading-tight"><span className="font-semibold text-xs text-slate-500 uppercase w-20 inline-block">Dirección:</span> {data.direccionEnvio}</p>
@@ -221,6 +222,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     ? {
         ...currentOrder,
         orderNumber: currentOrder.orderNumber,
+        companyName: currentOrder.companyName || '',
         entrega: currentOrder.entrega ? new Date(currentOrder.entrega) : new Date(),
         entregaLimite: currentOrder.entregaLimite ? new Date(currentOrder.entregaLimite) : new Date(),
         description: currentOrder.description || '',
@@ -238,6 +240,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       }
     : {
         name: '',
+        companyName: '',
         email: '',
         celular: '',
         celularSecundario: '',
@@ -372,6 +375,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const formattedNumber = formatPhoneNumber(e.target.value);
     form.setValue('celular', formattedNumber, { shouldValidate: true });
   };
+  
+  const handleSecondaryPhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const formattedNumber = formatPhoneNumber(e.target.value);
+    form.setValue('celularSecundario', formattedNumber, { shouldValidate: true });
+  };
 
   const handleDownloadQuote = () => {
     // Target the clean component instead of the dirty form
@@ -480,7 +488,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="container mx-auto py-6">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-4xl mx-auto">
                 <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex items-center space-x-4">
@@ -537,50 +545,76 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleCustomerInfo')}</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-4">
-                      <FormField control={form.control} name="name" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('formLabelFullName')}</FormLabel>
-                          <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="ruc" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>RUC</FormLabel>
-                          <FormControl><Input placeholder="RUC" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('formLabelEmail')}</FormLabel>
-                          <FormControl><Input placeholder="john@example.com" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <div className="space-y-2">
-                        <FormField control={form.control} name="celular" render={({ field }) => (
+                    <CardContent>
+                      {/* Main Grid Container: 2 Columns on small screens and up */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                        
+                        {/* --- ROW 1 --- */}
+                        {/* Left: Full Name */}
+                        <FormField control={form.control} name="name" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('formLabelPhone')}</FormLabel>
-                            <FormControl><Input placeholder="+507 6216-8911" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
+                            <FormLabel>{t('formLabelFullName')}</FormLabel>
+                            <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
-                        <Button type="button" variant="outline" size="sm" asChild className={!watchedPhoneNumber ? 'pointer-events-none opacity-50' : ''}>
-                          <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank">
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            {t('formButtonWhatsApp')}
-                          </Link>
-                        </Button>
+
+                        {/* Right: Company Name (NEW) */}
+                        <FormField control={form.control} name="companyName" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Name</FormLabel>
+                            <FormControl><Input placeholder="Company S.A." {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* --- ROW 2 --- */}
+                        {/* Left: RUC */}
+                        <FormField control={form.control} name="ruc" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>RUC</FormLabel>
+                            <FormControl><Input placeholder="8-888-888" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* Right: Email */}
+                        <FormField control={form.control} name="email" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('formLabelEmail')}</FormLabel>
+                            <FormControl><Input placeholder="email@example.com" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* --- ROW 3 --- */}
+                        {/* Left: Primary Phone + WhatsApp */}
+                        <div className="space-y-2">
+                          <FormField control={form.control} name="celular" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('formLabelPhone')}</FormLabel>
+                              <FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          {/* WhatsApp Button - Compact styling to keep alignment */}
+                          <Button type="button" variant="outline" size="sm" className="w-full text-xs h-8" asChild disabled={!watchedPhoneNumber}>
+                            <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank">
+                              <MessageSquare className="mr-2 h-3 w-3" /> WhatsApp
+                            </Link>
+                          </Button>
+                        </div>
+
+                        {/* Right: Secondary Phone */}
+                        <FormField control={form.control} name="celularSecundario" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Secondary Phone</FormLabel>
+                            <FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handleSecondaryPhoneNumberBlur} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
                       </div>
-                      <FormField control={form.control} name="celularSecundario" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Secondary Phone</FormLabel>
-                          <FormControl><Input placeholder="+507..." {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
                     </CardContent>
                   </Card>
 
@@ -597,11 +631,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-[60px] text-center p-1">{t('formTableReady')}</TableHead>
-                              <TableHead className="p-1">{t('formTableProductName')}</TableHead>
-                              <TableHead className="p-1">{t('formTableDescription')}</TableHead>
-                              <TableHead className="w-[90px] p-1">{t('formTableQuantity')}</TableHead>
-                              <TableHead className="w-[110px] p-1">{t('formTableUnitPrice')}</TableHead>
-                              <TableHead className="w-[120px] text-right p-1">{t('formTableSubtotal')}</TableHead>
+                              <TableHead className="p-2">Product Name</TableHead>
+                              <TableHead className="p-2">Description</TableHead>
+                              <TableHead className="w-[80px] p-2">Qty</TableHead>
+                              <TableHead className="w-[100px] p-2">Unit Price</TableHead>
+                              <TableHead className="w-[120px] text-right p-2">Subtotal</TableHead>
                               <TableHead className="w-[40px] p-1"><span className="sr-only">{t('formTableRemove')}</span></TableHead>
                             </TableRow>
                           </TableHeader>
@@ -615,27 +649,27 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                     </FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="p-1 pr-1">
+                                <TableCell className="p-2">
                                   <FormField control={form.control} name={`productos.${index}.name`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductName')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="p-1 pr-1">
+                                <TableCell className="p-2">
                                   <FormField control={form.control} name={`productos.${index}.description`} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('formPlaceholderProductDesc')} {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="p-1 pr-1">
+                                <TableCell className="p-2">
                                   <FormField control={form.control} name={`productos.${index}.quantity`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="p-1 pr-1">
+                                <TableCell className="p-2">
                                   <FormField control={form.control} name={`productos.${index}.price`} render={({ field }) => (
                                     <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
                                   )} />
                                 </TableCell>
-                                <TableCell className="text-right font-medium p-1 pr-1">
+                                <TableCell className="text-right font-medium p-2">
                                   {formatCurrency((watchedProducts[index]?.quantity || 0) * (watchedProducts[index]?.price || 0))}
                                 </TableCell>
                                 <TableCell className="p-1">

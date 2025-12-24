@@ -23,6 +23,10 @@
           "type": "string",
           "description": "Name of the customer."
         },
+        "companyName": {
+          "type": "string",
+          "description": "Company name of the customer."
+        },
         "customerEmail": {
           "type": "string",
           "description": "Email address of the customer.",

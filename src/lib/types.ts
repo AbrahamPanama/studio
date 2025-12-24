@@ -24,6 +24,7 @@ export type Order = Omit<z.infer<typeof orderSchema>, 'tags' | 'tagsOther' | 'pr
   ruc?: string;
   celularSecundario?: string;
   direccionEnvio?: string;
+  companyName?: string;
 };
 
 export type Tag = z.infer<typeof tagSchema>;
