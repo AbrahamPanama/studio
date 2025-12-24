@@ -980,11 +980,16 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className='sm:justify-between flex-col sm:flex-row gap-2'>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                            Close
-                        </Button>
-                    </DialogClose>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                        setShowPostSaveDialog(false);
+                        router.push('/');
+                        }}
+                    >
+                        Close
+                    </Button>
                     <div className="flex justify-end gap-2">
                         <Button type="button" onClick={() => {
                             handleCopyToClipboard();
@@ -1005,6 +1010,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
+    
 
     
 
