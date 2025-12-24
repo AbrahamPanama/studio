@@ -650,54 +650,6 @@
       "orderNumber": "000007"
     },
     {
-      "name": "John Doe",
-      "email": "john.doe@example.com",
-      "celular": "+1 (234) 567-890",
-      "description": "A sample order for 10 T-shirts and 20 mugs.",
-      "comentarios": "Customer requested a specific blue color for the t-shirts.",
-      "estado": "Packaging",
-      "subEstado": "Check List",
-      "entrega": "2024-07-05T00:00:00.000Z",
-      "entregaLimite": "2024-07-24T05:00:00.000Z",
-      "servicioEntrega": "Uber",
-      "direccionEnvio": "123 Main St, Anytown, USA",
-      "abono": false,
-      "cancelo": false,
-      "totalAbono": 0,
-      "privacidad": "ilimitado",
-      "tags": [],
-      "tagsOther": [
-        "Pend. Aproba"
-      ],
-      "productos": [
-        {
-          "id": "p1",
-          "name": "T-Shirt",
-          "description": "",
-          "quantity": 10,
-          "price": 15,
-          "materialsReady": true,
-          "isTaxable": true
-        },
-        {
-          "id": "p2",
-          "name": "Mug",
-          "description": "",
-          "quantity": 20,
-          "price": 8,
-          "materialsReady": true,
-          "isTaxable": true
-        }
-      ],
-      "itbms": false,
-      "subtotal": 310,
-      "tax": 0,
-      "orderTotal": 310,
-      "id": "1",
-      "fechaIngreso": "2023-10-26T10:00:00.000Z",
-      "orderNumber": "000008"
-    },
-    {
       "name": "Abraham Israel Saenz Clark",
       "email": "abraham.saenz@gmail.com",
       "celular": "+50762168911",

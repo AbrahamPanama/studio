@@ -195,7 +195,11 @@ export async function deleteOrder(id: string) {
     const index = db.orders.findIndex(o => o.id === id);
 
     if (index === -1) {
-        throw new Error('Order not found');
+        // Instead of throwing an error, just log it and return.
+        // This can happen if the order was already deleted in another session.
+        console.warn(`Attempted to delete order with ID "${id}", but it was not found.`);
+        revalidatePath('/');
+        return;
     }
     db.orders.splice(index, 1);
     await writeDb(db);
