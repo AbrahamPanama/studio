@@ -192,14 +192,15 @@ export const translations = {
   },
 };
 
-export type TranslationKey = keyof typeof translations.en | keyof typeof translations.es;
+export type TranslationKey = keyof typeof translations.en;
 
 // Helper to replace placeholders like {name}
 export const t = (key: TranslationKey, lang: 'en' | 'es', options?: { [key: string]: string | number }) => {
   let text = translations[lang][key] || translations['en'][key];
   if (options) {
     Object.keys(options).forEach(placeholder => {
-      text = text.replace(`{${placeholder}}`, String(options[placeholder]));
+      const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+      text = text.replace(regex, String(options[placeholder]));
     });
   }
   return text;
