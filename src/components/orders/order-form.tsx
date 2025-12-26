@@ -70,6 +70,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
   const subtotal = data.productos?.reduce((acc: number, p: any) => acc + (Number(p.quantity) * Number(p.price)), 0) || 0;
   const tax = data.itbms ? subtotal * 0.07 : 0;
   const total = subtotal + tax;
+  const abono = total * 0.5;
   const currentDate = new Date().toLocaleDateString('es-PA', { day: '2-digit', month: '2-digit', year: 'numeric' });
   
   // Validity logic: 15 days from now
@@ -182,6 +183,10 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
             <div className="flex justify-between text-lg font-extrabold text-black border-t-2 border-black pt-2 mt-2">
                 <span>TOTAL:</span>
                 <span>${total.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm font-bold text-white bg-black p-2 mt-2">
+                <span>Abono (50%):</span>
+                <span>${abono.toFixed(2)}</span>
             </div>
         </div>
       </div>
