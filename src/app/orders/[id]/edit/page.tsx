@@ -1,11 +1,11 @@
-
 'use client';
-import { notFound, useParams, redirect } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { OrderForm } from '@/components/orders/order-form';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
-import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function EditOrderPage() {
   const params = useParams();
@@ -19,42 +19,65 @@ export default function EditOrderPage() {
 
   const { data: order, isLoading, error } = useDoc<Order>(docRef);
 
-  // DEBUGGING: Watch the console to see what happens
-  useEffect(() => {
-    if (!isLoading) {
-      console.log(`[EditPage] Looking for ID: ${id}`);
-      console.log(`[EditPage] Firestore Instance:`, !!firestore);
-      console.log(`[EditPage] Order found:`, order);
-      console.log(`[EditPage] Any Errors?:`, error);
-    }
-  }, [isLoading, id, order, firestore, error]);
-
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading order details...</div>;
+    return <div className="p-8">Loading order data...</div>;
   }
 
-  // If the hook returns an error (like permission denied), show it instead of 404
+  // 1. Check for Firestore Errors (Permissions)
   if (error) {
     return (
-      <div className="p-8 text-red-500">
-        <h2 className="font-bold text-xl">Error Loading Order</h2>
-        <p>Could not fetch document with ID: {id}</p>
-        <pre className="mt-4 bg-gray-100 p-4 rounded text-sm text-black">
-          {JSON.stringify(error, null, 2)}
-        </pre>
-        <p className="mt-4 text-sm text-gray-600">Check your Browser Console (F12) for more details.</p>
+      <div className="p-8 border-l-4 border-red-500 bg-red-50">
+        <h1 className="text-xl font-bold text-red-700">Firestore Error</h1>
+        <p className="mt-2 text-red-600">{error.message}</p>
+        <p className="mt-2 text-sm">Check your Browser Console (F12) and Firestore Rules.</p>
       </div>
     );
   }
 
+  // 2. Check if Data exists
   if (!order) {
-    // If we get here, Firestore definitely said "This document does not exist"
-    return notFound();
+    return (
+      <div className="p-8 border-l-4 border-amber-500 bg-amber-50">
+        <h1 className="text-xl font-bold text-amber-700">Document Not Found</h1>
+        <p className="mt-2">
+            The ID <strong>{id}</strong> does not exist in the "orders" collection of your current database.
+        </p>
+        <div className="mt-4">
+            <p className="font-semibold">Possible causes:</p>
+            <ul className="list-disc ml-5 mt-1">
+                <li>This order was created in the Emulator, but you are now connected to the Cloud (or vice versa).</li>
+                <li>The ID in the URL is wrong.</li>
+            </ul>
+        </div>
+        <div className="mt-6">
+            <Button asChild>
+                <Link href="/">Return to Dashboard</Link>
+            </Button>
+        </div>
+      </div>
+    );
   }
 
-  // A quote should not be editable via the /orders/... path. Redirect to the correct quotes path.
+  // 3. Check for Redirects (without actually redirecting yet)
   if (order.estado === 'Cotización') {
-    redirect(`/quotes/${id}/edit`);
+    return (
+        <div className="p-8 border-l-4 border-blue-500 bg-blue-50">
+            <h1 className="text-xl font-bold text-blue-700">Redirect Blocked for Debugging</h1>
+            <p className="mt-2">
+                This is a <strong>Quote</strong> (Cotización).
+                The code normally redirects you to: <code className="bg-gray-200 px-1">/quotes/{id}/edit</code>
+            </p>
+            <p className="mt-2">
+                If you were getting a 404, it implies the <strong>/quotes</strong> route does not exist.
+            </p>
+            <div className="mt-4 flex gap-4">
+                <Button asChild variant="outline">
+                    <Link href={`/quotes/${id}/edit`}>Try clicking here to go to Quotes Page manually</Link>
+                </Button>
+                <Button onClick={() => window.history.back()}>Go Back</Button>
+            </div>
+        </div>
+    );
   }
 
   return <OrderForm order={order} formType="order" />;
