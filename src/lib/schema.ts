@@ -22,16 +22,16 @@ export const orderSchema = z.object({
   ruc: z.string().optional(),
   description: z.string().max(300, 'Description cannot exceed 300 characters.').optional(),
   comentarios: z.string().optional(),
-
-  // FIX 1: Explicitly allow 'Cotización' alongside the enum
+  
+  // CORRECCIÓN CRÍTICA 1: Permitir explícitamente el estado 'Cotización'
   estado: z.enum(ORDER_STATUSES).or(z.literal('Cotización')).default('New'),
   subEstado: z.enum(ORDER_SUB_STATUSES).default('Pendiente'),
 
-  // FIX 2: Preprocess dates to turn empty strings into undefined BEFORE coercion
+  // CORRECCIÓN CRÍTICA 2: Pre-procesar fechas para que los strings vacíos no rompan la validación
   entrega: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
   entregaLimite: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
   
-  // FIX 3: Allow empty strings for service and address
+  // CORRECCIÓN CRÍTICA 3: Permitir strings vacíos en selectores ocultos
   servicioEntrega: z.enum(DELIVERY_SERVICES).optional().or(z.literal('')),
   direccionEnvio: z.string().optional(),
 
@@ -52,7 +52,7 @@ export const orderSchema = z.object({
 
   createdBy: z.string().optional(),
 }).superRefine((data, ctx) => {
-    // Only enforce strict rules if it is NOT a Quote
+    // Solo aplicamos reglas estrictas si NO es una cotización
     if (data.estado !== 'Cotización') {
         if (!data.entrega) {
             ctx.addIssue({
@@ -68,7 +68,6 @@ export const orderSchema = z.object({
                 message: 'Delivery deadline is required for orders.',
             });
         }
-        // Ensure service is not empty string or undefined
         if (!data.servicioEntrega || data.servicioEntrega === '') {
             ctx.addIssue({
                 code: z.ZodIssueCode.invalid_enum_value,
@@ -78,7 +77,6 @@ export const orderSchema = z.object({
         }
     }
 });
-
 
 export const tagSchema = z.object({
   id: z.string(),
