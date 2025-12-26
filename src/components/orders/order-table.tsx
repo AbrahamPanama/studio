@@ -46,6 +46,19 @@ import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
+const parseDate = (dateInput: any): Date | undefined => {
+  if (!dateInput) return undefined;
+  // If it's already a Date object
+  if (dateInput instanceof Date) return dateInput;
+  // If it's a Firestore Timestamp (has toDate method)
+  if (typeof dateInput.toDate === 'function') return dateInput.toDate();
+  // If it's a raw object with seconds (serialized Timestamp)
+  if (dateInput.seconds) return new Date(dateInput.seconds * 1000);
+  // If it's a string
+  return new Date(dateInput);
+};
+
+
 const OrderTableRow = ({ 
   order, 
   allTags, 
@@ -88,6 +101,7 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
+        onRefresh();
       } catch (error) {
         // Error is handled by global listener
       }
@@ -118,7 +132,7 @@ const OrderTableRow = ({
 
   const editUrl = order.estado === 'Cotización' ? `/quotes/${order.id}/edit` : `/orders/${order.id}/edit`;
 
-  const deadline = order.entregaLimite ? new Date(order.entregaLimite as any) : null;
+  const deadline = parseDate(order.entregaLimite);
   const deadlineStyle = React.useMemo(() => {
     if (!deadline) return '';
     if (isPast(deadline)) return 'text-red-600 font-medium';
@@ -213,7 +227,7 @@ const OrderTableRow = ({
         </Popover>
       </TableCell>
       <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
-       {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite as any) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
+       {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
