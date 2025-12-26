@@ -26,9 +26,9 @@ export const orderSchema = z.object({
   estado: z.enum(ORDER_STATUSES).default('New'),
   subEstado: z.enum(ORDER_SUB_STATUSES).default('Pendiente'),
 
-  entrega: z.coerce.date({ required_error: 'Delivery date is required.' }),
-  entregaLimite: z.coerce.date({ required_error: 'Delivery deadline is required.' }),
-  servicioEntrega: z.enum(DELIVERY_SERVICES).default('Retiro taller'),
+  entrega: z.coerce.date().optional(),
+  entregaLimite: z.coerce.date().optional(),
+  servicioEntrega: z.enum(DELIVERY_SERVICES).optional(),
   direccionEnvio: z.string().optional(),
 
   abono: z.boolean().default(false),
@@ -47,10 +47,36 @@ export const orderSchema = z.object({
   orderTotal: z.coerce.number().default(0),
 
   createdBy: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.estado !== 'Cotización') {
+        if (!data.entrega) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.invalid_date,
+                path: ['entrega'],
+                message: 'Delivery date is required for orders.',
+            });
+        }
+        if (!data.entregaLimite) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.invalid_date,
+                path: ['entregaLimite'],
+                message: 'Delivery deadline is required for orders.',
+            });
+        }
+        if (!data.servicioEntrega) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.invalid_enum_value,
+                path: ['servicioEntrega'],
+                message: 'Delivery service is required for orders.',
+            });
+        }
+    }
 });
+
 
 export const tagSchema = z.object({
   id: z.string(),
   label: z.string().min(1, "Label is required"),
   color: z.string().min(1, "Color is required"),
 });
+
