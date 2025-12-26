@@ -69,8 +69,6 @@ const OrderTableRow = ({
   order: Order, 
   allTags: Tag[], 
   allOtherTags: Tag[], 
-  onAllTagsUpdate: (tags: Tag[]) => void, 
-  onAllOtherTagsUpdate: (tags: Tag[]) => void, 
   onDelete: (id: string) => void,
   onRefresh: () => void,
 }) => {
@@ -332,8 +330,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                   order={order} 
                   allTags={allTags}
                   allOtherTags={allOtherTags}
-                  onAllTagsUpdate={handleAllTagsUpdate}
-                  onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                   onDelete={handleDelete} 
                   onRefresh={onRefresh}
               />
@@ -350,5 +346,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
+
+    
 
     
