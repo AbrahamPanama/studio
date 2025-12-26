@@ -178,6 +178,12 @@ const OrderTableRow = ({
             <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
+      <TableCell>
+        {order.servicioEntrega}
+      </TableCell>
+      <TableCell>
+        <p className="line-clamp-3">{order.direccionEnvio}</p>
+      </TableCell>
        <TableCell>
         <Popover>
           <PopoverTrigger asChild>
@@ -276,7 +282,7 @@ const ResizableHandle = ({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) =
 );
 
 
-const COLUMN_IDS = ['customer', 'status', 'sub-status', 'items', 'tags-shipping', 'tags-other', 'delivery-deadline', 'total', 'actions'];
+const COLUMN_IDS = ['customer', 'status', 'sub-status', 'items', 'shipping-method', 'shipping-address', 'tags-shipping', 'tags-other', 'delivery-deadline', 'total', 'actions'];
 
 export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order[], onRefresh: () => void }) {
   const [orders, setOrders] = React.useState(initialOrders);
@@ -300,6 +306,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
             'status': 160,
             'sub-status': 160,
             'items': 250,
+            'shipping-method': 150,
+            'shipping-address': 250,
             'tags-shipping': 250,
             'tags-other': 250,
             'delivery-deadline': 150,
