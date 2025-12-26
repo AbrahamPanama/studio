@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -11,16 +12,15 @@ type DatePickerProps = {
   disabled?: boolean;
 };
 
-// Helper to format date to "yyyy-MM-dd" for the input
 function formatDateForInput(date: Date | undefined): string {
-  if (!date) return "";
-  try {
-    // Ensure the date is treated as local time when formatting for the input
-    const localDate = new Date(date.valueOf() + date.getTimezoneOffset() * 60000);
-    return format(localDate, "yyyy-MM-dd");
-  } catch {
-    return "";
-  }
+    if (!date) return "";
+    try {
+        const dateObj = new Date(date);
+        const adjustedDate = new Date(dateObj.getTime() - (dateObj.getTimezoneOffset() * 60000));
+        return adjustedDate.toISOString().split('T')[0];
+    } catch {
+        return "";
+    }
 }
 
 export function DatePicker({ value, onChange, disabled }: DatePickerProps) {
@@ -34,10 +34,9 @@ export function DatePicker({ value, onChange, disabled }: DatePickerProps) {
     const newStringValue = e.target.value;
     setInputValue(newStringValue);
     if (newStringValue) {
-        // The input value is a string 'YYYY-MM-DD'.
-        // parseISO treats it as UTC midnight.
-        const date = parseISO(newStringValue);
-        onChange(date);
+        const date = new Date(newStringValue);
+        const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+        onChange(utcDate);
     } else {
       onChange(undefined);
     }

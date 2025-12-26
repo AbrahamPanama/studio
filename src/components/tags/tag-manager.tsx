@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -13,18 +14,20 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { updateTags } from '@/lib/actions';
 import type { Tag } from '@/lib/types';
-import { Edit, PlusCircle, Trash2, X } from 'lucide-react';
+import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+
 
 interface TagManagerProps {
   allTags: Tag[];
   selectedTags: string[];
   onSelectedTagsChange: (tags: string[]) => void;
   onTagsUpdate: (tags: Tag[]) => void;
-  onSave?: (tags: Tag[]) => Promise<void>;
+  collectionName?: 'tags' | 'tagsOther';
 }
 
 export function TagManager({
@@ -32,12 +35,13 @@ export function TagManager({
   selectedTags,
   onSelectedTagsChange,
   onTagsUpdate,
-  onSave = updateTags,
+  collectionName = 'tags'
 }: TagManagerProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedTags, setEditedTags] = React.useState(allTags);
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   React.useEffect(() => {
     setEditedTags(allTags);
@@ -52,8 +56,28 @@ export function TagManager({
 
   const handleSaveEdits = () => {
     startTransition(async () => {
+      if (!firestore) return;
       try {
-        await onSave(editedTags);
+        const batch = writeBatch(firestore);
+        const collectionRef = collection(firestore, collectionName);
+    
+        // Get current tags from DB to find out which ones to delete
+        const snapshot = await getDocs(collectionRef);
+        const existingIds = snapshot.docs.map(doc => doc.id);
+        const newIds = editedTags.map(tag => tag.id);
+        
+        const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+        idsToDelete.forEach(id => {
+            batch.delete(doc(collectionRef, id));
+        });
+
+        editedTags.forEach(tag => {
+            const { id, ...tagData } = tag;
+            const docRef = doc(collectionRef, id);
+            batch.set(docRef, tagData, { merge: true });
+        });
+
+        await batch.commit();
         onTagsUpdate(editedTags);
         toast({ title: 'Success', description: 'Labels updated successfully.' });
         setIsEditing(false);

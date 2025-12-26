@@ -11,16 +11,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { differenceInDays, isPast } from 'date-fns';
+import { doc, getDocs, collection } from 'firebase/firestore';
 
 import type { Order, Tag } from '@/lib/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { deleteOrder, updateOrder, getTags, getOtherTags, updateTags, updateOtherTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -46,13 +44,12 @@ import { ProductEditPopover } from './product-edit-popover';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
+import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
 const OrderTableRow = ({ 
   order, 
   allTags, 
   allOtherTags, 
-  onAllTagsUpdate, 
-  onAllOtherTagsUpdate, 
   onDelete,
   onRefresh,
 }: { 
@@ -66,39 +63,33 @@ const OrderTableRow = ({
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
-  const router = useRouter();
+  const firestore = useFirestore();
 
-  const [name, setName] = React.useState(order.name);
-  
   const [hasMounted, setHasMounted] = React.useState(false);
   React.useEffect(() => {
     setHasMounted(true);
   }, []);
 
   const handleDelete = () => {
-    startTransition(async () => {
-      await deleteOrder(order.id);
-      toast({ title: 'Success', description: 'Order deleted.' });
-      onDelete(order.id); // This will trigger the refresh on the parent
+    startTransition(() => {
+      const docRef = doc(firestore, 'orders', order.id);
+      deleteDocumentNonBlocking(docRef);
+      toast({ title: 'Success', description: 'Order will be deleted.' });
+      onDelete(order.id);
     });
   }
 
   const handleFieldUpdate = (fieldName: keyof Order, value: any) => {
-    startTransition(async () => {
+    startTransition(() => {
       try {
-        await updateOrder(order.id, { [fieldName]: value });
+        const docRef = doc(firestore, 'orders', order.id);
+        updateDocumentNonBlocking(docRef, { [fieldName]: value });
         toast({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        onRefresh();
       } catch (error) {
-        console.error(error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Failed to update ${fieldName.toString()}.`,
-        });
+        // Error is handled by global listener
       }
     });
   };
@@ -110,12 +101,6 @@ const OrderTableRow = ({
     handleFieldUpdate('tagsOther', tags);
   }
 
-  const handleNameBlur = () => {
-    if (name !== order.name) {
-      handleFieldUpdate('name', name);
-    }
-  };
-  
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
       {p.name} {p.description && `(${p.description})`} - {p.quantity}
@@ -133,7 +118,7 @@ const OrderTableRow = ({
 
   const editUrl = order.estado === 'Cotización' ? `/quotes/${order.id}/edit` : `/orders/${order.id}/edit`;
 
-  const deadline = order.entregaLimite ? new Date(order.entregaLimite) : null;
+  const deadline = order.entregaLimite ? new Date(order.entregaLimite as any) : null;
   const deadlineStyle = React.useMemo(() => {
     if (!deadline) return '';
     if (isPast(deadline)) return 'text-red-600 font-medium';
@@ -144,7 +129,7 @@ const OrderTableRow = ({
   return (
     <TableRow>
       <TableCell className="w-[200px]">
-        <div className="font-medium text-foreground">{name}</div>
+        <div className="font-medium text-foreground">{order.name}</div>
         <div className="text-sm font-mono text-muted-foreground">#{order.orderNumber}</div>
         <div className="text-sm text-muted-foreground">{order.celular}</div>
       </TableCell>
@@ -201,8 +186,7 @@ const OrderTableRow = ({
               allTags={allTags}
               selectedTags={order.tags || []}
               onSelectedTagsChange={handleTagsUpdate}
-              onTagsUpdate={onAllTagsUpdate}
-              onSave={updateTags}
+              onTagsUpdate={() => {}}
             />
           </PopoverContent>
         </Popover>
@@ -223,14 +207,13 @@ const OrderTableRow = ({
               allTags={allOtherTags}
               selectedTags={order.tagsOther || []}
               onSelectedTagsChange={handleOtherTagsUpdate}
-              onTagsUpdate={onAllOtherTagsUpdate}
-              onSave={updateOtherTags}
+              onTagsUpdate={() => {}}
             />
           </PopoverContent>
         </Popover>
       </TableCell>
       <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
-       {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
+       {hasMounted && <DatePicker value={order.entregaLimite ? new Date(order.entregaLimite as any) : undefined} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
@@ -277,22 +260,25 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   const [orders, setOrders] = React.useState(initialOrders);
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
-  const router = useRouter();
-
+  const firestore = useFirestore();
+  
   React.useEffect(() => {
-    getTags().then(setAllTags);
-    getOtherTags().then(setAllOtherTags);
-  }, []);
+    if (!firestore) return;
+    const fetchTags = async () => {
+      const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
+      const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
+      setAllTags(tagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+      setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+    };
+    fetchTags();
+  }, [firestore]);
   
   React.useEffect(() => {
     setOrders(initialOrders);
   }, [initialOrders]);
 
   const handleDelete = (id: string) => {
-    // Optimistically remove the order from the local state
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
-    // Trigger the parent component to refetch all data
-    onRefresh();
   };
   
   const handleAllTagsUpdate = (newTags: Tag[]) => {

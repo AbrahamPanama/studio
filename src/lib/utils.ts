@@ -1,6 +1,7 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
+import { format as formatDateFns, fromUnixTime } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -44,10 +45,16 @@ export function formatPhoneNumber(phone: string): string {
 }
 
 
-export function formatDate(date: string | number | Date): string {
+export function formatDate(date: string | number | Date | { seconds: number, nanoseconds: number }): string {
   if (!date) return "";
   try {
-    return format(new Date(date), "dd MMM, yyyy");
+    let dateObj: Date;
+    if (typeof date === 'object' && 'seconds' in date && 'nanoseconds' in date) {
+      dateObj = fromUnixTime(date.seconds);
+    } else {
+      dateObj = new Date(date);
+    }
+    return formatDateFns(dateObj, "dd MMM, yyyy");
   } catch (error) {
     return "";
   }

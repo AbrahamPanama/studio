@@ -9,7 +9,6 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card'; // Simplificado, no necesitamos Header/Title/etc para los grupos
 import { OrderTable } from '@/components/orders/order-table';
-import { getOrders } from '@/lib/actions';
 import type { Order } from '@/lib/types';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Input } from '@/components/ui/input';
@@ -22,6 +21,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 // --- Helper Functions ---
 const groupAndSortOrders = (orders: Order[]) => {
@@ -36,10 +37,20 @@ const groupAndSortOrders = (orders: Order[]) => {
     grouped[order.estado]!.push(order);
   });
 
+  // Convert timestamps to sortable dates
+  const sortableOrders = (group: Order[] | undefined) => {
+    if (!group) return [];
+    return group.sort((a, b) => {
+      const dateA = a.fechaIngreso && typeof a.fechaIngreso !== 'string' ? (a.fechaIngreso as any).toMillis() : 0;
+      const dateB = b.fechaIngreso && typeof b.fechaIngreso !== 'string' ? (b.fechaIngreso as any).toMillis() : 0;
+      return dateB - dateA;
+    });
+  };
+
   const sortedGroups = statusOrder
     .map(status => ({
       status,
-      orders: grouped[status] || [],
+      orders: sortableOrders(grouped[status]) || [],
     }))
     .filter(group => group.orders.length > 0);
 
@@ -86,7 +97,6 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
   const orderGroups = groupAndSortOrders(filteredOrders);
 
   return (
-    // CAMBIO 1: Fondo global gris suave para dar profundidad
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-[95vw] mx-auto">
        <Tabs value={tab} className="space-y-8">
@@ -186,7 +196,6 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
              <TabsContent value={tab} className="mt-0 space-y-6 animate-in fade-in-50 duration-300">
                   
                   {orderGroups.map(({ status, orders }) => (
-                    // CAMBIO 2: Tarjetas limpias, bordes suaves, fondo blanco puro
                     <div key={status} className="group">
                         <Card className="border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white overflow-hidden rounded-xl">
                             <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
@@ -199,7 +208,6 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                                                 {orders.length} {orders.length === 1 ? 'Pedido' : 'Pedidos'}
                                             </span>
                                         </div>
-                                        {/* Aquí podrías poner el total monetario del grupo si quisieras */}
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-0 pb-0 border-t border-slate-100">
@@ -233,27 +241,28 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
-    const query = searchParams.get('query') || '';
+    const queryParam = searchParams.get('query') || '';
     const tab = searchParams.get('tab') || 'active';
-    const [allOrders, setAllOrders] = React.useState<Order[]>([]);
-    const [loading, setLoading] = React.useState(true);
+    const firestore = useFirestore();
 
-    const fetchOrders = React.useCallback(() => {
-        setLoading(true);
-        getOrders().then(orders => {
-            setAllOrders(orders);
-            setLoading(false);
-        });
-    }, []);
+    const ordersQuery = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'orders'), orderBy('fechaIngreso', 'desc'));
+    }, [firestore]);
+    
+    const { data: allOrders, isLoading, error } = useCollection<Order>(ordersQuery);
 
-    React.useEffect(() => {
-        fetchOrders();
-    }, [fetchOrders]);
+    const [refreshKey, setRefreshKey] = React.useState(0);
+    const forceRefresh = () => setRefreshKey(k => k + 1);
 
-    if (loading) {
-        // Un skeleton loader simple sería ideal aquí, pero por ahora centramos el texto
+
+    if (isLoading) {
         return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading orders...</p></div>
     }
 
-    return <DashboardPageContent allOrders={allOrders} query={query} tab={tab} onRefresh={fetchOrders} />;
+    if (error) {
+        return <div className="flex justify-center items-center h-screen bg-red-50"><p className="text-red-500 font-medium">Error: {error.message}</p></div>
+    }
+
+    return <DashboardPageContent allOrders={allOrders || []} query={queryParam} tab={tab} onRefresh={forceRefresh} />;
 }

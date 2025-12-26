@@ -41,7 +41,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/date-picker';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
@@ -49,13 +49,13 @@ import { orderSchema } from '@/lib/schema';
 import type { Order, Tag } from '@/lib/types';
 import { DELIVERY_SERVICES, ORDER_STATUSES, ORDER_SUB_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants';
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl, formatDate } from '@/lib/utils';
-import { createOrder, updateOrder, getTags, updateTags, getOtherTags, updateOtherTags, getOrderById } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown, Copy } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
+import { collection, doc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
@@ -207,6 +207,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
 
 export function OrderForm({ order, formType }: OrderFormProps) {
   const { user } = useUser();
+  const firestore = useFirestore();
   const { t, language } = useLanguage();
   const [currentOrder, setCurrentOrder] = React.useState(order);
   const isEditing = !!currentOrder;
@@ -220,17 +221,23 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
 
   React.useEffect(() => {
-    getTags().then(setAllTags);
-    getOtherTags().then(setAllOtherTags);
-  }, []);
+    if (!firestore) return;
+    const fetchTags = async () => {
+      const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
+      const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
+      setAllTags(tagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+      setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+    };
+    fetchTags();
+  }, [firestore]);
 
   const defaultValues: Partial<OrderFormValues> = isEditing
     ? {
         ...currentOrder,
         orderNumber: currentOrder.orderNumber,
         companyName: currentOrder.companyName || '',
-        entrega: currentOrder.entrega ? new Date(currentOrder.entrega) : new Date(),
-        entregaLimite: currentOrder.entregaLimite ? new Date(currentOrder.entregaLimite) : new Date(),
+        entrega: currentOrder.entrega ? new Date(currentOrder.entrega as string) : new Date(),
+        entregaLimite: currentOrder.entregaLimite ? new Date(currentOrder.entregaLimite as string) : new Date(),
         description: currentOrder.description || '',
         comentarios: currentOrder.comentarios || '',
         abono: currentOrder.abono || false,
@@ -459,38 +466,69 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const finalValues = form.getValues();
 
     startTransition(async () => {
-      try {
-        const payload = {
+      if (!firestore) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Firestore is not initialized.',
+        });
+        return;
+      }
+      
+      const payload: Omit<OrderFormValues, 'orderNumber'> & { [key: string]: any } = {
           ...data,
           ...finalValues
-        };
-        
+      };
+
+      try {
         if (isEditing && currentOrder) {
-          await updateOrder(currentOrder.id, payload);
+          const docRef = doc(firestore, 'orders', currentOrder.id);
+          updateDocumentNonBlocking(docRef, payload);
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
           router.push('/');
         } else {
-          const { id: newOrderId } = await createOrder({
-            ...payload,
-            createdBy: user?.email || 'Unknown',
-          });
+          const ordersCol = collection(firestore, 'orders');
+          const latestOrderQuery = query(ordersCol, orderBy('orderNumber', 'desc'));
+          const latestOrderSnapshot = await getDocs(latestOrderQuery);
+    
+          let newOrderNumber = 1;
+          if (!latestOrderSnapshot.empty) {
+              const latestOrder = latestOrderSnapshot.docs[0].data();
+              if(latestOrder.orderNumber && !isNaN(parseInt(latestOrder.orderNumber, 10))) {
+                newOrderNumber = parseInt(latestOrder.orderNumber, 10) + 1;
+              }
+          }
+          const orderNumberString = newOrderNumber.toString().padStart(6, '0');
+
+          const newOrderData = {
+              ...payload,
+              createdBy: user?.email || 'Unknown',
+              fechaIngreso: serverTimestamp(),
+              orderNumber: orderNumberString,
+          };
+
+          const newDocRef = await addDocumentNonBlocking(ordersCol, newOrderData);
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
           
-          if (isQuote) {
-            const newOrderData = await getOrderById(newOrderId);
-            if (newOrderData) {
-              setCurrentOrder(newOrderData);
-              window.history.replaceState(null, '', `/quotes/${newOrderId}/edit`);
-              setShowPostSaveDialog(true);
-            } else {
-              router.push(`/quotes/${newOrderId}/edit`);
-            }
+          if (newDocRef) {
+             if (isQuote) {
+               const optimisticOrder: Order = {
+                 ...newOrderData,
+                 id: newDocRef.id,
+                 orderNumber: orderNumberString,
+                 fechaIngreso: new Date().toISOString(),
+               };
+               setCurrentOrder(optimisticOrder);
+               window.history.replaceState(null, '', `/quotes/${newDocRef.id}/edit`);
+               setShowPostSaveDialog(true);
+             } else {
+               router.push('/');
+             }
           } else {
-            router.push('/');
+             router.push('/');
           }
         }
       } catch (error) {
-        console.error(error);
         toast({
           variant: 'destructive',
           title: t('toastError'),
@@ -501,21 +539,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   }
 
   const handleConvertToOrder = () => {
-    if (!isEditing || !currentOrder) return;
+    if (!isEditing || !currentOrder || !firestore) return;
 
-    startConverting(async () => {
-      try {
-        await updateOrder(currentOrder.id, { estado: 'New' });
-        toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
-        router.push('/');
-      } catch (error) {
-        console.error(error);
-        toast({
-          variant: 'destructive',
-          title: t('toastError'),
-          description: t('toastQuoteConvertFailed'),
-        });
-      }
+    startConverting(() => {
+      const docRef = doc(firestore, 'orders', currentOrder.id);
+      updateDocumentNonBlocking(docRef, { estado: 'New' });
+      toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
+      router.push('/');
     });
   };
 
@@ -551,7 +581,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Calendar className="h-3 w-3" />
-                              <span>{t('formCreatedOn')}: {currentOrder?.fechaIngreso ? formatDate(currentOrder.fechaIngreso) : 'N/A'}</span>
+                              <span>{t('formCreatedOn')}: {currentOrder?.fechaIngreso ? formatDate(currentOrder.fechaIngreso as any) : 'N/A'}</span>
                             </div>
                           </div>
                         )}
@@ -934,7 +964,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                     selectedTags={field.value || []}
                                     onSelectedTagsChange={field.onChange}
                                     onTagsUpdate={setAllTags}
-                                    onSave={updateTags}
                                   />
                                   <FormMessage />
                                 </FormItem>
@@ -951,7 +980,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                     selectedTags={field.value || []}
                                     onSelectedTagsChange={field.onChange}
                                     onTagsUpdate={setAllOtherTags}
-                                    onSave={updateOtherTags}
                                   />
                                   <FormMessage />
                                 </FormItem>
@@ -1014,9 +1042,3 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
-
-    
-
-    
-
-    

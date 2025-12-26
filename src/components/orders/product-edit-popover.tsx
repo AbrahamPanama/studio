@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,7 +36,7 @@ import {
 import { productSchema } from '@/lib/schema';
 import type { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { updateOrder } from '@/lib/actions';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { Save } from 'lucide-react';
 
 const popoverFormSchema = z.object({
@@ -57,7 +58,7 @@ export function ProductEditPopover({
   const [isStatusAlertOpen, setIsStatusAlertOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
-  const router = useRouter();
+  const firestore = useFirestore();
 
   const form = useForm<PopoverFormValues>({
     resolver: zodResolver(popoverFormSchema),
@@ -78,29 +79,26 @@ export function ProductEditPopover({
   }, [order, isOpen, form]);
 
   const handleUpdate = (data: PopoverFormValues, newStatus?: Order['estado']) => {
-    startTransition(async () => {
+    startTransition(() => {
       try {
         const payload: Partial<Order> = { productos: data.productos };
         if (newStatus) {
           payload.estado = newStatus;
         }
 
-        await updateOrder(order.id, payload);
+        const docRef = doc(firestore, 'orders', order.id);
+        updateDocumentNonBlocking(docRef, payload);
+
         toast({
           title: 'Success',
           description: 'Products have been updated.' + (newStatus ? ` Status set to ${newStatus}.` : ''),
         });
         
-        onRefresh();
+        // onRefresh is likely not needed anymore due to real-time updates
         setIsOpen(false);
         setIsStatusAlertOpen(false);
       } catch (error) {
-        console.error(error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to update products.',
-        });
+        // Errors are now handled globally
       }
     });
   };
