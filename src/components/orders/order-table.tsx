@@ -54,6 +54,7 @@ const OrderTableRow = ({
   onAllTagsUpdate, 
   onAllOtherTagsUpdate, 
   onDelete,
+  onRefresh,
 }: { 
   order: Order, 
   allTags: Tag[], 
@@ -61,6 +62,7 @@ const OrderTableRow = ({
   onAllTagsUpdate: (tags: Tag[]) => void, 
   onAllOtherTagsUpdate: (tags: Tag[]) => void, 
   onDelete: (id: string) => void,
+  onRefresh: () => void,
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
@@ -89,7 +91,7 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        router.refresh();
+        onRefresh();
       } catch (error) {
         console.error(error);
         toast({
@@ -173,7 +175,7 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
-        <ProductEditPopover order={order}>
+        <ProductEditPopover order={order} onRefresh={onRefresh}>
             <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
@@ -295,12 +297,12 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
-    router.refresh();
+    onRefresh();
   }
 
   const handleAllOtherTagsUpdate = (newTags: Tag[]) => {
     setAllOtherTags(newTags);
-    router.refresh();
+    onRefresh();
   }
 
   return (
@@ -332,6 +334,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                   onAllTagsUpdate={handleAllTagsUpdate}
                   onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                   onDelete={handleDelete} 
+                  onRefresh={onRefresh}
               />
             ))
           ) : (

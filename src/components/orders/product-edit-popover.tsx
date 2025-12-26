@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -46,9 +47,11 @@ type PopoverFormValues = z.infer<typeof popoverFormSchema>;
 export function ProductEditPopover({
   order,
   children,
+  onRefresh,
 }: {
   order: Order;
   children: React.ReactNode;
+  onRefresh: () => void;
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isStatusAlertOpen, setIsStatusAlertOpen] = React.useState(false);
@@ -88,7 +91,7 @@ export function ProductEditPopover({
           description: 'Products have been updated.' + (newStatus ? ` Status set to ${newStatus}.` : ''),
         });
         
-        router.refresh();
+        onRefresh();
         setIsOpen(false);
         setIsStatusAlertOpen(false);
       } catch (error) {
