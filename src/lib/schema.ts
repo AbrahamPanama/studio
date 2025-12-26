@@ -22,13 +22,17 @@ export const orderSchema = z.object({
   ruc: z.string().optional(),
   description: z.string().max(300, 'Description cannot exceed 300 characters.').optional(),
   comentarios: z.string().optional(),
-  
-  estado: z.enum(ORDER_STATUSES).default('New'),
+
+  // FIX 1: Explicitly allow 'Cotización' alongside the enum
+  estado: z.enum(ORDER_STATUSES).or(z.literal('Cotización')).default('New'),
   subEstado: z.enum(ORDER_SUB_STATUSES).default('Pendiente'),
 
-  entrega: z.coerce.date().optional(),
-  entregaLimite: z.coerce.date().optional(),
-  servicioEntrega: z.enum(DELIVERY_SERVICES).optional(),
+  // FIX 2: Preprocess dates to turn empty strings into undefined BEFORE coercion
+  entrega: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
+  entregaLimite: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
+  
+  // FIX 3: Allow empty strings for service and address
+  servicioEntrega: z.enum(DELIVERY_SERVICES).optional().or(z.literal('')),
   direccionEnvio: z.string().optional(),
 
   abono: z.boolean().default(false),
@@ -48,6 +52,7 @@ export const orderSchema = z.object({
 
   createdBy: z.string().optional(),
 }).superRefine((data, ctx) => {
+    // Only enforce strict rules if it is NOT a Quote
     if (data.estado !== 'Cotización') {
         if (!data.entrega) {
             ctx.addIssue({
@@ -63,7 +68,8 @@ export const orderSchema = z.object({
                 message: 'Delivery deadline is required for orders.',
             });
         }
-        if (!data.servicioEntrega) {
+        // Ensure service is not empty string or undefined
+        if (!data.servicioEntrega || data.servicioEntrega === '') {
             ctx.addIssue({
                 code: z.ZodIssueCode.invalid_enum_value,
                 path: ['servicioEntrega'],
@@ -79,4 +85,3 @@ export const tagSchema = z.object({
   label: z.string().min(1, "Label is required"),
   color: z.string().min(1, "Color is required"),
 });
-
