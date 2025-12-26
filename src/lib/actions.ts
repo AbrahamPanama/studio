@@ -2,167 +2,106 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { db } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
-import type { Order, Tag } from '@/lib/types';
+import type { Order, Tag, Product } from '@/lib/types';
 import { orderSchema, tagSchema } from '@/lib/schema';
-import { readDb, writeDb, readTags, writeTags, readOtherTags, writeOtherTags } from '@/lib/db';
 
+// Helper to convert Firestore Timestamps to serializable format
+const serializeObject = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+  if (obj.toDate) { // Firestore Timestamp check
+    return obj.toDate().toISOString();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(serializeObject);
+  }
+
+  const serialized: { [key: string]: any } = {};
+  for (const key in obj) {
+    serialized[key] = serializeObject(obj[key]);
+  }
+  return serialized;
+};
+
 
 export async function getOrders(): Promise<Order[]> {
-    await delay(300);
-    const db = await readDb();
-    
-    let needsWrite = false;
-    let maxOrderNum = 0;
-
-    // First, find the maximum existing order number
-    db.orders.forEach(order => {
-        if (order && order.orderNumber) {
-            const num = parseInt(order.orderNumber, 10);
-            if (num > maxOrderNum) {
-                maxOrderNum = num;
-            }
-        }
-    });
-    
-    // Migrate old tags and assign order numbers if missing
-    const orders = db.orders.map(order => {
-        if (!order) return null; // handle potential null/undefined entries
-
-        const newOrder = { ...order };
-
-        // Assign order number if it's missing
-        if (!newOrder.orderNumber) {
-            needsWrite = true;
-            maxOrderNum++;
-            newOrder.orderNumber = maxOrderNum.toString().padStart(6, '0');
-        }
-
-        if (!newOrder.tags) {
-            const newTags: string[] = [];
-            if (newOrder.customTag1) newTags.push(newOrder.customTag1);
-            if (newOrder.customTag2) newTags.push(newOrder.customTag2);
-            if (newOrder.customTag3) newTags.push(newOrder.customTag3);
-            if (newOrder.customTag4) newTags.push(newOrder.customTag4);
-            newOrder.tags = newTags;
-        }
-
-        if (!newOrder.tagsOther) {
-            newOrder.tagsOther = [];
-        }
-        
-        if (!newOrder.id) {
-            newOrder.id = `temp-id-${Math.random()}`;
-            console.warn("Order found without ID, temporary ID assigned:", newOrder.name);
-        }
-
-        return newOrder as Order;
-    }).filter((order): order is Order => order !== null);
-    
-    // If we had to add any order numbers, write the changes back to the DB
-    if (needsWrite) {
-        await writeDb({ orders: orders });
+    const ordersSnapshot = await db.collection('orders').orderBy('fechaIngreso', 'desc').get();
+    if (ordersSnapshot.empty) {
+        return [];
     }
+    
+    const orders = ordersSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return serializeObject({
+            id: doc.id,
+            ...data,
+        }) as Order;
+    });
 
     return orders;
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
-    await delay(300);
-    const db = await readDb();
-    let order = db.orders.find(o => o.id === id);
-    if (!order) {
+    const docRef = db.collection('orders').doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
         return null;
     }
+    
+    const data = doc.data();
+    if (!data) return null;
 
-    // Back-fill order number if missing
-    if (!order.orderNumber) {
-        // This is a rare case, ideally getOrders() would have fixed it.
-        // We'll assign a temporary one but won't save it here to avoid race conditions.
-        // The main list view is the source of truth for back-filling.
-        const maxOrderNum = db.orders.reduce((max, o) => Math.max(max, o.orderNumber ? parseInt(o.orderNumber, 10) : 0), 0);
-        order.orderNumber = (maxOrderNum + 1).toString().padStart(6, '0');
-    }
-
-    // Ensure tags arrays exist
-    if (!order.tags) {
-        const newTags: string[] = [];
-        if (order.customTag1) newTags.push(order.customTag1);
-        if (order.customTag2) newTags.push(order.customTag2);
-        if (order.customTag3) newTags.push(order.customTag3);
-        if (order.customTag4) newTags.push(order.customTag4);
-        order.tags = newTags;
-    }
-    if (!order.tagsOther) {
-        order.tagsOther = [];
-    }
-    return order;
+    return serializeObject({
+        id: doc.id,
+        ...data
+    }) as Order;
 }
 
 export async function createOrder(data: z.infer<typeof orderSchema>): Promise<{ id: string }> {
-    await delay(500);
     const validatedFields = orderSchema.safeParse(data);
     if (!validatedFields.success) {
         console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to createOrder action.");
     }
     
-    const db = await readDb();
+    // Get the latest order to determine the next order number
+    const latestOrderQuery = await db.collection('orders').orderBy('orderNumber', 'desc').limit(1).get();
+    let newOrderNumber = 1;
+    if (!latestOrderQuery.empty) {
+        const latestOrder = latestOrderQuery.docs[0].data();
+        newOrderNumber = parseInt(latestOrder.orderNumber, 10) + 1;
+    }
+    const orderNumberString = newOrderNumber.toString().padStart(6, '0');
 
-    // Generate new progressive order number
-    const maxOrderNumber = db.orders.reduce((max, order) => {
-        const currentNum = order.orderNumber ? parseInt(order.orderNumber, 10) : 0;
-        return currentNum > max ? currentNum : max;
-    }, 0);
-    const newOrderNumber = (maxOrderNumber + 1).toString().padStart(6, '0');
-    
-    const newOrder: Order = {
+    const newOrderData = {
         ...validatedFields.data,
-        id: String(Date.now()),
-        orderNumber: newOrderNumber,
-        fechaIngreso: new Date(),
-        productos: validatedFields.data.productos.map((p, i) => ({...p, id: `p${Date.now()}${i}`})),
-        createdBy: validatedFields.data.createdBy,
+        fechaIngreso: FieldValue.serverTimestamp(),
+        orderNumber: orderNumberString,
+        productos: validatedFields.data.productos.map(p => ({
+          ...p, 
+          // No need to generate ID, Firestore subcollections would be better but for now this is fine.
+        })),
     };
     
-    db.orders.unshift(newOrder);
-    await writeDb(db);
+    const docRef = await db.collection('orders').add(newOrderData);
     
     revalidatePath('/');
     
-    return { id: newOrder.id };
+    return { id: docRef.id };
 }
 
 export async function updateOrder(id: string, data: Partial<z.infer<typeof orderSchema>>) {
-    await delay(500);
-    
-    const db = await readDb();
-    const index = db.orders.findIndex(o => o.id === id);
+    const docRef = db.collection('orders').doc(id);
 
-    if (index === -1) {
-        throw new Error('Order not found');
-    }
-
-    const originalOrder = db.orders[index];
-
-    // Merge incoming partial data with existing data
-    const mergedData = {
-        ...originalOrder,
-        ...data,
-        // Ensure products have IDs
-        productos: data.productos 
-            ? data.productos.map((p, i) => ({...p, id: p.id || `p${Date.now()}${i}`}))
-            : originalOrder.productos,
-        // Ensure tags arrays are always arrays
-        tags: data.tags || originalOrder.tags || [],
-        tagsOther: data.tagsOther || originalOrder.tagsOther || [],
-    };
-    
-    // We parse against a partial schema first for flexibility, then merge with the original
+    // We parse against a partial schema first for flexibility
     const partialSchema = orderSchema.partial();
     const validatedPartial = partialSchema.safeParse(data);
 
@@ -170,19 +109,17 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
         console.error('Validation errors on update:', validatedPartial.error.flatten().fieldErrors);
         throw new Error("Invalid data provided to updateOrder action.");
     }
-    
-    const finalOrderData: Order = {
-        ...originalOrder,
-        ...validatedPartial.data,
-        id: originalOrder.id, // Ensure original ID is preserved
-        orderNumber: originalOrder.orderNumber, // Ensure original order number is preserved
-        fechaIngreso: originalOrder.fechaIngreso, // Preserve original creation date
-        createdBy: originalOrder.createdBy, // Preserve original creator
-    };
 
-    db.orders[index] = finalOrderData;
-    
-    await writeDb(db);
+    // Convert dates back to Timestamps if they exist
+    const updateData = { ...validatedPartial.data };
+    if (updateData.entrega) {
+      updateData.entrega = new Date(updateData.entrega);
+    }
+    if (updateData.entregaLimite) {
+      updateData.entregaLimite = new Date(updateData.entregaLimite);
+    }
+
+    await docRef.update(updateData);
     
     revalidatePath('/');
     revalidatePath(`/orders/${id}/edit`);
@@ -190,54 +127,62 @@ export async function updateOrder(id: string, data: Partial<z.infer<typeof order
 }
 
 export async function deleteOrder(id: string) {
-    await delay(500);
-    const db = await readDb();
-    const index = db.orders.findIndex(o => o.id === id);
-
-    if (index === -1) {
-        // Instead of throwing an error, just log it and return.
-        // This can happen if the order was already deleted in another session.
-        console.warn(`Attempted to delete order with ID "${id}", but it was not found.`);
-        revalidatePath('/');
-        return;
-    }
-    db.orders.splice(index, 1);
-    await writeDb(db);
-    
+    const docRef = db.collection('orders').doc(id);
+    await docRef.delete();
     revalidatePath('/');
 }
 
 // Tag Actions
+async function getTagsCollection(collectionName: string): Promise<Tag[]> {
+    const snapshot = await db.collection(collectionName).get();
+    if (snapshot.empty) {
+        return [];
+    }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
+}
+
+async function updateTagsCollection(collectionName: string, tags: Tag[]): Promise<void> {
+    const validatedTags = z.array(tagSchema).safeParse(tags);
+    if (!validatedTags.success) {
+        throw new Error(`Invalid data provided to update ${collectionName} action.`);
+    }
+
+    const batch = db.batch();
+    const collectionRef = db.collection(collectionName);
+    
+    // Get all existing tags to delete the ones not in the new list
+    const snapshot = await collectionRef.get();
+    const existingIds = snapshot.docs.map(doc => doc.id);
+    const newIds = validatedTags.data.map(tag => tag.id);
+    
+    const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+    idsToDelete.forEach(id => {
+        batch.delete(collectionRef.doc(id));
+    });
+
+    // Set/update new tags
+    validatedTags.data.forEach(tag => {
+        const { id, ...tagData } = tag;
+        const docRef = collectionRef.doc(id);
+        batch.set(docRef, tagData, { merge: true });
+    });
+
+    await batch.commit();
+    revalidatePath('/');
+}
+
 export async function getTags() {
-    await delay(100);
-    return await readTags();
+    return getTagsCollection('tags');
 }
 
 export async function updateTags(tags: Tag[]) {
-    await delay(300);
-    const validatedTags = z.array(tagSchema).safeParse(tags);
-    if (!validatedTags.success) {
-        throw new Error("Invalid data provided to updateTags action.");
-    }
-    await writeTags(validatedTags.data);
-    revalidatePath('/');
+    await updateTagsCollection('tags', tags);
 }
 
 export async function getOtherTags() {
-    await delay(100);
-    return await readOtherTags();
+    return getTagsCollection('tagsOther');
 }
 
 export async function updateOtherTags(tags: Tag[]) {
-    await delay(300);
-    const validatedTags = z.array(tagSchema).safeParse(tags);
-    if (!validatedTags.success) {
-        throw new Error("Invalid data provided to updateOtherTags action.");
-    }
-    await writeOtherTags(validatedTags.data);
-    revalidatePath('/');
+    await updateTagsCollection('tagsOther', tags);
 }
-
-    
-
-    

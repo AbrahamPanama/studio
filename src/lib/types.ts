@@ -6,10 +6,14 @@ export type Product = z.infer<typeof productSchema> & {
     id?: string;
 };
 
-export type Order = Omit<z.infer<typeof orderSchema>, 'tags' | 'tagsOther' | 'productos'> & {
+// Making properties that are optional in the form truly optional in the final type.
+// Timestamps from Firestore will be strings after serialization.
+export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega' | 'entregaLimite' | 'productos'> & {
   id: string;
   orderNumber: string;
-  fechaIngreso: Date;
+  fechaIngreso: string; // Will be ISO string from Firestore
+  entrega: string; // Will be ISO string from Firestore
+  entregaLimite: string; // Will be ISO string from Firestore
   productos: Product[];
   abono?: boolean;
   cancelo?: boolean;
