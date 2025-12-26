@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { PlusCircle, Search, PackageOpen } from 'lucide-react'; // Añadí PackageOpen para el estado vacío
@@ -89,7 +88,7 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
   return (
     // CAMBIO 1: Fondo global gris suave para dar profundidad
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
-      <div className="max-w-screen-2xl mx-auto">
+      <div className="max-w-[95vw] mx-auto">
        <Tabs value={tab} className="space-y-8">
         
         {/* Header Section */}
