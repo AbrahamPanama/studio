@@ -89,6 +89,7 @@ const OrderTableRow = ({
       deleteDocumentNonBlocking(docRef);
       toast({ title: 'Success', description: 'Order will be deleted.' });
       onDelete(order.id);
+      onRefresh(); // Refresh data after delete
     });
   }
 
@@ -101,7 +102,7 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        onRefresh();
+        onRefresh(); // Refresh data after update
       } catch (error) {
         // Error is handled by global listener
       }
@@ -349,3 +350,5 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
+
+    

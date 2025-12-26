@@ -245,15 +245,15 @@ export default function DashboardPage() {
     const tab = searchParams.get('tab') || 'active';
     const firestore = useFirestore();
 
+    const [refreshKey, setRefreshKey] = React.useState(0);
+    const forceRefresh = () => setRefreshKey(k => k + 1);
+
     const ordersQuery = useMemoFirebase(() => {
       if (!firestore) return null;
       return query(collection(firestore, 'orders'), orderBy('fechaIngreso', 'desc'));
-    }, [firestore]);
+    }, [firestore, refreshKey]);
     
     const { data: allOrders, isLoading, error } = useCollection<Order>(ordersQuery);
-
-    const [refreshKey, setRefreshKey] = React.useState(0);
-    const forceRefresh = () => setRefreshKey(k => k + 1);
 
 
     if (isLoading) {
@@ -266,3 +266,5 @@ export default function DashboardPage() {
 
     return <DashboardPageContent allOrders={allOrders || []} query={queryParam} tab={tab} onRefresh={forceRefresh} />;
 }
+
+    
