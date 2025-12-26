@@ -475,19 +475,18 @@ export function OrderForm({ order, formType }: OrderFormProps) {
             createdBy: user?.email || 'Unknown',
           });
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
-          const newOrderData = await getOrderById(newOrderId);
           
-          if (newOrderData) {
-            setCurrentOrder(newOrderData);
-             // Update URL without a full reload to show the dialog
-            window.history.replaceState(null, '', isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`);
-            if (isQuote) {
+          if (isQuote) {
+            const newOrderData = await getOrderById(newOrderId);
+            if (newOrderData) {
+              setCurrentOrder(newOrderData);
+              window.history.replaceState(null, '', `/quotes/${newOrderId}/edit`);
               setShowPostSaveDialog(true);
+            } else {
+              router.push(`/quotes/${newOrderId}/edit`);
             }
           } else {
-             // Fallback redirect if fetching fails
-            const redirectUrl = isQuote ? `/quotes/${newOrderId}/edit` : `/orders/${newOrderId}/edit`;
-            router.push(redirectUrl);
+            router.push('/');
           }
         }
       } catch (error) {
