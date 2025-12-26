@@ -83,7 +83,7 @@ const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNum
       {/* 1. CORPORATE HEADER */}
       <div className="flex justify-between items-start mb-2">
         <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-black uppercase tracking-tight">Veronica de Sáenz</h1>
+            <h1 className="text-xl font-extrabold text-black uppercase tracking-tight">VA Cards and Crafts</h1>
             <div className="text-sm font-medium text-slate-800 space-y-0.5">
                 <p><span className="font-bold w-24 inline-block">RUC:</span> 8-825-429 DV 59</p>
                 <p><span className="font-bold w-24 inline-block">Dirección:</span> Fuentes del Chase, La Chorrera, Casa C-53</p>
@@ -666,7 +666,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                     <CardHeader>
                       <CardTitle>{t('formTitleProducts')}</CardTitle>
                       <CardDescription>
-                         {t('formDescriptionProducts', { formType: translatedFormType.toLowerCase() })}
+                         {t('formDescriptionProducts').replace('{formType}', translatedFormType.toLowerCase())}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
