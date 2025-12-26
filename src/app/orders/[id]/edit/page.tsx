@@ -1,8 +1,8 @@
 
 'use client';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, redirect } from 'next/navigation';
 import { OrderForm } from '@/components/orders/order-form';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 
@@ -12,7 +12,11 @@ export default function EditOrderPage() {
   const id = params.id as string;
   const firestore = useFirestore();
 
-  const docRef = doc(firestore, 'orders', id);
+  const docRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'orders', id);
+  }, [firestore, id]);
+
   const { data: order, isLoading } = useDoc<Order>(docRef);
 
   if (isLoading) {
@@ -23,13 +27,10 @@ export default function EditOrderPage() {
     return notFound();
   }
 
-  const formType = order.estado === 'Cotización' ? 'quote' : 'order';
-
-  // This is a safeguard. If a quote is accessed via /orders/, redirect to /quotes/
-  if (formType === 'quote') {
-    const { redirect } = require('next/navigation');
+  // A quote should not be editable via the /orders/... path. Redirect to the correct quotes path.
+  if (order.estado === 'Cotización') {
     redirect(`/quotes/${id}/edit`);
   }
 
-  return <OrderForm order={order} formType={formType} />;
+  return <OrderForm order={order} formType="order" />;
 }
