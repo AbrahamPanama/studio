@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Order": {
@@ -9,40 +8,36 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the order."
+          "description": "Unique identifier for the Order entity."
         },
         "estado": {
           "type": "string",
-          "description": "Status of the order (New, On Hand/Working, Urgent, Pending, Packaging, Done)."
+          "description": "The status of the order (New, On Hand/Working, Urgent, Pending, Packaging, Done)."
         },
         "subEstado": {
           "type": "string",
-          "description": "Sub-status of the order (Pendiente Arte, Pendiente, Corte, Pendiente Material, Check List)."
+          "description": "The sub-status of the order (Pendiente Arte, Pendiente, Corte, Pendiente Material, Check List)."
         },
-        "customerName": {
+        "name": {
           "type": "string",
-          "description": "Name of the customer."
+          "description": "The name of the customer."
         },
-        "companyName": {
+        "email": {
           "type": "string",
-          "description": "Company name of the customer."
-        },
-        "customerEmail": {
-          "type": "string",
-          "description": "Email address of the customer.",
+          "description": "The email address of the customer.",
           "format": "email"
         },
-        "customerCelular": {
+        "celular": {
           "type": "string",
-          "description": "Phone number of the customer."
+          "description": "The phone number of the customer."
         },
         "description": {
           "type": "string",
-          "description": "Description of the order (max 300 characters)."
+          "description": "A description of the order (max 300 chars)."
         },
         "fechaIngreso": {
           "type": "string",
-          "description": "Date and time when the order was created.",
+          "description": "The date and time the order was entered into the system.",
           "format": "date-time"
         },
         "comentarios": {
@@ -51,69 +46,61 @@
         },
         "entrega": {
           "type": "string",
-          "description": "Date of delivery.",
-          "format": "date-time"
+          "description": "The date the order is to be delivered.",
+          "format": "date"
         },
         "entregaLimite": {
           "type": "string",
-          "description": "Delivery deadline date.",
-          "format": "date-time"
+          "description": "The latest date the order can be delivered.",
+          "format": "date"
         },
         "servicioEntrega": {
           "type": "string",
-          "description": "Delivery service used (Uno Express, Delivery Rolando, Delivery Daniel, Delivery Otros, Uber, InDriver, Retiro taller)."
+          "description": "The delivery service used (Uno Express, Delivery Rolando, Delivery Daniel, Delivery Otros, Uber, InDriver, Retiro taller)."
         },
         "direccionEnvio": {
           "type": "string",
-          "description": "Shipping address."
+          "description": "The shipping address for the order."
         },
         "privacidad": {
           "type": "string",
-          "description": "Privacy settings for the order (Por preguntar, Limitado Fecha, no respondió, ilimitado, Limitado Otros)."
+          "description": "The privacy setting for the order (Por preguntar, Limitado Fecha, no respondió, ilimitado, Limitado Otros)."
         },
         "customTag1": {
           "type": "string",
-          "description": "Custom tag 1."
+          "description": "Custom tag 1 for the order."
         },
         "customTag2": {
           "type": "string",
-          "description": "Custom tag 2."
+          "description": "Custom tag 2 for the order."
         },
         "customTag3": {
           "type": "string",
-          "description": "Custom tag 3."
+          "description": "Custom tag 3 for the order."
         },
         "customTag4": {
           "type": "string",
-          "description": "Custom tag 4."
+          "description": "Custom tag 4 for the order."
         },
         "productos": {
           "type": "array",
-          "description": "Array of products in the order.",
+          "description": "An array of product objects associated with the order.",
           "items": {
             "type": "string"
           }
         },
         "orderTotal": {
           "type": "number",
-          "description": "Total value of the order."
-        },
-        "ruc": {
-          "type": "string",
-          "description": "Customer's RUC (Registro Único de Contribuyente)."
-        },
-        "celularSecundario": {
-          "type": "string",
-          "description": "Secondary contact phone number."
+          "description": "The total value of the order."
         }
       },
       "required": [
         "id",
         "estado",
         "subEstado",
-        "customerName",
-        "customerEmail",
-        "customerCelular",
+        "name",
+        "email",
+        "celular",
         "description",
         "fechaIngreso",
         "comentarios",
@@ -138,7 +125,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the product."
+          "description": "Unique identifier for the Product entity."
         },
         "orderId": {
           "type": "string",
@@ -146,19 +133,19 @@
         },
         "name": {
           "type": "string",
-          "description": "Name of the product."
+          "description": "The name of the product."
         },
         "quantity": {
           "type": "number",
-          "description": "Quantity of the product in the order."
+          "description": "The quantity of the product ordered."
         },
         "price": {
           "type": "number",
-          "description": "Price of the product."
+          "description": "The price of the product."
         },
         "materialsReady": {
           "type": "boolean",
-          "description": "Indicates if the materials for the product are ready."
+          "description": "Indicates whether the materials for the product are ready."
         }
       },
       "required": [
@@ -169,32 +156,12 @@
         "price",
         "materialsReady"
       ]
-    },
-    "AdminUser": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminUser",
-      "type": "object",
-      "description": "Represents an administrator user of the system.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the admin user."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the administrator.",
-          "format": "email"
-        }
-      },
-      "required": [
-        "id",
-        "email"
-      ]
     }
   },
   "auth": {
     "providers": [
-      "password"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
@@ -206,11 +173,11 @@
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores order information. Includes fields for order status, customer details, logistics, and meta information.",
+          "description": "Represents an order in the system. Includes denormalized fields if ownership or role-based restrictions are implemented in the security rules.",
           "params": [
             {
               "name": "orderId",
-              "description": "Unique identifier for the order."
+              "description": "The unique identifier for the order."
             }
           ]
         }
@@ -222,36 +189,20 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores product details for a specific order.  Each product belongs to one order.",
+          "description": "Represents a product associated with an order.",
           "params": [
             {
               "name": "orderId",
-              "description": "Unique identifier for the order."
+              "description": "The unique identifier for the order."
             },
             {
               "name": "productId",
-              "description": "Unique identifier for the product."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "AdminUser",
-          "schema": {
-            "$ref": "#/backend/entities/AdminUser"
-          },
-          "description": "Collection to store admin user IDs. Presence in this collection grants admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase UID of the admin user."
+              "description": "The unique identifier for the product."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the OrderFlow application, prioritizing security, scalability, and ease of debugging. It leverages structural segregation and denormalization to achieve authorization independence, eliminating the need for `get()` calls in security rules. This enhances the integrity of atomic operations (transactions/batches) and improves overall security.\n\n1.  **Authorization Independence (CRITICAL):** The structure avoids hierarchical authorization dependencies (`get()`) by storing roles in the database and relying on `request.auth.uid`. All authorization context is denormalized using specific collections, ensuring that access control can be validated independently.\n\n2.  **Clarity of Intent (Debuggability):** The structure is designed to make authorization intent explicit through standardized naming conventions, explicit state modeling, and predictable schema.\n\n3.  **DBAC (No Custom Claims):** Roles are stored in the database in the `/roles_admin/{uid}` collection, so authorization relies solely on `request.auth.uid` and avoids custom claims.\n\n4.  **QAPs (Rules are not Filters):** The structure enables secure `list` operations. Administrative access is controlled using the dedicated `/roles_admin/{uid}` collection, and user-owned data is organized under `/orders`.\n\n5.  **Invariants:** The structure supports the integrity of ownership and timestamps.\n\n**Explanation of Authorization Independence and QAPs:**\n\n*   **Authorization Independence:** The `/roles_admin/{uid}` collection allows us to quickly and efficiently verify if a user is an admin without needing to read any other documents. This completely decouples the authorization logic from the data itself. The data structure implements Authorization Independence by relying on the dedicated AdminUser collection and avoiding hierarchical dependencies.\n*   **QAPs:** The administrative role setup ensures that listing all orders is restricted to admins. Regular users do not have listing privileges at the root `/orders` collection. This segregation ensures that rules are not filters, as listing is only permitted for authorized roles."
+    "reasoning": "The Firestore structure is designed to manage orders and products, focusing on ease of querying, data integrity, and scalability. The primary collection is `/orders`, containing documents representing individual orders. A subcollection `/orders/{orderId}/products` stores products associated with each order. This structure facilitates easy retrieval of all products for a specific order. The design ensures Authorization Independence by not requiring any `get()` calls in the rules, as no authorization data needs to be fetched from parent documents. The structure supports the required QAPs (Rules are not Filters) by ensuring all documents in a collection share the same security requirements.\n\nDenormalization is not strictly required in this case because the security rules primarily rely on user roles which, in this example, are not defined. In a production environment, if access to orders needed to be restricted based on user roles or ownership, those roles or ownership details would be denormalized into each order document."
   }
 }

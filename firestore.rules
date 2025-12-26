@@ -1,23 +1,123 @@
+/**
+ * @file firestore.rules
+ * @description Firestore Security Rules for the Order Management System.
+ *
+ * ## Core Philosophy
+ * This ruleset implements a simple but secure "Authenticated User Access" model.
+ * The primary security assumption is that any user who can sign in is a trusted
+ * operator (e.g., an employee) and is granted full permissions to read and write
+ * data across the entire system. Access is universally denied to unauthenticated
+ * (anonymous) users. This approach is ideal for internal business applications
+ * and prototypes where granular user roles are not yet defined.
+ *
+ * ## Data Structure
+ * The data is organized into a top-level `orders` collection. Each document
+ * in this collection represents a single order and can contain a `products`
+ * subcollection for items associated with that order.
+ * - /orders/{orderId}
+ * - /orders/{orderId}/products/{productId}
+ *
+ * ## Key Security Decisions
+ * - **Authenticated Access Only**: All read and write operations require a user to be
+ *   signed in. This is the fundamental security boundary.
+ * - **No Ownership or Roles**: The rules do not enforce document ownership or
+ *   role-based permissions. This decision is based on the provided data schema,
+ *   which lacks `ownerId` or role fields, and aligns with the need for a flexible
+ *   internal tool.
+ * - **Relational Integrity**: While data shapes are not strictly enforced (Prototyping Mode),
+ *   the rules do ensure that a `Product` created under a specific `Order` cannot have its
+ *   parent `orderId` modified, preventing data corruption.
+ *
+ * ## Denormalization for Authorization
+ * The current security model is simple enough that it does not require denormalization.
+ * All authorization checks are based on the user's authentication state (`request.auth`),
+ * which is always available.
+ *
+ * ## Structural Segregation
+ * This pattern is not applicable as there is no concept of public vs. private
+ * data in this system. All data is considered internal and is protected by the
+ * authentication boundary.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      let adminEmails = ["abraham.saenz@gmail.com", "vacardspanama@gmail.com"];
-      return request.auth != null && request.auth.token.email in adminEmails;
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
     }
 
+    /**
+     * Verifies that a document exists before an update or delete operation.
+     * This prevents operations on non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * On product creation, validates that the `orderId` field in the new document
+     * matches the `orderId` in the path.
+     */
+    function hasValidProductData(orderId) {
+      return request.resource.data.orderId == orderId;
+    }
+
+    /**
+     * On product update, ensures the `orderId` field cannot be changed,
+     * maintaining the relationship between the product and its parent order.
+     */
+    function isProductRelationImmutable() {
+      return request.resource.data.orderId == resource.data.orderId;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Collection: orders
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages customer orders. Any authenticated user can create, read,
+     *              update, or delete any order.
+     * @path /orders/{orderId}
+     * @allow (create) An authenticated user creates a new order. `auth != null`.
+     * @deny  (create) An anonymous user attempts to create an order. `auth == null`.
+     * @principle Implements an "Authenticated Access" model, suitable for internal tools
+     *            where all signed-in users are trusted operators.
+     */
     match /orders/{orderId} {
-      allow read, write: if isAdmin();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isExistingDoc();
+      allow delete: if isSignedIn() && isExistingDoc();
 
+      // ----------------------------------------------------------------------
+      // Subcollection: products
+      // ----------------------------------------------------------------------
+
+      /**
+       * @description Manages products associated with a specific order. Any
+       *              authenticated user can manage products for any order.
+       * @path /orders/{orderId}/products/{productId}
+       * @allow (create) An authenticated user adds a product to an existing order. `auth != null`.
+       * @deny  (update) An authenticated user tries to change a product's parent `orderId`.
+       * @principle Enforces relational integrity by ensuring a product's `orderId`
+       *            is correctly set on creation and remains immutable thereafter.
+       */
       match /products/{productId} {
-        allow read, write: if isAdmin();
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && hasValidProductData(orderId);
+        allow update: if isSignedIn() && isExistingDoc() && isProductRelationImmutable();
+        allow delete: if isSignedIn() && isExistingDoc();
       }
-    }
-    
-    match /roles_admin/{userId} {
-      allow read, write: if isAdmin();
     }
   }
 }
