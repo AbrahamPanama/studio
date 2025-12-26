@@ -184,6 +184,9 @@ const OrderTableRow = ({
       <TableCell>
         <p className="line-clamp-3">{order.direccionEnvio}</p>
       </TableCell>
+      <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
+       {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
+      </TableCell>
        <TableCell>
         <Popover>
           <PopoverTrigger asChild>
@@ -225,9 +228,6 @@ const OrderTableRow = ({
             />
           </PopoverContent>
         </Popover>
-      </TableCell>
-      <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
-       {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
@@ -316,9 +316,9 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
             <TableHead className="whitespace-nowrap min-w-[250px]">Items</TableHead>
             <TableHead className="whitespace-nowrap min-w-[150px]">Shipping Method</TableHead>
             <TableHead className="whitespace-nowrap min-w-[250px]">Shipping Address</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px]">Delivery Deadline</TableHead>
             <TableHead className="whitespace-nowrap min-w-[200px]">Tags Shipping</TableHead>
             <TableHead className="whitespace-nowrap min-w-[200px]">Tags Other</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px]">Delivery Deadline</TableHead>
             <TableHead className="whitespace-nowrap text-right min-w-[120px]">Total</TableHead>
             <TableHead className="whitespace-nowrap min-w-[100px]"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
