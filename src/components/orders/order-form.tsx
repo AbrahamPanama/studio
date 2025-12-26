@@ -538,6 +538,16 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   }
 
+  const onInvalid = (errors: any) => {
+    console.error("Form Validation Errors:", errors);
+    const firstError = Object.keys(errors)[0];
+    toast({
+        variant: 'destructive',
+        title: "Validation Error",
+        description: `Field '${firstError}' is invalid: ${errors[firstError]?.message || 'Unknown error'}. Check console for details.`,
+    });
+  };
+
   const handleConvertToOrder = () => {
     if (!isEditing || !currentOrder || !firestore) return;
 
@@ -559,7 +569,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         <div className="container mx-auto py-6">
             <div className="max-w-5xl mx-auto">
                 <div id="quote-capture-area" className="bg-background p-6 rounded-lg shadow-lg">
