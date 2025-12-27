@@ -64,45 +64,53 @@ export function TagManager({
         return;
       }
       try {
+        // 1. Capture new tags (IDs starting with temp-) BEFORE saving
+        // We capture Labels because the system currently selects by Label
+        const newTagsToAutoSelect = editedTags
+            .filter(tag => tag.id.startsWith('temp-'))
+            .map(tag => tag.label);
+
         const batch = writeBatch(firestore);
         const collectionRef = collection(firestore, collectionName);
-        const originalTagMap = new Map(allTags.map(t => [t.id, t]));
-        const editedTagMap = new Map(editedTags.map(t => [t.id, t]));
 
-        // 1. Identify Deletions
-        for (const originalTag of allTags) {
-          if (!editedTagMap.has(originalTag.id)) {
-            const docRef = doc(collectionRef, originalTag.id);
-            batch.delete(docRef);
-          }
-        }
+        // --- Diffing Save Logic ---
+        const currentIds = new Set(editedTags.map(t => t.id));
+        const tagsToDelete = allTags.filter(t => !currentIds.has(t.id));
 
-        // 2. Identify Updates and Creations
-        for (const editedTag of editedTags) {
-          const originalTag = originalTagMap.get(editedTag.id);
-          
-          if (editedTag.id.startsWith('temp-')) {
-            // This is a new tag (Creation)
-            const newDocRef = doc(collectionRef); // Let Firestore generate the ID
-            const { id, ...tagData } = editedTag; // remove temp id
-            batch.set(newDocRef, tagData);
-          } else if (originalTag && (originalTag.label !== editedTag.label || originalTag.color !== editedTag.color)) {
-            // This is an existing tag that has changed (Update)
-            const docRef = doc(collectionRef, editedTag.id);
-            batch.update(docRef, { label: editedTag.label, color: editedTag.color });
-          }
-        }
+        tagsToDelete.forEach(tag => {
+            if (!tag.id.startsWith('temp-')) {
+                const docRef = doc(collectionRef, tag.id);
+                batch.delete(docRef);
+            }
+        });
+
+        editedTags.forEach(tag => {
+            const isNew = tag.id.startsWith('temp-');
+            const docRef = isNew ? doc(collectionRef) : doc(collectionRef, tag.id);
+            batch.set(docRef, { label: tag.label, color: tag.color });
+        });
         
         await batch.commit();
         
-        // 3. Refresh data from Firestore to get the source of truth
+        // --- Refresh Data ---
         const freshSnapshot = await getDocs(collectionRef);
-        const freshTags = freshSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
-
-        onTagsUpdate(freshTags);
+        const freshTags = freshSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+        } as Tag));
         
-        toast({ title: 'Success', description: 'Labels updated successfully.' });
-        handleOpenChange(false);
+        onTagsUpdate(freshTags);
+
+        // 2. AUTO-SELECT LOGIC:
+        // Update the selected tags on the parent component
+        if (newTagsToAutoSelect.length > 0) {
+            // Merge existing selection with new tags, avoiding duplicates
+            const updatedSelection = Array.from(new Set([...selectedTags, ...newTagsToAutoSelect]));
+            onSelectedTagsChange(updatedSelection);
+        }
+
+        toast({ title: 'Success', description: 'Labels updated and selected.' });
+        setIsEditing(false);
 
       } catch (error: any) {
         console.error("Failed to update labels:", error);
