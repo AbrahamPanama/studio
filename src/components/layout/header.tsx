@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from '@/contexts/language-context';
+import { Button } from '@/components/ui/button';
 
 
 export default function Header() {
@@ -28,7 +29,10 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-end">
+        <div className="flex flex-1 items-center justify-end space-x-4">
+            <Button asChild variant="ghost">
+              <Link href="/admin/import">Import</Link>
+            </Button>
             <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Language" />
