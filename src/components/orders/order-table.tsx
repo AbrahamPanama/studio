@@ -59,18 +59,22 @@ const parseDate = (dateInput: any): Date | undefined => {
 };
 
 
-const OrderTableRow = ({ 
-  order, 
-  allTags, 
-  allOtherTags, 
+const OrderTableRow = ({
+  order,
+  allTags,
+  allOtherTags,
+  onAllTagsUpdate,
+  onAllOtherTagsUpdate,
   onDelete,
   onRefresh,
-}: { 
-  order: Order, 
-  allTags: Tag[], 
-  allOtherTags: Tag[], 
-  onDelete: (id: string) => void,
-  onRefresh: () => void,
+}: {
+  order: Order;
+  allTags: Tag[];
+  allOtherTags: Tag[];
+  onAllTagsUpdate: (tags: Tag[]) => void;
+  onAllOtherTagsUpdate: (tags: Tag[]) => void;
+  onDelete: (id: string) => void;
+  onRefresh: () => void;
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
@@ -202,7 +206,8 @@ const OrderTableRow = ({
               allTags={allTags}
               selectedTags={order.tags || []}
               onSelectedTagsChange={handleTagsUpdate}
-              onTagsUpdate={() => {}}
+              onTagsUpdate={onAllTagsUpdate}
+              collectionName="tags"
             />
           </PopoverContent>
         </Popover>
@@ -223,7 +228,8 @@ const OrderTableRow = ({
               allTags={allOtherTags}
               selectedTags={order.tagsOther || []}
               onSelectedTagsChange={handleOtherTagsUpdate}
-              onTagsUpdate={() => {}}
+              onTagsUpdate={onAllOtherTagsUpdate}
+              collectionName="tagsOther"
             />
           </PopoverContent>
         </Popover>
@@ -330,6 +336,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                   order={order} 
                   allTags={allTags}
                   allOtherTags={allOtherTags}
+                  onAllTagsUpdate={handleAllTagsUpdate}
+                  onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                   onDelete={handleDelete} 
                   onRefresh={onRefresh}
               />
@@ -346,6 +354,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
+
+    
 
     
 
