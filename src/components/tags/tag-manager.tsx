@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +17,8 @@ import type { Tag } from '@/lib/types';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, doc, writeBatch, getDocs } from 'firebase/firestore';
 
 
 interface TagManagerProps {
@@ -56,33 +55,38 @@ export function TagManager({
 
   const handleSaveEdits = () => {
     startTransition(async () => {
-      if (!firestore) return;
+      if (!firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
+        return;
+      }
       try {
         const batch = writeBatch(firestore);
         const collectionRef = collection(firestore, collectionName);
-    
-        // Get current tags from DB to find out which ones to delete
-        const snapshot = await getDocs(collectionRef);
-        const existingIds = snapshot.docs.map(doc => doc.id);
-        const newIds = editedTags.map(tag => tag.id);
-        
-        const idsToDelete = existingIds.filter(id => !newIds.includes(id));
-        idsToDelete.forEach(id => {
-            batch.delete(doc(collectionRef, id));
+
+        // 1. Get all existing documents in the collection to delete them.
+        const existingDocsSnapshot = await getDocs(collectionRef);
+        existingDocsSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
         });
 
+        // 2. Add all the tags from the current local state as new documents.
         editedTags.forEach(tag => {
-            const { id, ...tagData } = tag;
-            const docRef = doc(collectionRef, id);
-            batch.set(docRef, tagData, { merge: true });
+          // Use the existing ID for stability, or let Firestore generate one if it's a new tag.
+          const docRef = tag.id ? doc(collectionRef, tag.id) : doc(collectionRef);
+          const { id, ...tagData } = tag;
+          batch.set(docRef, tagData);
         });
-
+        
         await batch.commit();
+        
+        // Pass the updated tags (with potentially new IDs) back up.
         onTagsUpdate(editedTags);
         toast({ title: 'Success', description: 'Labels updated successfully.' });
         setIsEditing(false);
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update labels.' });
+
+      } catch (error: any) {
+        console.error("Failed to update labels:", error);
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to update labels: ${error.message}` });
       }
     });
   };
