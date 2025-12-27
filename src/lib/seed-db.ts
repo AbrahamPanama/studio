@@ -17,10 +17,13 @@ export const seedDatabase = async (firestore: Firestore) => {
   }
 
   orders.forEach((order) => {
-    const docRef = doc(ordersCollection, order.id);
+    // FIX: Create a new document reference to let Firestore generate a unique ID.
+    const docRef = doc(ordersCollection); 
     
+    const { id, ...orderData } = order; // Remove the placeholder ID from the data payload.
+
     const data = {
-        ...order,
+        ...orderData,
         fechaIngreso: serverTimestamp(),
         entrega: new Date(order.entrega),
         entregaLimite: new Date(order.entregaLimite),
