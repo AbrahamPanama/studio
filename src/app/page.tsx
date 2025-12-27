@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { seedDatabase } from '@/lib/seed-db';
+import { initializeTags } from '@/lib/init-tags';
 import { useToast } from '@/hooks/use-toast';
 
 // --- Helper Functions ---
@@ -97,8 +98,11 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = React.useState(false);
+  const [isInitializingTags, setIsInitializingTags] = React.useState(false);
+
 
   const handleSeed = async () => {
+    if(!firestore) return;
     setIsSeeding(true);
     try {
       const count = await seedDatabase(firestore);
@@ -116,6 +120,28 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
       });
     } finally {
       setIsSeeding(false);
+    }
+  };
+  
+  const handleInitializeTags = async () => {
+    if (!firestore) return;
+    setIsInitializingTags(true);
+    try {
+      const message = await initializeTags(firestore);
+      toast({
+        title: "Tag Initialization",
+        description: message,
+      });
+      onRefresh(); // Refresh the page to show new tags
+    } catch (error: any) {
+      console.error("Tag initialization failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Tag Initialization Failed",
+        description: error.message || "Could not initialize tags. Check console for details.",
+      });
+    } finally {
+      setIsInitializingTags(false);
     }
   };
 
@@ -158,9 +184,14 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                 </div>
                 <div className="flex gap-2">
                   {process.env.NODE_ENV === 'development' && (
-                    <Button onClick={handleSeed} disabled={isSeeding} variant="outline">
-                      {isSeeding ? 'Seeding...' : 'Seed Database'}
-                    </Button>
+                    <>
+                      <Button onClick={handleSeed} disabled={isSeeding} variant="outline">
+                        {isSeeding ? 'Seeding...' : 'Seed Database'}
+                      </Button>
+                      <Button onClick={handleInitializeTags} disabled={isInitializingTags} variant="outline">
+                        {isInitializingTags ? 'Initializing...' : 'Initialize Missing Tags'}
+                      </Button>
+                    </>
                   )}
                   <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                     <Link href="/quotes/new">
