@@ -66,6 +66,14 @@ interface OrderFormProps {
 
 const TAX_RATE = 0.07;
 
+const parseDate = (dateInput: any): Date => {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date) return dateInput;
+  if (typeof dateInput.toDate === 'function') return dateInput.toDate(); // Firestore Timestamp
+  if (dateInput.seconds) return new Date(dateInput.seconds * 1000); // Serialized Timestamp
+  return new Date(dateInput); // String or number
+};
+
 const PrintableQuote = ({ data, orderNumber, isQuote, t }: { data: any, orderNumber: string, isQuote: boolean, t: any }) => {
   const subtotal = data.productos?.reduce((acc: number, p: any) => acc + (Number(p.quantity) * Number(p.price)), 0) || 0;
   const tax = data.itbms ? subtotal * 0.07 : 0;
@@ -236,8 +244,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         ...currentOrder,
         orderNumber: currentOrder.orderNumber,
         companyName: currentOrder.companyName || '',
-        entrega: currentOrder.entrega ? new Date(currentOrder.entrega as string) : new Date(),
-        entregaLimite: currentOrder.entregaLimite ? new Date(currentOrder.entregaLimite as string) : new Date(),
+        entrega: parseDate(currentOrder.entrega),
+        entregaLimite: parseDate(currentOrder.entregaLimite),
         description: currentOrder.description || '',
         comentarios: currentOrder.comentarios || '',
         abono: currentOrder.abono || false,
