@@ -1,0 +1,34 @@
+{
+  "orders": [
+    {
+      "id": "REPLACE_WITH_REAL_ID_1",
+      "name": "John Doe (Sample)",
+      "orderNumber": "000001",
+      "celular": "+507 6000-0001",
+      "email": "john.doe@example.com",
+      "estado": "New",
+      "subEstado": "Pendiente",
+      "entrega": "2024-07-30T12:00:00.000Z",
+      "entregaLimite": "2024-08-05T12:00:00.000Z",
+      "servicioEntrega": "Uno Express",
+      "direccionEnvio": "123 Main St, Panama City",
+      "productos": [
+        { "name": "Custom Mug", "quantity": 2, "price": 15, "materialsReady": false, "isTaxable": true },
+        { "name": "Logo T-Shirt", "quantity": 1, "price": 25, "materialsReady": false, "isTaxable": true }
+      ],
+      "orderTotal": 58.85,
+      "itbms": true,
+      "subtotal": 55,
+      "tax": 3.85,
+      "privacidad": "Por preguntar",
+      "description": "Sample order for demonstration.",
+      "comentarios": "Internal note: check logo quality.",
+      "abono": false,
+      "cancelo": false,
+      "totalAbono": 0,
+      "tags": [],
+      "tagsOther": [],
+      "createdBy": "seed@system.com"
+    }
+  ]
+}
