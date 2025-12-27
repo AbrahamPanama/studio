@@ -286,8 +286,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     const fetchTags = async () => {
       const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
       const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
-      setAllTags(tagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
-      setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+      setAllTags(tagsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Tag)));
+      setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Tag)));
     };
     fetchTags();
   }, [firestore]);
@@ -354,6 +354,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
+
+    
 
     
 
