@@ -233,8 +233,33 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const fetchTags = async () => {
       const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
       const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
-      setAllTags(tagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
-      setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag)));
+      
+      const seenTagIds = new Set<string>();
+      const uniqueTags = tagsSnapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id } as Tag))
+        .filter(tag => {
+          if (seenTagIds.has(tag.id)) {
+            return false;
+          } else {
+            seenTagIds.add(tag.id);
+            return true;
+          }
+        });
+
+      const seenOtherTagIds = new Set<string>();
+      const uniqueOtherTags = otherTagsSnapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id } as Tag))
+        .filter(tag => {
+          if (seenOtherTagIds.has(tag.id)) {
+            return false;
+          } else {
+            seenOtherTagIds.add(tag.id);
+            return true;
+          }
+        });
+
+      setAllTags(uniqueTags);
+      setAllOtherTags(uniqueOtherTags);
     };
     fetchTags();
   }, [firestore]);
