@@ -37,14 +37,18 @@ export function TagManager({
   collectionName = 'tags'
 }: TagManagerProps) {
   const [isEditing, setIsEditing] = React.useState(false);
-  const [editedTags, setEditedTags] = React.useState(allTags);
+  const [editedTags, setEditedTags] = React.useState<Tag[]>([]);
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  React.useEffect(() => {
-    setEditedTags(allTags);
-  }, [allTags]);
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      // When dialog opens, create a deep copy of allTags to edit
+      setEditedTags(JSON.parse(JSON.stringify(allTags)));
+    }
+    setIsEditing(open);
+  };
 
   const handleTagClick = (tagId: string) => {
     const newSelectedTags = selectedTags.includes(tagId)
@@ -62,27 +66,43 @@ export function TagManager({
       try {
         const batch = writeBatch(firestore);
         const collectionRef = collection(firestore, collectionName);
+        const originalTagMap = new Map(allTags.map(t => [t.id, t]));
+        const editedTagMap = new Map(editedTags.map(t => [t.id, t]));
 
-        // 1. Get all existing documents in the collection to delete them.
-        const existingDocsSnapshot = await getDocs(collectionRef);
-        existingDocsSnapshot.forEach(doc => {
-          batch.delete(doc.ref);
-        });
+        // 1. Identify Deletions
+        for (const originalTag of allTags) {
+          if (!editedTagMap.has(originalTag.id)) {
+            const docRef = doc(collectionRef, originalTag.id);
+            batch.delete(docRef);
+          }
+        }
 
-        // 2. Add all the tags from the current local state as new documents.
-        editedTags.forEach(tag => {
-          // Use the existing ID for stability, or let Firestore generate one if it's a new tag.
-          const docRef = tag.id ? doc(collectionRef, tag.id) : doc(collectionRef);
-          const { id, ...tagData } = tag;
-          batch.set(docRef, tagData);
-        });
+        // 2. Identify Updates and Creations
+        for (const editedTag of editedTags) {
+          const originalTag = originalTagMap.get(editedTag.id);
+          
+          if (editedTag.id.startsWith('temp-')) {
+            // This is a new tag (Creation)
+            const newDocRef = doc(collectionRef); // Let Firestore generate the ID
+            const { id, ...tagData } = editedTag; // remove temp id
+            batch.set(newDocRef, tagData);
+          } else if (originalTag && (originalTag.label !== editedTag.label || originalTag.color !== editedTag.color)) {
+            // This is an existing tag that has changed (Update)
+            const docRef = doc(collectionRef, editedTag.id);
+            batch.update(docRef, { label: editedTag.label, color: editedTag.color });
+          }
+        }
         
         await batch.commit();
         
-        // Pass the updated tags (with potentially new IDs) back up.
-        onTagsUpdate(editedTags);
+        // 3. Refresh data from Firestore to get the source of truth
+        const freshSnapshot = await getDocs(collectionRef);
+        const freshTags = freshSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
+
+        onTagsUpdate(freshTags);
+        
         toast({ title: 'Success', description: 'Labels updated successfully.' });
-        setIsEditing(false);
+        handleOpenChange(false);
 
       } catch (error: any) {
         console.error("Failed to update labels:", error);
@@ -92,8 +112,8 @@ export function TagManager({
   };
 
   const handleAddNewTag = () => {
-    const newTag = {
-      id: `tag-${Date.now()}`,
+    const newTag: Tag = {
+      id: `temp-${Date.now()}`,
       label: 'New Label',
       color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
     };
@@ -127,9 +147,9 @@ export function TagManager({
         ))}
       </div>
 
-      <Dialog onOpenChange={(open) => { if(!open) setIsEditing(false)}}>
+      <Dialog open={isEditing} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" size="sm">
             <Edit className="mr-2 h-4 w-4" />
             Edit Labels
           </Button>
