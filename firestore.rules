@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Allow authorized users to read and write to the orders collection
     match /orders/{orderId} {
-      allow read, write: if request.auth != null;
+      allow read, write, list: if request.auth != null;
 
       // Allow authorized users to read and write to the products subcollection
       match /products/{productId} {
@@ -11,12 +11,18 @@ service cloud.firestore {
       }
     }
 
-    // Allow authorized users to read and write to the tags collections
+    // Allow authorized users to read, write, and list the tags collections
     match /tags/{tagId} {
         allow read, write: if request.auth != null;
     }
+    match /tags {
+        allow list: if request.auth != null;
+    }
     match /tagsOther/{tagId} {
         allow read, write: if request.auth != null;
+    }
+    match /tagsOther {
+        allow list: if request.auth != null;
     }
   }
 }
