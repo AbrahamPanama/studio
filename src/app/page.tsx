@@ -146,42 +146,56 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
             </div>
         </div>
         
-        {/* Navigation Tabs (Con tu solución de fuerza bruta integrada y estilizada) */}
+        {/* Navigation Tabs (Styled as Underline Links) */}
         <div className="border-b border-slate-200 px-2">
-            <TabsList className="bg-transparent p-0 space-x-4">
-                <TabsTrigger value="active" asChild>
+            <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start">
+                
+                {/* Active Tab */}
+                <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                   <Link 
                     href="/?tab=active" 
                     className={cn(
-                      "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
-                       tab === 'active' && "border-primary font-bold text-foreground"
+                      "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
+                      // Force styling based on URL param to override default behavior
+                      tab === 'active' 
+                        ? "border-emerald-600 font-bold text-slate-900" 
+                        : "hover:border-slate-300"
                     )}
                   >
                     {t('active')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="quotes" asChild>
+                
+                {/* Quotes Tab */}
+                <TabsTrigger value="quotes" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                   <Link 
                     href="/?tab=quotes"
                     className={cn(
-                        "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
-                        tab === 'quotes' && "border-primary font-bold text-foreground"
+                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        tab === 'quotes' 
+                          ? "border-emerald-600 font-bold text-slate-900" 
+                          : "hover:border-slate-300"
                     )}
                   >
                     {t('quotes')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="completed" asChild>
+                
+                {/* Completed Tab */}
+                <TabsTrigger value="completed" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                   <Link 
                     href="/?tab=completed" 
                     className={cn(
-                        "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
-                        tab === 'completed' && "border-primary font-bold text-foreground"
+                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
+                        tab === 'completed' 
+                          ? "border-emerald-600 font-bold text-slate-900" 
+                          : "hover:border-slate-300"
                     )}
                   >
                     {t('completed')}
                   </Link>
                 </TabsTrigger>
+
             </TabsList>
         </div>
 
