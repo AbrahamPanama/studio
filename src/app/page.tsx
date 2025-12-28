@@ -148,41 +148,35 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
         
         {/* Navigation Tabs (Con tu solución de fuerza bruta integrada y estilizada) */}
         <div className="border-b border-slate-200 px-2">
-             <TabsList className="h-auto p-0 bg-transparent gap-6">
-                <TabsTrigger value="active" asChild className="data-[state=active]:bg-transparent p-0">
+            <TabsList className="bg-transparent p-0 space-x-4">
+                <TabsTrigger value="active" asChild>
                   <Link 
                     href="/?tab=active" 
                     className={cn(
-                      "pb-3 text-sm transition-all border-b-2 px-1", 
-                      tab === 'active' 
-                        ? "font-bold text-indigo-600 border-indigo-600" 
-                        : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
+                      "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
+                       tab === 'active' && "border-primary font-bold text-foreground"
                     )}
                   >
                     {t('active')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="quotes" asChild className="data-[state=active]:bg-transparent p-0">
+                <TabsTrigger value="quotes" asChild>
                   <Link 
                     href="/?tab=quotes"
                     className={cn(
-                        "pb-3 text-sm transition-all border-b-2 px-1", 
-                        tab === 'quotes' 
-                          ? "font-bold text-indigo-600 border-indigo-600" 
-                          : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
+                        "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
+                        tab === 'quotes' && "border-primary font-bold text-foreground"
                     )}
                   >
                     {t('quotes')}
                   </Link>
                 </TabsTrigger>
-                <TabsTrigger value="completed" asChild className="data-[state=active]:bg-transparent p-0">
+                <TabsTrigger value="completed" asChild>
                   <Link 
                     href="/?tab=completed" 
                     className={cn(
-                        "pb-3 text-sm transition-all border-b-2 px-1", 
-                        tab === 'completed' 
-                          ? "font-bold text-indigo-600 border-indigo-600" 
-                          : "font-medium text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
+                        "rounded-none border-b-2 border-transparent bg-transparent px-4 pb-2 font-medium text-muted-foreground transition-none data-[state=active]:border-primary data-[state=active]:font-bold data-[state=active]:text-foreground data-[state=active]:shadow-none",
+                        tab === 'completed' && "border-primary font-bold text-foreground"
                     )}
                   >
                     {t('completed')}
@@ -266,3 +260,5 @@ export default function DashboardPage() {
 
     return <DashboardPageContent allOrders={allOrders || []} query={queryParam} tab={tab} onRefresh={forceRefresh} />;
 }
+
+    
