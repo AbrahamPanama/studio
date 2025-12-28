@@ -518,7 +518,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           const docRef = doc(firestore, 'orders', currentOrder.id);
           updateDocumentNonBlocking(docRef, payload);
           toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
-          router.push('/');
+          if (isQuote) {
+            setShowPostSaveDialog(true); // Show dialog instead of redirecting
+          } else {
+            router.push('/');
+          }
         } else {
           const ordersCol = collection(firestore, 'orders');
           const latestOrderQuery = query(ordersCol, orderBy('orderNumber', 'desc'));
@@ -1023,6 +1027,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                     selectedTags={field.value || []}
                                     onSelectedTagsChange={field.onChange}
                                     onTagsUpdate={setAllOtherTags}
+                                    collectionName="tagsOther"
                                   />
                                   <FormMessage />
                                 </FormItem>
@@ -1051,7 +1056,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                 <DialogHeader>
                     <DialogTitle>Quote Saved!</DialogTitle>
                     <DialogDescription>
-                        Quote # {currentOrder?.orderNumber} has been created successfully. What would you like to do next?
+                        Quote # {currentOrder?.orderNumber} has been {isEditing ? 'updated' : 'created'} successfully. What would you like to do next?
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className='sm:justify-between flex-col sm:flex-row gap-2'>
