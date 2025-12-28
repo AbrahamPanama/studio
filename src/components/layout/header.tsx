@@ -24,7 +24,7 @@ export default function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-4">
             <Image src="/logo.png" alt="VA OMS Logo" width={40} height={40} />
             <span className="font-bold sm:inline-block text-2xl">
-              VA OMS
+              VA OMS 0.15
             </span>
           </Link>
         </div>
