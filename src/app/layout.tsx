@@ -7,7 +7,7 @@ import { AuthGate } from '@/components/auth/auth-gate';
 import { LanguageProvider } from '@/contexts/language-context';
 
 export const metadata: Metadata = {
-  title: 'VA OMS',
+  title: 'VA OMS 0.15',
   description: 'Lightweight Order Management System',
 };
 
