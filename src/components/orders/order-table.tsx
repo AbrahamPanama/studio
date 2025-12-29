@@ -311,21 +311,21 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   }
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-auto max-h-[75vh] relative rounded-md border border-slate-200 shadow-sm bg-white">
       <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="whitespace-nowrap min-w-[200px]">Customer</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px]">Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px]">Sub-Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px]">Items</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px]">Shipping Method</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px]">Shipping Address</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px]">Delivery Deadline</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px]">Tags Shipping</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px]">Tags Other</TableHead>
-            <TableHead className="whitespace-nowrap text-right min-w-[120px]">Total</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[100px]"><span className="sr-only">Actions</span></TableHead>
+        <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
+          <TableRow className="hover:bg-transparent border-b border-slate-300">
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Customer</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Status</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Sub-Status</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700">Items</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Shipping Method</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700">Shipping Address</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Delivery Deadline</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Tags Shipping</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Tags Other</TableHead>
+            <TableHead className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700">Total</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -344,7 +344,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                 No orders for this view.
               </TableCell>
             </TableRow>
@@ -354,11 +354,3 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
-
-    
-
-    
-
-    
-
-    
