@@ -146,7 +146,7 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
             </div>
         </div>
         
-        {/* Navigation Tabs (Styled as Underline Links) */}
+        {/* Navigation Tabs (Styled with Data Attributes) */}
         <div className="border-b border-slate-200 px-2">
             <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start">
                 
@@ -155,11 +155,9 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                   <Link 
                     href="/?tab=active" 
                     className={cn(
-                      "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
-                      // Force styling based on URL param to override default behavior
-                      tab === 'active' 
-                        ? "border-emerald-600 font-bold text-slate-900" 
-                        : "hover:border-slate-300"
+                      "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                      // Apply styles automatically when this tab is active
+                      "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
                     )}
                   >
                     {t('active')}
@@ -171,10 +169,8 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                   <Link 
                     href="/?tab=quotes"
                     className={cn(
-                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
-                        tab === 'quotes' 
-                          ? "border-emerald-600 font-bold text-slate-900" 
-                          : "hover:border-slate-300"
+                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                        "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
                     )}
                   >
                     {t('quotes')}
@@ -186,10 +182,8 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                   <Link 
                     href="/?tab=completed" 
                     className={cn(
-                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground transition-colors",
-                        tab === 'completed' 
-                          ? "border-emerald-600 font-bold text-slate-900" 
-                          : "hover:border-slate-300"
+                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                        "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
                     )}
                   >
                     {t('completed')}
@@ -198,6 +192,7 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
 
             </TabsList>
         </div>
+
 
         {/* Orders Grid */}
         <div className="space-y-6">
