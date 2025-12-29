@@ -146,51 +146,53 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
             </div>
         </div>
         
-        {/* Navigation Tabs (Corrected Style) */}
-        <div className="border-b border-slate-200 px-2">
-            <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start">
-                
-                {/* Active Tab */}
-                <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                  <Link 
-                    href="/?tab=active" 
-                    className={cn(
-                      "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                      "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
-                    )}
-                  >
-                    {t('active')}
-                  </Link>
-                </TabsTrigger>
-                
-                {/* Quotes Tab */}
-                <TabsTrigger value="quotes" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                  <Link 
-                    href="/?tab=quotes"
-                    className={cn(
-                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                        "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
-                    )}
-                  >
-                    {t('quotes')}
-                  </Link>
-                </TabsTrigger>
-                
-                {/* Completed Tab */}
-                <TabsTrigger value="completed" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                  <Link 
-                    href="/?tab=completed" 
-                    className={cn(
-                        "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                        "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
-                    )}
-                  >
-                    {t('completed')}
-                  </Link>
-                </TabsTrigger>
-
-            </TabsList>
-        </div>
+        <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start border-b border-slate-200">
+    {/* Active Tab */}
+    <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+      <Link 
+        href="/?tab=active" 
+        className={cn(
+          "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+          // The Condition: If URL param is 'active', FORCE these styles:
+          tab === 'active' 
+            ? "border-emerald-600 font-bold text-slate-900" 
+            : ""
+        )}
+      >
+        {t('active')}
+      </Link>
+    </TabsTrigger>
+    
+    {/* Quotes Tab */}
+    <TabsTrigger value="quotes" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+      <Link 
+        href="/?tab=quotes"
+        className={cn(
+            "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+            tab === 'quotes' 
+              ? "border-emerald-600 font-bold text-slate-900" 
+              : ""
+        )}
+      >
+        {t('quotes')}
+      </Link>
+    </TabsTrigger>
+    
+    {/* Completed Tab */}
+    <TabsTrigger value="completed" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+      <Link 
+        href="/?tab=completed" 
+        className={cn(
+            "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+            tab === 'completed' 
+              ? "border-emerald-600 font-bold text-slate-900" 
+              : ""
+        )}
+      >
+        {t('completed')}
+      </Link>
+    </TabsTrigger>
+</TabsList>
 
 
         {/* Orders Grid */}
