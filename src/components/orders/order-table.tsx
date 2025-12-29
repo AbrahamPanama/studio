@@ -311,21 +311,26 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   }
 
   return (
+    // CONTENEDOR PRINCIPAL: Controla el scroll Vertical y Horizontal
     <div className="w-full overflow-auto max-h-[75vh] relative rounded-md border border-slate-200 shadow-sm bg-white">
-      <Table>
+      {/* IMPORTANTE: Usamos 'table' (minúscula) en lugar de 'Table' (componente)
+         para evitar el wrapper extra de Shadcn que rompe el sticky header.
+         Añadimos las clases base de Shadcn manualmente: "w-full caption-bottom text-sm"
+      */}
+      <table className="w-full caption-bottom text-sm">
         <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
           <TableRow className="hover:bg-transparent border-b border-slate-300">
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Customer</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Sub-Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700">Items</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Shipping Method</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700">Shipping Address</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700">Delivery Deadline</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Tags Shipping</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700">Tags Other</TableHead>
-            <TableHead className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700">Total</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700"><span className="sr-only">Actions</span></TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Customer</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Status</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Sub-Status</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Items</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Shipping Method</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Shipping Address</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Delivery Deadline</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
+            <TableHead className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle">Total</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -350,7 +355,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
             </TableRow>
           )}
         </TableBody>
-      </Table>
+      </table>
     </div>
   );
 }
