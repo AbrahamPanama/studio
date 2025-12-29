@@ -146,7 +146,7 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
             </div>
         </div>
         
-        {/* Navigation Tabs (Styled with Data Attributes) */}
+        {/* Navigation Tabs (Corrected Style) */}
         <div className="border-b border-slate-200 px-2">
             <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start">
                 
@@ -156,7 +156,6 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                     href="/?tab=active" 
                     className={cn(
                       "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                      // Apply styles automatically when this tab is active
                       "data-[state=active]:border-emerald-600 data-[state=active]:font-bold data-[state=active]:text-slate-900"
                     )}
                   >
