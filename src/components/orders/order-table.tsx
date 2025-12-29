@@ -2,8 +2,8 @@
 'use client';
 
 import * as React from 'react';
+import { useRef, useEffect, useState } from 'react';
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -312,16 +312,85 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     onRefresh();
   }
 
+  // --- START: Top Scrollbar Logic ---
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const [showTopScroll, setShowTopScroll] = useState(false);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  useEffect(() => {
+    const tableContainer = tableContainerRef.current;
+    const topScroll = topScrollRef.current;
+
+    if (!tableContainer || !topScroll) return;
+
+    // Helper to sync scroll position
+    const syncScroll = (source: HTMLElement, target: HTMLElement) => {
+      // Only sync if significantly different to avoid loops
+      if (Math.abs(source.scrollLeft - target.scrollLeft) > 5) {
+        target.scrollLeft = source.scrollLeft;
+      }
+    };
+
+    const handleTableScroll = () => syncScroll(tableContainer, topScroll);
+    const handleTopScroll = () => syncScroll(topScroll, tableContainer);
+
+    // Measure table width to size the dummy scrollbar
+    const updateDimensions = () => {
+      if (tableContainer) {
+        const scrollWidth = tableContainer.scrollWidth;
+        const clientWidth = tableContainer.clientWidth;
+        
+        // Only show top scrollbar if content actually overflows
+        setShowTopScroll(scrollWidth > clientWidth);
+        setContentWidth(scrollWidth);
+      }
+    };
+
+    // Initial check
+    updateDimensions();
+    
+    // Listen for window resize to re-check overflow
+    window.addEventListener('resize', updateDimensions);
+
+    // Attach scroll listeners
+    tableContainer.addEventListener('scroll', handleTableScroll);
+    topScroll.addEventListener('scroll', handleTopScroll);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+      tableContainer.removeEventListener('scroll', handleTableScroll);
+      topScroll.removeEventListener('scroll', handleTopScroll);
+    };
+  }, [orders]); // Re-run when data changes, as that changes width
+  // --- END: Top Scrollbar Logic ---
+
   return (
-    // CONTENEDOR PRINCIPAL: Controla el scroll Vertical y Horizontal
-    <div className="w-full overflow-auto max-h-[75vh] relative rounded-md border border-slate-200 shadow-sm bg-white">
-      {/* IMPORTANTE: Usamos 'table' (minúscula) en lugar de 'Table' (componente)
-         para evitar el wrapper extra de Shadcn que rompe el sticky header.
-         Añadimos las clases base de Shadcn manualmente: "w-full caption-bottom text-sm"
-      */}
-      <table className="w-full caption-bottom text-sm">
-        <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
-          <TableRow className="hover:bg-transparent border-b border-slate-300">
+    <div className="space-y-1"> {/* Wrapper for both bars */}
+      
+      {/* 1. The New Top Scrollbar */}
+      {showTopScroll && (
+        <div 
+          ref={topScrollRef} 
+          className="w-full overflow-x-auto border border-transparent"
+          style={{ height: '12px' }} // Keeps it thin and unobtrusive
+        >
+          {/* Inner div forces the scrollbar to match table width */}
+          <div style={{ width: `${contentWidth}px`, height: '1px' }} />
+        </div>
+      )}
+
+      {/* 2. The Existing Table Container */}
+      <div 
+        ref={tableContainerRef} // <--- IMPORTANT: Attach the ref here!
+        className="w-full overflow-auto max-h-[75vh] relative rounded-md border border-slate-200 shadow-sm bg-white"
+      >
+        <table className="w-full caption-bottom text-sm">
+          {/* ... existing table header and body ... */}
+          {/* (Keep all existing code inside the table tag exactly as is) */}
+          <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
+            <TableRow className="hover:bg-transparent border-b border-slate-300">
             <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Customer</TableHead>
             <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Status</TableHead>
             <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Sub-Status</TableHead>
@@ -334,9 +403,9 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
             <TableHead className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle">Total</TableHead>
             <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.length > 0 ? (
+          </TableHeader>
+          <TableBody>
+            {orders.length > 0 ? (
             orders.map((order) => (
               <OrderTableRow 
                   key={order.id} 
@@ -356,8 +425,9 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               </TableCell>
             </TableRow>
           )}
-        </TableBody>
-      </table>
+          </TableBody>
+        </table>
+      </div>
     </div>
   );
 }
