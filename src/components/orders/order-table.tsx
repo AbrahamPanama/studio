@@ -144,8 +144,10 @@ const OrderTableRow = ({
   }, [deadline]);
 
   return (
-    <TableRow>
-      <TableCell className="w-[200px]">
+    <TableRow className="group">
+      <TableCell 
+        className="w-[200px] sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+      >
         <div className="font-medium text-foreground">{order.name}</div>
         <div className="text-sm font-mono text-muted-foreground">#{order.orderNumber}</div>
         <div className="text-sm text-muted-foreground">{order.celular}</div>
@@ -320,7 +322,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       <table className="w-full caption-bottom text-sm">
         <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
           <TableRow className="hover:bg-transparent border-b border-slate-300">
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Customer</TableHead>
+            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Customer</TableHead>
             <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Status</TableHead>
             <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Sub-Status</TableHead>
             <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Items</TableHead>
