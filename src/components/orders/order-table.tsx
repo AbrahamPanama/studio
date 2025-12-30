@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { differenceInDays, isPast } from 'date-fns';
 import { doc, getDocs, collection } from 'firebase/firestore';
@@ -282,7 +282,87 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const firestore = useFirestore();
-  
+
+  // --- 1. NEW SORTING STATE ---
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' } | null>(null);
+
+  // --- 2. SORTING LOGIC ---
+  const sortedOrders = React.useMemo(() => {
+    if (!sortConfig) return orders;
+
+    return [...orders].sort((a, b) => {
+      const key = sortConfig.key;
+      let aValue = a[key];
+      let bValue = b[key];
+
+      // Handle Dates
+      if (key === 'entregaLimite') {
+        const dateA = parseDate(aValue)?.getTime() || 0;
+        const dateB = parseDate(bValue)?.getTime() || 0;
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      // Handle Numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // Handle Strings (Default)
+      aValue = aValue ? String(aValue).toLowerCase() : '';
+      bValue = bValue ? String(bValue).toLowerCase() : '';
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [orders, sortConfig]);
+
+  const requestSort = (key: keyof Order) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // --- 3. HELPER FOR HEADERS ---
+  const SortIcon = ({ columnKey }: { columnKey: keyof Order }) => {
+    if (sortConfig?.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="ml-2 h-4 w-4 text-primary" />
+      : <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
+  };
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const [showTopScroll, setShowTopScroll] = useState(false);
+  const [contentWidth, setContentWidth] = useState(0);
+  useEffect(() => {
+    const tableContainer = tableContainerRef.current;
+    const topScroll = topScrollRef.current;
+    if (!tableContainer || !topScroll) return;
+    const syncScroll = (source: HTMLElement, target: HTMLElement) => {
+      if (Math.abs(source.scrollLeft - target.scrollLeft) > 5) target.scrollLeft = source.scrollLeft;
+    };
+    const handleTableScroll = () => syncScroll(tableContainer, topScroll);
+    const handleTopScroll = () => syncScroll(topScroll, tableContainer);
+    const updateDimensions = () => {
+      if (tableContainer) {
+        setShowTopScroll(tableContainer.scrollWidth > tableContainer.clientWidth);
+        setContentWidth(tableContainer.scrollWidth);
+      }
+    };
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    tableContainer.addEventListener('scroll', handleTableScroll);
+    topScroll.addEventListener('scroll', handleTopScroll);
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+      tableContainer.removeEventListener('scroll', handleTableScroll);
+      topScroll.removeEventListener('scroll', handleTopScroll);
+    };
+  }, [sortedOrders]); // UPDATE DEPENDENCY to sortedOrders
+
   React.useEffect(() => {
     if (!firestore) return;
     const fetchTags = async () => {
@@ -306,125 +386,89 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     setAllTags(newTags);
     onRefresh();
   }
-
   const handleAllOtherTagsUpdate = (newTags: Tag[]) => {
     setAllOtherTags(newTags);
     onRefresh();
   }
 
-  // --- START: Top Scrollbar Logic ---
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const topScrollRef = useRef<HTMLDivElement>(null);
-  const [showTopScroll, setShowTopScroll] = useState(false);
-  const [contentWidth, setContentWidth] = useState(0);
-
-  useEffect(() => {
-    const tableContainer = tableContainerRef.current;
-    const topScroll = topScrollRef.current;
-
-    if (!tableContainer || !topScroll) return;
-
-    // Helper to sync scroll position
-    const syncScroll = (source: HTMLElement, target: HTMLElement) => {
-      // Only sync if significantly different to avoid loops
-      if (Math.abs(source.scrollLeft - target.scrollLeft) > 5) {
-        target.scrollLeft = source.scrollLeft;
-      }
-    };
-
-    const handleTableScroll = () => syncScroll(tableContainer, topScroll);
-    const handleTopScroll = () => syncScroll(topScroll, tableContainer);
-
-    // Measure table width to size the dummy scrollbar
-    const updateDimensions = () => {
-      if (tableContainer) {
-        const scrollWidth = tableContainer.scrollWidth;
-        const clientWidth = tableContainer.clientWidth;
-        
-        // Only show top scrollbar if content actually overflows
-        setShowTopScroll(scrollWidth > clientWidth);
-        setContentWidth(scrollWidth);
-      }
-    };
-
-    // Initial check
-    updateDimensions();
-    
-    // Listen for window resize to re-check overflow
-    window.addEventListener('resize', updateDimensions);
-
-    // Attach scroll listeners
-    tableContainer.addEventListener('scroll', handleTableScroll);
-    topScroll.addEventListener('scroll', handleTopScroll);
-
-    // Clean up
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-      tableContainer.removeEventListener('scroll', handleTableScroll);
-      topScroll.removeEventListener('scroll', handleTopScroll);
-    };
-  }, [orders]); // Re-run when data changes, as that changes width
-  // --- END: Top Scrollbar Logic ---
-
   return (
-    <div className="space-y-1"> {/* Wrapper for both bars */}
-      
-      {/* 1. The New Top Scrollbar */}
+    <div className="space-y-1"> 
       {showTopScroll && (
-        <div 
-          ref={topScrollRef} 
-          className="w-full overflow-x-auto border border-transparent"
-          style={{ height: '12px' }} // Keeps it thin and unobtrusive
-        >
-          {/* Inner div forces the scrollbar to match table width */}
+        <div ref={topScrollRef} className="w-full overflow-x-auto border border-transparent" style={{ height: '12px' }}>
           <div style={{ width: `${contentWidth}px`, height: '1px' }} />
         </div>
       )}
 
-      {/* 2. The Existing Table Container */}
       <div 
-        ref={tableContainerRef} // <--- IMPORTANT: Attach the ref here!
-        className="w-full overflow-auto max-h-[75vh] relative rounded-md border border-slate-200 shadow-sm bg-white"
+        ref={tableContainerRef} 
+        className="w-full overflow-auto h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
       >
         <table className="w-full caption-bottom text-sm">
-          {/* ... existing table header and body ... */}
-          {/* (Keep all existing code inside the table tag exactly as is) */}
           <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-slate-300">
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Customer</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Sub-Status</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Items</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Shipping Method</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Shipping Address</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Delivery Deadline</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
-            <TableHead className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle">Total</TableHead>
-            <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
-          </TableRow>
+              
+              <TableHead 
+                onClick={() => requestSort('name')}
+                className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors"
+              >
+                <div className="flex items-center">Customer <SortIcon columnKey="name" /></div>
+              </TableHead>
+
+              <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
+              </TableHead>
+
+              <TableHead onClick={() => requestSort('subEstado')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Sub-Status <SortIcon columnKey="subEstado" /></div>
+              </TableHead>
+
+              <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">
+                Items
+              </TableHead>
+
+              <TableHead onClick={() => requestSort('servicioEntrega')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Method <SortIcon columnKey="servicioEntrega" /></div>
+              </TableHead>
+
+              <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
+              </TableHead>
+
+              <TableHead onClick={() => requestSort('entregaLimite')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Deadline <SortIcon columnKey="entregaLimite" /></div>
+              </TableHead>
+
+              <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
+              <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
+
+              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center justify-end">Total <SortIcon columnKey="orderTotal" /></div>
+              </TableHead>
+
+              <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
+            </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.length > 0 ? (
-            orders.map((order) => (
-              <OrderTableRow 
-                  key={order.id} 
-                  order={order} 
-                  allTags={allTags}
-                  allOtherTags={allOtherTags}
-                  onAllTagsUpdate={handleAllTagsUpdate}
-                  onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
-                  onDelete={handleDelete} 
-                  onRefresh={onRefresh}
-              />
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
-                No orders for this view.
-              </TableCell>
-            </TableRow>
-          )}
+            {sortedOrders.length > 0 ? (
+              sortedOrders.map((order) => (
+                <OrderTableRow 
+                    key={order.id} 
+                    order={order} 
+                    allTags={allTags}
+                    allOtherTags={allOtherTags}
+                    onAllTagsUpdate={handleAllTagsUpdate}
+                    onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
+                    onDelete={handleDelete} 
+                    onRefresh={onRefresh}
+                />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                  No orders for this view.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </table>
       </div>
