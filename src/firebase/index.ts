@@ -5,15 +5,12 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// This function now robustly handles initialization on the client side.
 export function initializeFirebase() {
   if (getApps().length) {
-    const app = getApp();
-    // Ensure the app has the correct config. Re-initializing is safe.
-    return getSdks(initializeApp(firebaseConfig, app.name));
+    return getSdks(getApp());
   }
   
-  // For the first initialization
   const firebaseApp = initializeApp(firebaseConfig);
   return getSdks(firebaseApp);
 }

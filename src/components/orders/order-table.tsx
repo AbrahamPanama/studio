@@ -401,7 +401,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
 
       <div 
         ref={tableContainerRef} 
-        className="w-full overflow-auto h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
+        className="w-full overflow-auto max-h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
       >
         <table className="w-full caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
