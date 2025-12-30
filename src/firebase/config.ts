@@ -1,8 +1,10 @@
+
 export const firebaseConfig = {
-  "projectId": "va-oms-copy-2-81096274-22694",
-  "appId": "1:1083307023410:web:12eedff593f3a57544b02b",
-  "apiKey": "AIzaSyCEC40awWDWY6TF3D1UnWg8HG4_MiyZ3c8",
-  "authDomain": "va-oms-copy-2-81096274-22694.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "1083307023410"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
