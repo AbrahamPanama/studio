@@ -283,7 +283,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const firestore = useFirestore();
 
-  // --- 1. NEW SORTING STATE ---
+  // --- 1. SORTING STATE ---
   const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' } | null>(null);
 
   // --- 2. SORTING LOGIC ---
@@ -333,35 +333,45 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       : <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
   };
 
+  // --- 4. SCROLL SYNC LOGIC ---
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const [showTopScroll, setShowTopScroll] = useState(false);
   const [contentWidth, setContentWidth] = useState(0);
+
   useEffect(() => {
     const tableContainer = tableContainerRef.current;
     const topScroll = topScrollRef.current;
+
     if (!tableContainer || !topScroll) return;
+
     const syncScroll = (source: HTMLElement, target: HTMLElement) => {
-      if (Math.abs(source.scrollLeft - target.scrollLeft) > 5) target.scrollLeft = source.scrollLeft;
+      if (Math.abs(source.scrollLeft - target.scrollLeft) > 5) {
+        target.scrollLeft = source.scrollLeft;
+      }
     };
+
     const handleTableScroll = () => syncScroll(tableContainer, topScroll);
     const handleTopScroll = () => syncScroll(topScroll, tableContainer);
+
     const updateDimensions = () => {
       if (tableContainer) {
         setShowTopScroll(tableContainer.scrollWidth > tableContainer.clientWidth);
         setContentWidth(tableContainer.scrollWidth);
       }
     };
+
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     tableContainer.addEventListener('scroll', handleTableScroll);
     topScroll.addEventListener('scroll', handleTopScroll);
+
     return () => {
       window.removeEventListener('resize', updateDimensions);
       tableContainer.removeEventListener('scroll', handleTableScroll);
       topScroll.removeEventListener('scroll', handleTopScroll);
     };
-  }, [sortedOrders]); // UPDATE DEPENDENCY to sortedOrders
+  }, [sortedOrders]); 
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -393,20 +403,24 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
 
   return (
     <div className="space-y-1"> 
+      {/* Top Scrollbar */}
       {showTopScroll && (
         <div ref={topScrollRef} className="w-full overflow-x-auto border border-transparent" style={{ height: '12px' }}>
           <div style={{ width: `${contentWidth}px`, height: '1px' }} />
         </div>
       )}
 
+      {/* Main Table Container */}
       <div 
         ref={tableContainerRef} 
+        // CHANGED: max-h-[calc(100vh-280px)] ensures it shrinks when empty but grows to fill screen when full
         className="w-full overflow-auto max-h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
       >
         <table className="w-full caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-slate-300">
               
+              {/* STICKY CUSTOMER COLUMN */}
               <TableHead 
                 onClick={() => requestSort('name')}
                 className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors"
