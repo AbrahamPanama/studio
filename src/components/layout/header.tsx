@@ -30,18 +30,21 @@ export default function Header() {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-4">
-            <Button asChild variant="ghost">
-              <Link href="/admin/import">Import</Link>
-            </Button>
-            <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-              </SelectContent>
-            </Select>
+          <Button asChild variant="ghost">
+            <Link href="/reports">Reports</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/admin/import">Import</Link>
+          </Button>
+          <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Español</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </header>
