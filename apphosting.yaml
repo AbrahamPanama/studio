@@ -5,3 +5,23 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# PASTE THIS SECTION EXACTLY AS IS:
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "va-oms-015-20753336-b9f13"
+    
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyC2tMcyz5rh-orBWQbm5tVrm1rjbquJZ5k"
+    
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "va-oms-015-20753336-b9f13.firebaseapp.com"
+    
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "va-oms-015-20753336-b9f13.appspot.com"
+    
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "1088963818534"
+    
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:1088963818534:web:ffb29ea70dbccfbf74a2e7"
