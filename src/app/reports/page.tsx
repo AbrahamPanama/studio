@@ -27,7 +27,8 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 function calculateKPIs(orders: Order[] = []) {
     // Filter out quotes for revenue
-    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
+    const safeOrders = orders || [];
+    const confirmedOrders = safeOrders.filter(o => o.estado !== 'Cotización');
 
     const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
     const totalOrders = confirmedOrders.length;
@@ -124,7 +125,7 @@ export default function ReportsPage() {
 
     const { data: allOrders, isLoading, error } = useCollection<Order>(ordersQuery);
 
-    const kpis = useMemo(() => calculateKPIs(allOrders), [allOrders]);
+    const kpis = useMemo(() => calculateKPIs(allOrders || []), [allOrders]);
     const statusData = useMemo(() => getOrdersByStatus(allOrders || []), [allOrders]);
     const revenueData = useMemo(() => getRevenueOverTime(allOrders || []), [allOrders]);
 
