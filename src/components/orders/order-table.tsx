@@ -128,7 +128,7 @@ const OrderTableRow = ({
   const orderTags = (order.tags || [])
     .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
     .filter((t): t is Tag => !!t);
-  
+
   const orderOtherTags = (order.tagsOther || [])
     .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
     .filter((t): t is Tag => !!t);
@@ -145,7 +145,7 @@ const OrderTableRow = ({
 
   return (
     <TableRow className="group">
-      <TableCell 
+      <TableCell
         className="w-[200px] sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
       >
         <div className="font-medium text-foreground">{order.name}</div>
@@ -154,33 +154,33 @@ const OrderTableRow = ({
       </TableCell>
       <TableCell>
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
-            <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
-                <SelectValue asChild>
-                    <StatusBadge status={order.estado} className="text-sm" />
-                </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-                {ORDER_STATUSES.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-            </SelectContent>
+          <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
+            <SelectValue asChild>
+              <StatusBadge status={order.estado} className="text-sm" />
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {ORDER_STATUSES.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </TableCell>
       <TableCell>
         <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending || order.estado === 'Cotización'}>
-            <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-                {ORDER_SUB_STATUSES.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-            </SelectContent>
+          <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ORDER_SUB_STATUSES.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </TableCell>
       <TableCell>
         <ProductEditPopover order={order} onRefresh={onRefresh}>
-            <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
+          <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
       <TableCell>
@@ -190,9 +190,9 @@ const OrderTableRow = ({
         <p className="line-clamp-3">{order.direccionEnvio}</p>
       </TableCell>
       <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
-       {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
+        {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
-       <TableCell>
+      <TableCell>
         <Popover>
           <PopoverTrigger asChild>
             <div className="flex flex-wrap gap-1 cursor-pointer">
@@ -204,7 +204,7 @@ const OrderTableRow = ({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-96">
-            <TagManager 
+            <TagManager
               allTags={allTags}
               selectedTags={order.tags || []}
               onSelectedTagsChange={handleTagsUpdate}
@@ -226,7 +226,7 @@ const OrderTableRow = ({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-96">
-            <TagManager 
+            <TagManager
               allTags={allOtherTags}
               selectedTags={order.tagsOther || []}
               onSelectedTagsChange={handleOtherTagsUpdate}
@@ -239,38 +239,38 @@ const OrderTableRow = ({
       <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
-            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <Link href={editUrl}>
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Edit Order</span>
-                </Link>
-            </Button>
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete Order</span>
-                </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the order for {order.name}.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                    >
-                    {isPending ? "Deleting..." : "Delete"}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+          <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Link href={editUrl}>
+              <Edit className="h-4 w-4" />
+              <span className="sr-only">Edit Order</span>
+            </Link>
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete Order</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the order for {order.name}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  {isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </TableCell>
     </TableRow>
@@ -328,7 +328,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   // --- 3. HELPER FOR HEADERS ---
   const SortIcon = ({ columnKey }: { columnKey: keyof Order }) => {
     if (sortConfig?.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
-    return sortConfig.direction === 'asc' 
+    return sortConfig.direction === 'asc'
       ? <ArrowUp className="ml-2 h-4 w-4 text-primary" />
       : <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
   };
@@ -371,7 +371,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       tableContainer.removeEventListener('scroll', handleTableScroll);
       topScroll.removeEventListener('scroll', handleTopScroll);
     };
-  }, [sortedOrders]); 
+  }, [sortedOrders]);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -383,7 +383,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     };
     fetchTags();
   }, [firestore]);
-  
+
   React.useEffect(() => {
     setOrders(initialOrders);
   }, [initialOrders]);
@@ -391,7 +391,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   const handleDelete = (id: string) => {
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
   };
-  
+
   const handleAllTagsUpdate = (newTags: Tag[]) => {
     setAllTags(newTags);
     onRefresh();
@@ -402,7 +402,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   }
 
   return (
-    <div className="space-y-1"> 
+    <div className="space-y-1">
       {/* Top Scrollbar */}
       {showTopScroll && (
         <div ref={topScrollRef} className="w-full overflow-x-auto border border-transparent" style={{ height: '12px' }}>
@@ -411,17 +411,17 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       )}
 
       {/* Main Table Container */}
-      <div 
-        ref={tableContainerRef} 
+      <div
+        ref={tableContainerRef}
         // CHANGED: max-h-[calc(100vh-280px)] ensures it shrinks when empty but grows to fill screen when full
         className="w-full overflow-auto max-h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
       >
         <table className="w-full caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-slate-300">
-              
+
               {/* STICKY CUSTOMER COLUMN */}
-              <TableHead 
+              <TableHead
                 onClick={() => requestSort('name')}
                 className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors"
               >
@@ -465,15 +465,15 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
           <TableBody>
             {sortedOrders.length > 0 ? (
               sortedOrders.map((order) => (
-                <OrderTableRow 
-                    key={order.id} 
-                    order={order} 
-                    allTags={allTags}
-                    allOtherTags={allOtherTags}
-                    onAllTagsUpdate={handleAllTagsUpdate}
-                    onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
-                    onDelete={handleDelete} 
-                    onRefresh={onRefresh}
+                <OrderTableRow
+                  key={order.id}
+                  order={order}
+                  allTags={allTags}
+                  allOtherTags={allOtherTags}
+                  onAllTagsUpdate={handleAllTagsUpdate}
+                  onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
+                  onDelete={handleDelete}
+                  onRefresh={onRefresh}
                 />
               ))
             ) : (
