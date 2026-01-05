@@ -22,7 +22,20 @@ import {
     Line
 } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
-import { startOfWeek, endOfWeek, subWeeks, isSameWeek, isSameYear, startOfYear, endOfYear, format } from 'date-fns';
+import {
+    startOfWeek,
+    endOfWeek,
+    subWeeks,
+    subDays,
+    isSameWeek,
+    isSameYear,
+    isSameDay,
+    startOfYear,
+    endOfYear,
+    format,
+    eachDayOfInterval,
+    eachWeekOfInterval
+} from 'date-fns';
 
 // --- Types & Helper Functions ---
 
@@ -166,8 +179,6 @@ function getAverageOrderValueTrends(orders: Order[]) {
     // Initialize last 4 weeks keys
     for (let i = 3; i >= 0; i--) {
         const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 }); // Monday start
-        // Create a key that sorts correctly, e.g., "2023-W45"
-        // But for simplicity in map, let's use the start date string
         const key = format(weekStart, 'yyyy-MM-dd');
         weeksData.set(key, {
             total: 0,
@@ -232,6 +243,214 @@ function getAverageOrderValueTrends(orders: Order[]) {
     return result;
 }
 
+// --- New Charts ---
+
+function getDailyQuotesVsOrders(orders: Order[]) {
+    // Last 7 Days
+    const now = new Date();
+    const days = eachDayOfInterval({ start: subDays(now, 6), end: now });
+
+    // Map: 'yyyy-MM-dd' -> { date, quoteCount, orderCount }
+    const dailyData = new Map<string, { name: string, Quotes: number, Orders: number }>();
+
+    days.forEach(day => {
+        dailyData.set(format(day, 'yyyy-MM-dd'), {
+            name: format(day, 'EEE dd'), // Mon 01
+            Quotes: 0,
+            Orders: 0
+        });
+    });
+
+    orders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const key = format(dateObj, 'yyyy-MM-dd');
+            if (dailyData.has(key)) {
+                const entry = dailyData.get(key)!;
+                if (order.estado === 'Cotización') {
+                    entry.Quotes += 1;
+                } else {
+                    entry.Orders += 1;
+                }
+            }
+        }
+    });
+
+    return Array.from(dailyData.values());
+}
+
+function getWeeklyQuotesVsOrders(orders: Order[]) {
+    // Last 4 Weeks
+    const now = new Date();
+    // 4 weeks ago
+    const start = startOfWeek(subWeeks(now, 3), { weekStartsOn: 1 });
+    const weeks = eachWeekOfInterval({ start, end: now }, { weekStartsOn: 1 });
+
+    const weeklyData = new Map<string, { name: string, Quotes: number, Orders: number }>();
+
+    weeks.forEach(weekStart => {
+        weeklyData.set(format(weekStart, 'yyyy-MM-dd'), {
+            name: `W${format(weekStart, 'w')}`,
+            Quotes: 0,
+            Orders: 0
+        });
+    });
+
+    orders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const weekStart = startOfWeek(dateObj, { weekStartsOn: 1 });
+            const key = format(weekStart, 'yyyy-MM-dd');
+
+            if (weeklyData.has(key)) {
+                const entry = weeklyData.get(key)!;
+                if (order.estado === 'Cotización') {
+                    entry.Quotes += 1;
+                } else {
+                    entry.Orders += 1;
+                }
+            }
+        }
+    });
+
+    return Array.from(weeklyData.values());
+}
+
+function getDailyRevenueWithAvg(orders: Order[]) {
+    // Show last 7 days daily revenue, plus a bar for the average of these 7 days
+    const now = new Date();
+    const days = eachDayOfInterval({ start: subDays(now, 6), end: now });
+
+    const dailyData = new Map<string, { name: string, value: number }>();
+    let totalRevenuePeriod = 0;
+
+    days.forEach(day => {
+        dailyData.set(format(day, 'yyyy-MM-dd'), {
+            name: format(day, 'EEE'),
+            value: 0
+        });
+    });
+
+    // Filter only confirmed orders
+    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
+
+    confirmedOrders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const key = format(dateObj, 'yyyy-MM-dd');
+            const amount = order.orderTotal || 0;
+            if (dailyData.has(key)) {
+                dailyData.get(key)!.value += amount;
+                totalRevenuePeriod += amount;
+            }
+        }
+    });
+
+    const result = Array.from(dailyData.values()).map(d => ({ ...d, type: 'Day' }));
+
+    // Add Average Bar
+    const avg = totalRevenuePeriod / 7;
+    result.push({ name: 'Avg (7d)', value: avg, type: 'Avg' });
+
+    return result;
+}
+
+function getWeeklyRevenueTrends(orders: Order[]) {
+    // Confirmed orders only
+    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
+    const now = new Date();
+
+    const weeksData = new Map<string, { total: number, label: string }>();
+
+    // Initialize last 4 weeks
+    for (let i = 3; i >= 0; i--) {
+        const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+        const key = format(weekStart, 'yyyy-MM-dd');
+        weeksData.set(key, {
+            total: 0,
+            label: `W${format(weekStart, 'w')}`
+        });
+    }
+
+    let yearTotal = 0;
+
+    // Using a set to count unique weeks for year avg correct calculation if needed, 
+    // or just assume 52? Better: count weeks that have passed in the year or weeks with orders?
+    // "Avg for the year" usually means Total / Weeks passed
+    const startOfCurrentYear = startOfYear(now);
+    // Rough weeks passed
+    const weeksPassed = Math.max(1, ((now.getTime() - startOfCurrentYear.getTime()) / (1000 * 60 * 60 * 24 * 7)));
+
+    confirmedOrders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const amount = order.orderTotal || 0;
+
+            if (isSameYear(dateObj, now)) {
+                yearTotal += amount;
+            }
+
+            const orderWeekStart = startOfWeek(dateObj, { weekStartsOn: 1 });
+            const key = format(orderWeekStart, 'yyyy-MM-dd');
+            if (weeksData.has(key)) {
+                weeksData.get(key)!.total += amount;
+            }
+        }
+    });
+
+    const result = [];
+    weeksData.forEach((value) => {
+        result.push({
+            name: value.label,
+            value: value.total,
+            type: 'Week'
+        });
+    });
+
+    // Periodic Average (Weekly)
+    // Avg = Total Year Revenue / Weeks Passed
+    const weeklyAvg = yearTotal / weeksPassed;
+    result.push({
+        name: 'Avg (Yr)',
+        value: weeklyAvg,
+        type: 'Year'
+    });
+
+    return result;
+}
+
 // --- Components ---
 
 function KPICard({ title, value, icon: Icon, subtext, highlight = false }: { title: string, value: string, icon: any, subtext?: string, highlight?: boolean }) {
@@ -267,6 +486,12 @@ export default function ReportsPage() {
     const revenueTrends = useMemo(() => getRevenueTrends(allOrders || []), [allOrders]);
     const topProducts = useMemo(() => getTopProducts(allOrders || []), [allOrders]);
     const aovTrends = useMemo(() => getAverageOrderValueTrends(allOrders || []), [allOrders]);
+
+    // New Metrics
+    const dailyQuotesVsOrders = useMemo(() => getDailyQuotesVsOrders(allOrders || []), [allOrders]);
+    const weeklyQuotesVsOrders = useMemo(() => getWeeklyQuotesVsOrders(allOrders || []), [allOrders]);
+    const dailyRevenueAvg = useMemo(() => getDailyRevenueWithAvg(allOrders || []), [allOrders]);
+    const weeklyRevenueTrends = useMemo(() => getWeeklyRevenueTrends(allOrders || []), [allOrders]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading reports...</p></div>;
@@ -341,9 +566,8 @@ export default function ReportsPage() {
                 />
             </div>
 
+            {/* Row: Existing Revenue Analysis (Long) + Top Products (Small) */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-
-                {/* Revenue Analysis Chart - Stacked (Completed vs Active vs Quotes) */}
                 <Card className="col-span-4">
                     <CardHeader>
                         <CardTitle>Business Health</CardTitle>
@@ -383,7 +607,6 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Top Products */}
                 <Card className="col-span-3">
                     <CardHeader>
                         <CardTitle>Top Products</CardTitle>
@@ -416,16 +639,173 @@ export default function ReportsPage() {
                         </div>
                     </CardContent>
                 </Card>
-
             </div>
 
-            {/* Row 2: Status & AOV */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {/* AOV Chart - NEW */}
-                <Card className="col-span-4">
+            {/* Row: Quotes Comparison (Daily & Weekly) */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                <Card>
                     <CardHeader>
-                        <CardTitle>Avg. Order Value Trends</CardTitle>
-                        <CardDescription>Last 4 Weeks vs Yearly Average</CardDescription>
+                        <CardTitle>Quotes vs Orders (Daily)</CardTitle>
+                        <CardDescription>Last 7 Days</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dailyQuotesVsOrders}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="Orders" fill="#10b981" radius={[4, 4, 0, 0]} name="Orders" />
+                                    <Bar dataKey="Quotes" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Quotes" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Quotes vs Orders (Weekly)</CardTitle>
+                        <CardDescription>Last 4 Weeks</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={weeklyQuotesVsOrders}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="Orders" fill="#10b981" radius={[4, 4, 0, 0]} name="Orders" />
+                                    <Bar dataKey="Quotes" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Quotes" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Row: Revenue Trends & AOV */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Daily Revenue</CardTitle>
+                        <CardDescription>Last 7 Days + Weekly Average</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dailyRevenueAvg}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value)}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        {dailyRevenueAvg.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.type === 'Avg' ? '#FFBB28' : '#0f172a'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Weekly Revenue</CardTitle>
+                        <CardDescription>Last 4 Weeks + Year Avg</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={weeklyRevenueTrends}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value)}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        {weeklyRevenueTrends.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.type === 'Year' ? '#FF8042' : '#8884d8'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Avg. Order Value</CardTitle>
+                        <CardDescription>Last 4 Weeks + Year Avg</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px] w-full">
@@ -454,7 +834,7 @@ export default function ReportsPage() {
                                         {aovTrends.map((entry, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
-                                                fill={entry.type === 'Year' ? '#FF8042' : '#8884d8'}
+                                                fill={entry.type === 'Year' ? '#FFBB28' : '#82ca9d'}
                                             />
                                         ))}
                                     </Bar>
@@ -463,8 +843,13 @@ export default function ReportsPage() {
                         </div>
                     </CardContent>
                 </Card>
+            </div>
 
-                {/* Status Chart */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* Status Chart - moved to bottom or keep here? Let's give it full width or keep small. 
+                    Previous layout had it in row 2. Now row 2 is quotes. 
+                    Let's put Status Chart at the end alongside maybe something else or full width.
+                */}
                 <Card className="col-span-3">
                     <CardHeader>
                         <CardTitle>Order Status Distribution</CardTitle>
