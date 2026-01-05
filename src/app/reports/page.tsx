@@ -5,7 +5,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, FileText, Percent } from 'lucide-react';
 import {
     Bar,
     BarChart,
@@ -26,35 +26,44 @@ import { useLanguage } from '@/contexts/language-context';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 function calculateKPIs(orders: Order[] = []) {
-    // Filter out quotes for revenue
     const safeOrders = orders || [];
+
+    // Split into Quotes and Confirmed Orders
+    const quotes = safeOrders.filter(o => o.estado === 'Cotización');
     const confirmedOrders = safeOrders.filter(o => o.estado !== 'Cotización');
 
+    // Orders Metrics
     const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
     const totalOrders = confirmedOrders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     const totalOutstanding = confirmedOrders.reduce((sum, o) => {
-        // Only count if not cancelled and explicitly marked as having outstanding balance logic if needed.
-        // Based on schema: totalAbono is what they paid. 
-        // Assuming outstanding = orderTotal - totalAbono
         const paid = o.totalAbono || 0;
         const total = o.orderTotal || 0;
         return sum + Math.max(0, total - paid);
     }, 0);
 
+    // Quotes Metrics
+    const potentialRevenue = quotes.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
+    const totalQuotes = quotes.length;
+
+    // Conversion Rate (Total Orders / (Total Orders + Active Quotes)) * 100
+    // This is a simplified "Lifetime" conversion rate. 
+    const totalOpportunities = totalOrders + totalQuotes;
+    const conversionRate = totalOpportunities > 0 ? (totalOrders / totalOpportunities) * 100 : 0;
+
     return {
         totalRevenue,
         totalOrders,
         averageOrderValue,
-        totalOutstanding
+        totalOutstanding,
+        potentialRevenue,
+        totalQuotes,
+        conversionRate
     };
 }
 
 function getOrdersByStatus(orders: Order[]) {
-    // Show all orders including active, pending, etc.
-    // Maybe exclude 'Done' if we only want active? 
-    // Usually "Status Distribution" includes everything to see workload.
     const statusCount: Record<string, number> = {};
 
     orders.forEach(order => {
@@ -66,12 +75,10 @@ function getOrdersByStatus(orders: Order[]) {
 }
 
 function getRevenueOverTime(orders: Order[]) {
-    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
-    // Group by Month (YYYY-MM)
-    const revenueByMonth: Record<string, number> = {};
+    // Group by Month (YYYY-MM) with split for Orders vs Quotes
+    const dataByMonth: Record<string, { orders: number, quotes: number }> = {};
 
-    confirmedOrders.forEach(order => {
-        // Use fechaIngreso. If it's a timestamp, convert.
+    orders.forEach(order => {
         let dateObj: Date | null = null;
         if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
             dateObj = (order.fechaIngreso as any).toDate();
@@ -83,27 +90,37 @@ function getRevenueOverTime(orders: Order[]) {
 
         if (dateObj) {
             const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-            revenueByMonth[key] = (revenueByMonth[key] || 0) + (order.orderTotal || 0);
+            if (!dataByMonth[key]) {
+                dataByMonth[key] = { orders: 0, quotes: 0 };
+            }
+
+            const amount = order.orderTotal || 0;
+            if (order.estado === 'Cotización') {
+                dataByMonth[key].quotes += amount;
+            } else {
+                dataByMonth[key].orders += amount;
+            }
         }
     });
 
-    // Sort keys
-    return Object.keys(revenueByMonth).sort().map(key => ({
+    // Sort keys and format
+    return Object.keys(dataByMonth).sort().map(key => ({
         name: key,
-        total: revenueByMonth[key]
+        Orders: dataByMonth[key].orders,
+        Quotes: dataByMonth[key].quotes
     }));
 }
 
 // --- Components ---
 
-function KPICard({ title, value, icon: Icon, subtext }: { title: string, value: string, icon: any, subtext?: string }) {
+function KPICard({ title, value, icon: Icon, subtext, highlight = false }: { title: string, value: string, icon: any, subtext?: string, highlight?: boolean }) {
     return (
-        <Card>
+        <Card className={highlight ? "border-l-4 border-l-blue-500 bg-blue-50/50" : ""}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                     {title}
                 </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className={`h-4 w-4 ${highlight ? "text-blue-600" : "text-muted-foreground"}`} />
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
@@ -115,9 +132,8 @@ function KPICard({ title, value, icon: Icon, subtext }: { title: string, value: 
 
 export default function ReportsPage() {
     const firestore = useFirestore();
-    const { t } = useLanguage(); // Assuming translation context exists, though we might need to add keys or just hardcode for now if keys missing.
+    const { t } = useLanguage();
 
-    // Fetch all orders
     const ordersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'orders'), orderBy('fechaIngreso', 'desc'));
@@ -143,41 +159,66 @@ export default function ReportsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard & Reports</h2>
             </div>
 
-            {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {/* Orders KPIs */}
                 <KPICard
                     title="Total Revenue"
                     value={`$${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                     icon={DollarSign}
-                    subtext="Lifetime confirmed revenue"
+                    subtext="Confirmed orders"
                 />
                 <KPICard
                     title="Total Orders"
                     value={kpis.totalOrders.toString()}
                     icon={ShoppingCart}
-                    subtext="Confirmed orders (excl. quotes)"
+                    subtext="Confirmed orders"
+                />
+
+                {/* Quotes KPIs - Highlighted */}
+                <KPICard
+                    title="Potential Revenue"
+                    value={`$${kpis.potentialRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    icon={DollarSign}
+                    subtext="Active Quotes"
+                    highlight={true}
                 />
                 <KPICard
-                    title="Average Order Value"
-                    value={`$${kpis.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    icon={TrendingUp}
-                    subtext="Revenue / Total Orders"
+                    title="Active Quotes"
+                    value={kpis.totalQuotes.toString()}
+                    icon={FileText}
+                    subtext="Pending conversion"
+                    highlight={true}
                 />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KPICard
                     title="Outstanding Balance"
                     value={`$${kpis.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                     icon={DollarSign}
                     subtext="Pending payments"
                 />
+                <KPICard
+                    title="Avg. Order Value"
+                    value={`$${kpis.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    icon={TrendingUp}
+                    subtext="Revenue / Total Orders"
+                />
+                <KPICard
+                    title="Conversion Rate"
+                    value={`${kpis.conversionRate.toFixed(1)}%`}
+                    icon={Percent}
+                    subtext="Orders / (Orders + Quotes)"
+                />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
 
-                {/* Revenue Chart */}
+                {/* Revenue Chart - Stacked */}
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Revenue Overview</CardTitle>
-                        <CardDescription>Monthly revenue from orders</CardDescription>
+                        <CardTitle>Revenue Analysis</CardTitle>
+                        <CardDescription>Orders (Actual) vs Quotes (Potential)</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <div className="h-[350px] w-full">
@@ -190,6 +231,7 @@ export default function ReportsPage() {
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
+                                        tick={{ fontSize: 10 }}
                                     />
                                     <YAxis
                                         stroke="#888888"
@@ -199,10 +241,12 @@ export default function ReportsPage() {
                                         tickFormatter={(value) => `$${value}`}
                                     />
                                     <Tooltip
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
                                         cursor={{ fill: 'transparent' }}
                                     />
-                                    <Bar dataKey="total" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                                    <Legend />
+                                    <Bar dataKey="Orders" stackId="a" fill="#0f172a" radius={[0, 0, 4, 4]} />
+                                    <Bar dataKey="Quotes" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -212,8 +256,8 @@ export default function ReportsPage() {
                 {/* Status Chart */}
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Order Status</CardTitle>
-                        <CardDescription>Distribution of current orders</CardDescription>
+                        <CardTitle>Order Status Distribution</CardTitle>
+                        <CardDescription>All records including Quotes</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[350px] w-full">
