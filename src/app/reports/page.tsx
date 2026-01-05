@@ -22,10 +22,20 @@ import {
     Line
 } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
+import { startOfWeek, endOfWeek, subWeeks, isSameWeek, isSameYear, startOfYear, endOfYear, format } from 'date-fns';
 
 // --- Types & Helper Functions ---
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+}
 
 function calculateKPIs(orders: Order[] = []) {
     const safeOrders = orders || [];
@@ -145,6 +155,83 @@ function getTopProducts(orders: Order[]) {
         .slice(0, 5);
 }
 
+function getAverageOrderValueTrends(orders: Order[]) {
+    // 1. Filter confirmed orders only
+    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
+    const now = new Date();
+
+    // 2. Prepare buckets: Last 4 weeks and Current Year
+    const weeksData = new Map<string, { total: number, count: number, label: string }>();
+
+    // Initialize last 4 weeks keys
+    for (let i = 3; i >= 0; i--) {
+        const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 }); // Monday start
+        // Create a key that sorts correctly, e.g., "2023-W45"
+        // But for simplicity in map, let's use the start date string
+        const key = format(weekStart, 'yyyy-MM-dd');
+        weeksData.set(key, {
+            total: 0,
+            count: 0,
+            label: `Week ${format(weekStart, 'w')}`
+        });
+    }
+
+    let yearTotal = 0;
+    let yearCount = 0;
+
+    // 3. Iterate orders
+    confirmedOrders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const amount = order.orderTotal || 0;
+
+            // Check Year
+            if (isSameYear(dateObj, now)) {
+                yearTotal += amount;
+                yearCount++;
+            }
+
+            // Check Weeks
+            const orderWeekStart = startOfWeek(dateObj, { weekStartsOn: 1 });
+            const key = format(orderWeekStart, 'yyyy-MM-dd');
+            if (weeksData.has(key)) {
+                const bucket = weeksData.get(key)!;
+                bucket.total += amount;
+                bucket.count += 1;
+            }
+        }
+    });
+
+    // 4. Format for Chart
+    const result = [];
+
+    // Add weeks
+    weeksData.forEach((value, key) => {
+        result.push({
+            name: value.label,
+            value: value.count > 0 ? value.total / value.count : 0,
+            type: 'Week'
+        });
+    });
+
+    // Add Year Avg
+    result.push({
+        name: 'Year Avg',
+        value: yearCount > 0 ? yearTotal / yearCount : 0,
+        type: 'Year'
+    });
+
+    return result;
+}
+
 // --- Components ---
 
 function KPICard({ title, value, icon: Icon, subtext, highlight = false }: { title: string, value: string, icon: any, subtext?: string, highlight?: boolean }) {
@@ -179,6 +266,7 @@ export default function ReportsPage() {
     const statusData = useMemo(() => getOrdersByStatus(allOrders || []), [allOrders]);
     const revenueTrends = useMemo(() => getRevenueTrends(allOrders || []), [allOrders]);
     const topProducts = useMemo(() => getTopProducts(allOrders || []), [allOrders]);
+    const aovTrends = useMemo(() => getAverageOrderValueTrends(allOrders || []), [allOrders]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading reports...</p></div>;
@@ -198,7 +286,7 @@ export default function ReportsPage() {
                 {/* Orders KPIs */}
                 <KPICard
                     title="Total Revenue"
-                    value={`$${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    value={formatCurrency(kpis.totalRevenue)}
                     icon={DollarSign}
                     subtext="Confirmed orders"
                 />
@@ -212,7 +300,7 @@ export default function ReportsPage() {
                 {/* Quotes KPIs - Highlighted */}
                 <KPICard
                     title="Potential Revenue"
-                    value={`$${kpis.potentialRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    value={formatCurrency(kpis.potentialRevenue)}
                     icon={DollarSign}
                     subtext="Active Quotes"
                     highlight={true}
@@ -229,19 +317,19 @@ export default function ReportsPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KPICard
                     title="Outstanding Balance"
-                    value={`$${kpis.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    value={formatCurrency(kpis.totalOutstanding)}
                     icon={DollarSign}
                     subtext="Pending payments"
                 />
                 <KPICard
                     title="Avg. Order Value"
-                    value={`$${kpis.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    value={formatCurrency(kpis.averageOrderValue)}
                     icon={TrendingUp}
                     subtext="Revenue / Total Orders"
                 />
                 <KPICard
                     title="ITBMS Collected"
-                    value={`$${kpis.totalITBMS.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    value={formatCurrency(kpis.totalITBMS)}
                     icon={Building2}
                     subtext="Total Tax"
                 />
@@ -279,10 +367,10 @@ export default function ReportsPage() {
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => `$${value}`}
+                                        tickFormatter={(value) => formatCurrency(value)}
                                     />
                                     <Tooltip
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                        formatter={(value: number) => [formatCurrency(value), '']}
                                         cursor={{ fill: 'transparent' }}
                                     />
                                     <Legend />
@@ -315,7 +403,7 @@ export default function ReportsPage() {
                                         interval={0}
                                     />
                                     <Tooltip
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
                                         cursor={{ fill: 'transparent' }}
                                     />
                                     <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
@@ -331,7 +419,51 @@ export default function ReportsPage() {
 
             </div>
 
+            {/* Row 2: Status & AOV */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* AOV Chart - NEW */}
+                <Card className="col-span-4">
+                    <CardHeader>
+                        <CardTitle>Avg. Order Value Trends</CardTitle>
+                        <CardDescription>Last 4 Weeks vs Yearly Average</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={aovTrends}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value)}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: number) => [formatCurrency(value), 'Avg Value']}
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        {aovTrends.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.type === 'Year' ? '#FF8042' : '#8884d8'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Status Chart */}
                 <Card className="col-span-3">
                     <CardHeader>
