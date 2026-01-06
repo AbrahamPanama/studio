@@ -509,8 +509,15 @@ function getVolumeComparison(orders: Order[]) {
     const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
     
     const ordersIn90Days = confirmedOrders.filter(o => {
-        const d = o.fechaIngreso instanceof Date ? o.fechaIngreso : new Date(o.fechaIngreso as any);
-        return d >= ninetyDaysAgo && d <= now;
+        let d: Date | null = null;
+        if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') {
+            d = (o.fechaIngreso as any).toDate();
+        } else if (o.fechaIngreso instanceof Date) {
+            d = o.fechaIngreso;
+        } else if (typeof o.fechaIngreso === 'string') {
+            d = new Date(o.fechaIngreso);
+        }
+        return d && d >= ninetyDaysAgo && d <= now;
     });
 
     // Simple daily average: Total Orders / 90 days
@@ -521,8 +528,17 @@ function getVolumeComparison(orders: Order[]) {
     const dailyData = last7Days.map(day => {
         const dayStr = format(day, 'yyyy-MM-dd');
         const count = confirmedOrders.filter(o => {
-            const d = o.fechaIngreso instanceof Date ? o.fechaIngreso : new Date(o.fechaIngreso as any);
-            return format(d, 'yyyy-MM-dd') === dayStr;
+            let d: Date | null = null;
+            if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') {
+                d = (o.fechaIngreso as any).toDate();
+            } else if (o.fechaIngreso instanceof Date) {
+                d = o.fechaIngreso;
+            } else if (typeof o.fechaIngreso === 'string') {
+                d = new Date(o.fechaIngreso);
+            }
+            
+            // Only format if we have a valid date
+            return d ? format(d, 'yyyy-MM-dd') === dayStr : false;
         }).length;
 
         return {
