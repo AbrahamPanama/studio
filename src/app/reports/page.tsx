@@ -9,6 +9,7 @@ import { DollarSign, ShoppingCart, TrendingUp, FileText, Percent, Truck, Buildin
 import {
     Bar,
     BarChart,
+    ComposedChart,
     CartesianGrid,
     Cell,
     Legend,
@@ -19,7 +20,8 @@ import {
     XAxis,
     YAxis,
     LineChart,
-    Line
+    Line,
+    ReferenceLine
 } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
 import {
@@ -451,6 +453,87 @@ function getWeeklyRevenueTrends(orders: Order[]) {
     return result;
 }
 
+function getConversionTrend(orders: Order[]) {
+    // Goal: Show last 6 months of "Leads" (Quotes + Orders) vs "Wins" (Orders)
+    const now = new Date();
+    // Generate keys for the last 6 months
+    const monthsData = new Map<string, { name: string, TotalLeads: number, Orders: number }>();
+
+    for (let i = 5; i >= 0; i--) {
+        const date = subDays(now, i * 30); // Approx month steps
+        const key = format(date, 'yyyy-MM');
+        monthsData.set(key, {
+            name: format(date, 'MMM'),
+            TotalLeads: 0,
+            Orders: 0
+        });
+    }
+
+    orders.forEach(order => {
+        let dateObj: Date | null = null;
+        if (order.fechaIngreso && typeof (order.fechaIngreso as any).toDate === 'function') {
+            dateObj = (order.fechaIngreso as any).toDate();
+        } else if (order.fechaIngreso instanceof Date) {
+            dateObj = order.fechaIngreso;
+        } else if (typeof order.fechaIngreso === 'string') {
+            dateObj = new Date(order.fechaIngreso);
+        }
+
+        if (dateObj) {
+            const key = format(dateObj, 'yyyy-MM');
+            if (monthsData.has(key)) {
+                const entry = monthsData.get(key)!;
+                // Every record is a "Lead"
+                entry.TotalLeads += 1;
+                
+                // If it's not a Quote, it counts as a converted "Order"
+                if (order.estado !== 'Cotización') {
+                    entry.Orders += 1;
+                }
+            }
+        }
+    });
+
+    // Calculate Rate
+    return Array.from(monthsData.values()).map(d => ({
+        ...d,
+        ConversionRate: d.TotalLeads > 0 ? Math.round((d.Orders / d.TotalLeads) * 100) : 0
+    }));
+}
+
+function getVolumeComparison(orders: Order[]) {
+    const now = new Date();
+    
+    // 1. Calculate 90-Day Average (Baseline)
+    const ninetyDaysAgo = subDays(now, 90);
+    const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
+    
+    const ordersIn90Days = confirmedOrders.filter(o => {
+        const d = o.fechaIngreso instanceof Date ? o.fechaIngreso : new Date(o.fechaIngreso as any);
+        return d >= ninetyDaysAgo && d <= now;
+    });
+
+    // Simple daily average: Total Orders / 90 days
+    const avg90Day = ordersIn90Days.length / 90;
+
+    // 2. Calculate Last 7 Days (Actuals)
+    const last7Days = eachDayOfInterval({ start: subDays(now, 6), end: now });
+    const dailyData = last7Days.map(day => {
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const count = confirmedOrders.filter(o => {
+            const d = o.fechaIngreso instanceof Date ? o.fechaIngreso : new Date(o.fechaIngreso as any);
+            return format(d, 'yyyy-MM-dd') === dayStr;
+        }).length;
+
+        return {
+            name: format(day, 'EEE'), // Mon, Tue...
+            Orders: count
+        };
+    });
+
+    return { dailyData, avg90Day: parseFloat(avg90Day.toFixed(1)) };
+}
+
 // --- Components ---
 
 function KPICard({ title, value, icon: Icon, subtext, highlight = false }: { title: string, value: string, icon: any, subtext?: string, highlight?: boolean }) {
@@ -492,6 +575,8 @@ export default function ReportsPage() {
     const weeklyQuotesVsOrders = useMemo(() => getWeeklyQuotesVsOrders(allOrders || []), [allOrders]);
     const dailyRevenueAvg = useMemo(() => getDailyRevenueWithAvg(allOrders || []), [allOrders]);
     const weeklyRevenueTrends = useMemo(() => getWeeklyRevenueTrends(allOrders || []), [allOrders]);
+    const conversionTrend = useMemo(() => getConversionTrend(allOrders || []), [allOrders]);
+    const volumeComp = useMemo(() => getVolumeComparison(allOrders || []), [allOrders]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading reports...</p></div>;
@@ -566,74 +651,117 @@ export default function ReportsPage() {
                 />
             </div>
 
-            {/* Row: Existing Revenue Analysis (Long) + Top Products (Small) */}
+            {/* NEW: Conversion & Velocity Row */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                
+                {/* 1. Conversion Efficiency Chart */}
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Business Health</CardTitle>
-                        <CardDescription>Realized (Completed) vs Active Revenue vs Potential (Quotes)</CardDescription>
+                        <CardTitle>Conversion Efficiency</CardTitle>
+                        <CardDescription>Quotes turned into Orders (Last 6 Months)</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <div className="h-[350px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={revenueTrends}>
+                                <ComposedChart data={conversionTrend}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#888888"
-                                        fontSize={12}
-                                        tickLine={false}
+                                    <XAxis 
+                                        dataKey="name" 
+                                        stroke="#888888" 
+                                        fontSize={12} 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                    />
+                                    {/* Left Axis: Volume */}
+                                    <YAxis 
+                                        yAxisId="left"
+                                        stroke="#888888" 
+                                        fontSize={12} 
+                                        tickLine={false} 
                                         axisLine={false}
-                                        tick={{ fontSize: 10 }}
                                     />
-                                    <YAxis
-                                        stroke="#888888"
-                                        fontSize={12}
-                                        tickLine={false}
+                                    {/* Right Axis: Percentage */}
+                                    <YAxis 
+                                        yAxisId="right" 
+                                        orientation="right" 
+                                        stroke="#82ca9d" 
+                                        unit="%" 
+                                        fontSize={12} 
+                                        tickLine={false} 
                                         axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value)}
                                     />
-                                    <Tooltip
-                                        formatter={(value: number) => [formatCurrency(value), '']}
-                                        cursor={{ fill: 'transparent' }}
-                                    />
+                                    <Tooltip cursor={{ fill: 'transparent' }} />
                                     <Legend />
-                                    <Bar dataKey="Completed" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} name="Done (Realized)" />
-                                    <Bar dataKey="Active" stackId="a" fill="#0f172a" radius={[0, 0, 4, 4]} name="In Progress" />
-                                    <Bar dataKey="Quotes" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Quotes (Potential)" />
-                                </BarChart>
+                                    
+                                    {/* Total Opportunities Bar */}
+                                    <Bar yAxisId="left" dataKey="TotalLeads" name="Total Opportunities" fill="#e2e8f0" radius={[4, 4, 0, 0]} barSize={32} />
+                                    
+                                    {/* Conversion Rate Line */}
+                                    <Line 
+                                        yAxisId="right" 
+                                        type="monotone" 
+                                        dataKey="ConversionRate" 
+                                        name="Conversion Rate" 
+                                        stroke="#10b981" 
+                                        strokeWidth={3} 
+                                        dot={{ r: 4, fill: "#10b981" }} 
+                                    />
+                                </ComposedChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>
 
+                {/* 2. Volume Velocity Chart */}
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Top Products</CardTitle>
-                        <CardDescription>By Revenue (Confirmed Orders)</CardDescription>
+                        <CardTitle>Order Velocity</CardTitle>
+                        <CardDescription>Last 7 Days vs 90-Day Avg</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[350px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={topProducts} layout="vertical" margin={{ left: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                    <XAxis type="number" hide />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        width={100}
-                                        tick={{ fontSize: 11 }}
-                                        interval={0}
+                                <BarChart data={volumeComp.dailyData} margin={{ top: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        stroke="#888888" 
+                                        fontSize={12} 
+                                        tickLine={false} 
+                                        axisLine={false} 
                                     />
-                                    <Tooltip
-                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
-                                        cursor={{ fill: 'transparent' }}
+                                    <YAxis 
+                                        stroke="#888888" 
+                                        fontSize={12} 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                        allowDecimals={false}
                                     />
-                                    <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
-                                        {topProducts.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    <Tooltip 
+                                        cursor={{ fill: '#f1f5f9' }}
+                                        formatter={(value: number) => [value, 'Orders']}
+                                    />
+                                    <Legend />
+                                    
+                                    {/* Daily Orders Bar */}
+                                    <Bar dataKey="Orders" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Daily Orders">
+                                        {volumeComp.dailyData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.Orders >= volumeComp.avg90Day ? '#10b981' : '#3b82f6'} />
                                         ))}
                                     </Bar>
+
+                                    {/* 90-Day Avg Reference Line */}
+                                    <ReferenceLine 
+                                        y={volumeComp.avg90Day} 
+                                        stroke="#f59e0b" 
+                                        strokeDasharray="3 3" 
+                                        label={{ 
+                                            position: 'top', 
+                                            value: `90d Avg: ${volumeComp.avg90Day}`, 
+                                            fill: '#f59e0b', 
+                                            fontSize: 12 
+                                        }} 
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -876,6 +1004,40 @@ export default function ReportsPage() {
                                     <Tooltip />
                                     <Legend />
                                 </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* OLD Top Products Chart - moved from above */}
+                <Card className="col-span-4">
+                    <CardHeader>
+                        <CardTitle>Top Products</CardTitle>
+                        <CardDescription>By Revenue (Confirmed Orders)</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={topProducts} layout="vertical" margin={{ left: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        width={100}
+                                        tick={{ fontSize: 11 }}
+                                        interval={0}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        cursor={{ fill: 'transparent' }}
+                                    />
+                                    <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
+                                        {topProducts.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
