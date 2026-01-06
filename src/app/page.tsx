@@ -25,6 +25,14 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 
 // --- Helper Functions ---
+
+// Helper: Normalizes text (lowercase + removes accents)
+const normalizeText = (text: string = '') =>
+  (text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+// Helper: Strips non-numeric chars
+const cleanNumber = (str: string = '') => (str || '').replace(/\D/g, '');
+
 const groupAndSortOrders = (orders: Order[]) => {
   const statusOrder: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New', 'Done', 'Cotización'];
 
@@ -73,18 +81,38 @@ const filterOrders = (orders: Order[], query: string, tab: string) => {
     return tabFilteredOrders;
   }
 
+  const normalizedQuery = normalizeText(query);
+  const numericQuery = cleanNumber(query);
+  const isNumericSearch = numericQuery.length > 0;
+
   return tabFilteredOrders.filter(order => {
-    const lowerCaseQuery = query.toLowerCase();
+    // 1. Generic Text Matcher (Safe for nulls)
+    const matchesText = (field?: string | null) =>
+      field ? normalizeText(field).includes(normalizedQuery) : false;
+
+    // 2. Smart Phone Matcher
+    const matchesPhone = (field?: string | null) => {
+      if (!field) return false;
+      // Match text (for partials like "00-12") OR match cleaned numbers
+      return normalizeText(field).includes(normalizedQuery) ||
+             (isNumericSearch && cleanNumber(field).includes(numericQuery));
+    };
+
     return (
-      (order.name || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.description || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.orderNumber || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.celular || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.estado || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.subEstado || '').toLowerCase().includes(lowerCaseQuery) ||
-      (order.tags || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
-      (order.tagsOther || []).some(tag => tag.toLowerCase().includes(lowerCaseQuery)) ||
-      order.productos.some(p => (p.name || '').toLowerCase().includes(lowerCaseQuery))
+      matchesText(order.name) ||
+      matchesText(order.description) ||
+      matchesText(order.orderNumber) ||
+      matchesText(order.email) ||
+      matchesText(order.companyName) ||
+      matchesText(order.ruc) ||
+      matchesText(order.direccionEnvio) ||
+      matchesText(order.estado) ||
+      matchesText(order.subEstado) ||
+      matchesPhone(order.celular) ||
+      matchesPhone(order.celularSecundario) ||
+      (order.tags || []).some(tag => matchesText(tag)) ||
+      (order.tagsOther || []).some(tag => matchesText(tag)) ||
+      (order.productos || []).some(p => matchesText(p.name))
     );
   });
 }
@@ -270,5 +298,3 @@ export default function DashboardPage() {
 
   return <DashboardPageContent allOrders={allOrders || []} query={queryParam} tab={tab} onRefresh={forceRefresh} />;
 }
-
-
