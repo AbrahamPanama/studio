@@ -503,52 +503,64 @@ function getConversionTrend(orders: Order[]) {
 
 function getVolumeComparison(orders: Order[]) {
     const now = new Date();
-    
-    // 1. Calculate 90-Day Average (Baseline)
-    const ninetyDaysAgo = subDays(now, 90);
     const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
     
-    const ordersIn90Days = confirmedOrders.filter(o => {
-        let d: Date | null = null;
-        if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') {
-            d = (o.fechaIngreso as any).toDate();
-        } else if (o.fechaIngreso instanceof Date) {
-            d = o.fechaIngreso;
-        } else if (typeof o.fechaIngreso === 'string') {
-            d = new Date(o.fechaIngreso);
+    // Default: 90 Days
+    let startDate = subDays(now, 90);
+    let daysPeriod = 90;
+
+    const getDate = (o: Order): Date | null => {
+        if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') return (o.fechaIngreso as any).toDate();
+        if (o.fechaIngreso instanceof Date) return o.fechaIngreso;
+        if (typeof o.fechaIngreso === 'string') {
+          try {
+            const d = new Date(o.fechaIngreso);
+            if (!isNaN(d.getTime())) return d;
+          } catch {
+             return null;
+          }
         }
-        return d && d >= ninetyDaysAgo && d <= now;
+        return null;
+    };
+
+    // Intelligent Start Date: If oldest order is newer than 90 days, use that.
+    if (confirmedOrders.length > 0) {
+        // Orders are usually sorted desc, so check the last one or sort explicitly if unsure
+        const sorted = [...confirmedOrders].sort((a, b) => {
+             const dA = getDate(a)?.getTime() || 0;
+             const dB = getDate(b)?.getTime() || 0;
+             return dA - dB;
+        });
+        const oldestDate = getDate(sorted[0]);
+
+        if (oldestDate && oldestDate > startDate) {
+            startDate = oldestDate;
+            const diffTime = Math.abs(now.getTime() - oldestDate.getTime());
+            daysPeriod = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); 
+        }
+    }
+
+    // Calculate Average
+    const ordersInWindow = confirmedOrders.filter(o => {
+        const d = getDate(o);
+        return d && d >= startDate && d <= now;
     });
+    const avgDaily = ordersInWindow.length / daysPeriod;
 
-    // Simple daily average: Total Orders / 90 days
-    const avg90Day = ordersIn90Days.length / 90;
-
-    // 2. Calculate Last 7 Days (Actuals)
+    // Last 7 Days Data
     const last7Days = eachDayOfInterval({ start: subDays(now, 6), end: now });
     const dailyData = last7Days.map(day => {
         const dayStr = format(day, 'yyyy-MM-dd');
         const count = confirmedOrders.filter(o => {
-            let d: Date | null = null;
-            if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') {
-                d = (o.fechaIngreso as any).toDate();
-            } else if (o.fechaIngreso instanceof Date) {
-                d = o.fechaIngreso;
-            } else if (typeof o.fechaIngreso === 'string') {
-                d = new Date(o.fechaIngreso);
-            }
-            
-            // Only format if we have a valid date
-            return d ? format(d, 'yyyy-MM-dd') === dayStr : false;
+            const d = getDate(o);
+            return d && !isNaN(d.getTime()) && format(d, 'yyyy-MM-dd') === dayStr;
         }).length;
-
-        return {
-            name: format(day, 'EEE'), // Mon, Tue...
-            Orders: count
-        };
+        return { name: format(day, 'EEE'), Orders: count };
     });
 
-    return { dailyData, avg90Day: parseFloat(avg90Day.toFixed(1)) };
+    return { dailyData, avg: parseFloat(avgDaily.toFixed(1)), daysUsed: daysPeriod };
 }
+
 
 // --- Components ---
 
@@ -732,7 +744,7 @@ export default function ReportsPage() {
                 <Card className="col-span-3">
                     <CardHeader>
                         <CardTitle>Order Velocity</CardTitle>
-                        <CardDescription>Last 7 Days vs 90-Day Avg</CardDescription>
+                        <CardDescription>Last 7 Days vs {volumeComp.daysUsed}-Day Avg</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[350px] w-full">
@@ -762,18 +774,18 @@ export default function ReportsPage() {
                                     {/* Daily Orders Bar */}
                                     <Bar dataKey="Orders" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Daily Orders">
                                         {volumeComp.dailyData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.Orders >= volumeComp.avg90Day ? '#10b981' : '#3b82f6'} />
+                                            <Cell key={`cell-${index}`} fill={entry.Orders >= volumeComp.avg ? '#10b981' : '#3b82f6'} />
                                         ))}
                                     </Bar>
 
-                                    {/* 90-Day Avg Reference Line */}
+                                    {/* Avg Reference Line */}
                                     <ReferenceLine 
-                                        y={volumeComp.avg90Day} 
+                                        y={volumeComp.avg} 
                                         stroke="#f59e0b" 
                                         strokeDasharray="3 3" 
                                         label={{ 
                                             position: 'top', 
-                                            value: `90d Avg: ${volumeComp.avg90Day}`, 
+                                            value: `${volumeComp.daysUsed}d Avg: ${volumeComp.avg}`, 
                                             fill: '#f59e0b', 
                                             fontSize: 12 
                                         }} 
