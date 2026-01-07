@@ -69,7 +69,8 @@ function getWorkloadData(
   orders: Order[] = [],
   includeSundays: boolean,
   horizonDays: number,
-  selectedDate: string | null
+  selectedDate: string | null,
+  selectedUrgency: UrgencyLevel | null // NEW
 ) {
   const now = startOfDay(new Date());
 
@@ -161,10 +162,20 @@ function getWorkloadData(
     });
   });
 
-  // Sort Priority Queue
+  // Filter Priority Queue
   const priorityQueue = processed
-    .filter((o) => o.daysUntilDue <= horizonDays)
+    .filter((o) => {
+      // 1. Horizon Window Check (Always applies)
+      const inWindow = o.daysUntilDue <= horizonDays;
+      if (!inWindow) return false;
+
+      // 2. Urgency Filter (If selected)
+      if (selectedUrgency && o.urgency !== selectedUrgency) return false;
+
+      return true;
+    })
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+
 
   // View Stats
   const stats = {
@@ -221,6 +232,9 @@ export default function WorkloadPage() {
   const [includeSundays, setIncludeSundays] = useState(false);
   const [horizonDays, setHorizonDays] = useState(7);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedUrgency, setSelectedUrgency] = useState<UrgencyLevel | null>(
+    null
+  );
 
   // Queries
   const ordersQuery = useMemoFirebase(() => {
@@ -237,24 +251,42 @@ export default function WorkloadPage() {
         allOrders || [],
         includeSundays,
         horizonDays,
-        selectedDate
+        selectedDate,
+        selectedUrgency // Pass it here
       ),
-    [allOrders, includeSundays, horizonDays, selectedDate]
+    [allOrders, includeSundays, horizonDays, selectedDate, selectedUrgency]
   );
 
   // Handlers
   const copyPhoneNumber = (phone: string) => {
-    let clean = phone.replace(/\\D/g, '');
+    let clean = phone.replace(/\D/g, '');
     if (clean.startsWith('507') && clean.length > 7)
       clean = clean.replace(/^507/, '');
     navigator.clipboard.writeText(clean);
     toast({ description: 'Phone copied: ' + clean });
   };
 
+  const handleUrgencyClick = (level: UrgencyLevel) => {
+    if (selectedUrgency === level) {
+      setSelectedUrgency(null); // Toggle off
+    } else {
+      setSelectedUrgency(level);
+      setSelectedDate(null); // Mutual exclusivity for clearer UX
+    }
+  };
+
   const handleBarClick = (date: string) => {
-    // Toggle: if clicking same date, clear filter
-    if (selectedDate === date) setSelectedDate(null);
-    else setSelectedDate(date);
+    if (selectedDate === date) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+      setSelectedUrgency(null);
+    }
+  };
+
+  const clearFilters = () => {
+    setSelectedDate(null);
+    setSelectedUrgency(null);
   };
 
   if (isLoading)
@@ -267,6 +299,16 @@ export default function WorkloadPage() {
 
   // Max value for chart scaling
   const maxDailyVolume = Math.max(...stats.horizon.map((d) => d.total), 1);
+
+  const getPageTitle = () => {
+      if (selectedUrgency) {
+          return selectedUrgency === 'CRITICAL' ? 'Immediate Action Items' : 'At Risk Items';
+      }
+      if (selectedDate) {
+          return `Workload for ${selectedDate}`;
+      }
+      return `Upcoming Workload (Next ${horizonDays} Days)`;
+  }
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen bg-slate-50/50">
@@ -283,16 +325,21 @@ export default function WorkloadPage() {
                 • Filtered by {selectedDate}
               </span>
             )}
+             {selectedUrgency && (
+              <span className="text-indigo-600 font-medium ml-2">
+                • Filtered by {selectedUrgency}
+              </span>
+            )}
           </p>
         </div>
 
         {/* Controls Toolbar */}
         <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-lg border border-slate-200 shadow-sm flex-wrap">
-          {selectedDate && (
+          {(selectedDate || selectedUrgency) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedDate(null)}
+              onClick={clearFilters}
               className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8"
             >
               <X className="h-4 w-4 mr-1" /> Clear Filter
@@ -330,10 +377,15 @@ export default function WorkloadPage() {
       {/* Row 1: The Pulse */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card
-          className={`border-l-4 ${
+          onClick={() => handleUrgencyClick('CRITICAL')}
+          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
             stats.critical > 0
               ? 'border-l-red-500 bg-red-50/30'
               : 'border-l-slate-200'
+          } ${
+            selectedUrgency === 'CRITICAL'
+              ? 'ring-2 ring-red-500 ring-offset-2'
+              : ''
           }`}
         >
           <CardHeader className="pb-2">
@@ -361,10 +413,15 @@ export default function WorkloadPage() {
         </Card>
 
         <Card
-          className={`border-l-4 ${
+          onClick={() => handleUrgencyClick('WARNING')}
+          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
             stats.warning > 0
               ? 'border-l-amber-500 bg-amber-50/30'
               : 'border-l-slate-200'
+          } ${
+            selectedUrgency === 'WARNING'
+              ? 'ring-2 ring-amber-500 ring-offset-2'
+              : ''
           }`}
         >
           <CardHeader className="pb-2">
@@ -424,7 +481,7 @@ export default function WorkloadPage() {
                             key={i} 
                             onClick={() => handleBarClick(day.fullDate)}
                             className={`flex flex-col items-center gap-2 min-w-[35px] flex-1 cursor-pointer group transition-all rounded-md p-1 ${isSelected ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'}`}
-                            title={`Date: ${day.date}\\nTotal: ${day.total}\\nHigh: ${day.high}\\nMedium: ${day.medium}\\nLow: ${day.low}`}
+                            title={`Date: ${day.date}\nTotal: ${day.total}\nHigh: ${day.high}\nMedium: ${day.medium}\nLow: ${day.low}`}
                         >
                             <div className="relative w-full flex items-end justify-center h-32">
                                 {/* Stacked Bar Container */}
@@ -471,9 +528,7 @@ export default function WorkloadPage() {
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
             <Clock className="h-5 w-5 text-slate-500" />
-            {selectedDate
-              ? `Upcoming Workload (${selectedDate})`
-              : `Upcoming Workload (Next ${horizonDays} Days)`}
+            {getPageTitle()}
           </h3>
         </div>
 
