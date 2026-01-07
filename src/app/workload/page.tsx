@@ -148,8 +148,10 @@ function getWorkloadData(
   });
 
   // Sort Priority Queue
+  // CHANGED: Filter to show ALL orders within the horizon window (or overdue)
+  // instead of just "Not Normal".
   const priorityQueue = processed
-    .filter(o => o.urgency !== 'NORMAL')
+    .filter(o => o.daysUntilDue <= horizonDays) 
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 
   // View Stats
@@ -370,7 +372,7 @@ export default function WorkloadPage() {
         <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-slate-500" />
-                {selectedDate ? `Priority Queue (${selectedDate})` : 'Priority Queue (All)'}
+                {selectedDate ? `Workload for ${selectedDate}` : `Upcoming Workload (Next ${horizonDays} Days)`}
             </h3>
         </div>
 
@@ -379,7 +381,7 @@ export default function WorkloadPage() {
             <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
             <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
             <p className="text-slate-500">
-                {selectedDate ? `No urgent orders for ${selectedDate}.` : 'No urgent orders requiring attention.'}
+                {selectedDate ? `No orders due on ${selectedDate}.` : 'No active orders in this window.'}
             </p>
           </div>
         ) : (
