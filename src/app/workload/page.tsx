@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -43,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 
 type UrgencyLevel = 'CRITICAL' | 'WARNING' | 'NORMAL';
 
@@ -166,6 +166,18 @@ export default function WorkloadPage() {
   const firestore = useFirestore();
   const [includeSundays, setIncludeSundays] = useState(false);
   const [horizonDays, setHorizonDays] = useState(7);
+  const { toast } = useToast();
+
+  const copyPhoneNumber = (phone: string) => {
+    // 1. Strip non-digits
+    let clean = phone.replace(/\D/g, '');
+    // 2. Strip '507' prefix if it exists and leaves a valid length (e.g., > 7 digits)
+    if (clean.startsWith('507') && clean.length > 7) {
+      clean = clean.replace(/^507/, '');
+    }
+    navigator.clipboard.writeText(clean);
+    toast({ description: "Phone copied: " + clean });
+  };
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -321,6 +333,15 @@ export default function WorkloadPage() {
                                     <div className="flex flex-col">
                                         <span className="font-medium text-slate-900">{order.name}</span>
                                         <span className="text-xs text-slate-500">{order.companyName}</span>
+                                        {order.celular && (
+                                            <button 
+                                                onClick={() => copyPhoneNumber(order.celular!)}
+                                                className="text-xs text-slate-400 hover:text-indigo-600 hover:underline text-left mt-0.5 w-fit flex items-center gap-1"
+                                                title="Click to copy sanitized number"
+                                            >
+                                                {order.celular}
+                                            </button>
+                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell className="max-w-[250px]">
