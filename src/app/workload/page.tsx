@@ -413,92 +413,56 @@ export default function WorkloadPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end justify-between gap-1 h-24 mt-2 overflow-x-auto pb-2">
-              {stats.horizon.map((day, i) => {
-                const isSelected = selectedDate === day.fullDate;
-                // Calculate relative height for the whole bar
-                const barHeightPercent = Math.max(
-                  15,
-                  (day.total / maxDailyVolume) * 100
-                );
-
-                return (
-                  <div
-                    key={i}
-                    onClick={() => handleBarClick(day.fullDate)}
-                    className={`flex flex-col items-center gap-1 min-w-[35px] flex-1 cursor-pointer group transition-all rounded-md p-1 ${
-                      isSelected
-                        ? 'bg-indigo-50 ring-1 ring-indigo-200'
-                        : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="relative w-full flex items-end justify-center h-16">
-                      {/* Stacked Bar Container */}
-                      <div
-                        className={`w-full max-w-[24px] rounded-sm overflow-hidden flex flex-col-reverse transition-all opacity-90 group-hover:opacity-100 ${
-                          isSelected ? 'ring-2 ring-indigo-600 ring-offset-1' : ''
-                        }`}
-                        style={{ height: `${barHeightPercent}%` }}
-                      >
-                        {/* Low Segment */}
-                        {day.low > 0 && (
-                          <div
-                            style={{ flex: day.low }}
-                            className="bg-blue-400 w-full"
-                          />
-                        )}
-                        {/* Med Segment */}
-                        {day.medium > 0 && (
-                          <div
-                            style={{ flex: day.medium }}
-                            className="bg-amber-400 w-full"
-                          />
-                        )}
-                        {/* High Segment */}
-                        {day.high > 0 && (
-                          <div
-                            style={{ flex: day.high }}
-                            className="bg-rose-400 w-full"
-                          />
-                        )}
-
-                        {/* Zero State */}
-                        {day.total === 0 && (
-                          <div className="h-1 bg-slate-100 w-full" />
-                        )}
-                      </div>
-
-                      {day.total > 0 && (
-                        <span
-                          className={`absolute -top-5 text-[10px] font-bold ${
-                            isSelected ? 'text-indigo-600' : 'text-slate-400'
-                          }`}
+                <div className="flex items-end justify-between gap-1 h-48 mt-2 overflow-x-auto pb-6">
+                    {stats.horizon.map((day, i) => {
+                        const isSelected = selectedDate === day.fullDate;
+                        // Calculate relative height for the whole bar
+                        const barHeightPercent = Math.max(15, (day.total / maxDailyVolume) * 100); 
+                        
+                        return (
+                        <div 
+                            key={i} 
+                            onClick={() => handleBarClick(day.fullDate)}
+                            className={`flex flex-col items-center gap-2 min-w-[35px] flex-1 cursor-pointer group transition-all rounded-md p-1 ${isSelected ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'}`}
+                            title={`Date: ${day.date}\\nTotal: ${day.total}\\nHigh: ${day.high}\\nMedium: ${day.medium}\\nLow: ${day.low}`}
                         >
-                          {day.total}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <div
-                        className={`text-[9px] uppercase font-bold ${
-                          isSelected ? 'text-indigo-600' : 'text-slate-400'
-                        }`}
-                      >
-                        {day.day}
-                      </div>
-                      <div
-                        className={`text-[10px] font-medium ${
-                          isSelected ? 'text-indigo-700' : 'text-slate-700'
-                        }`}
-                      >
-                        {day.date}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
+                            <div className="relative w-full flex items-end justify-center h-32">
+                                {/* Stacked Bar Container */}
+                                <div 
+                                    className={`w-full max-w-[24px] rounded-sm overflow-hidden flex flex-col-reverse transition-all opacity-90 group-hover:opacity-100 ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-1' : ''}`}
+                                    style={{ height: `${barHeightPercent}%` }}
+                                >
+                                    {/* Low Segment */}
+                                    {day.low > 0 && (
+                                        <div style={{ flex: day.low }} className="bg-blue-400 w-full min-h-[4px] border-t border-white/20" />
+                                    )}
+                                    {/* Med Segment */}
+                                    {day.medium > 0 && (
+                                        <div style={{ flex: day.medium }} className="bg-amber-400 w-full min-h-[4px] border-t border-white/20" />
+                                    )}
+                                    {/* High Segment */}
+                                    {day.high > 0 && (
+                                        <div style={{ flex: day.high }} className="bg-rose-400 w-full min-h-[4px] border-t border-white/20" />
+                                    )}
+                                    
+                                    {/* Zero State */}
+                                    {day.total === 0 && <div className="h-1 bg-slate-100 w-full" />}
+                                </div>
+                                
+                                {day.total > 0 && (
+                                    <span className={`absolute -top-6 text-[10px] font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                        {day.total}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-center">
+                                <div className={`text-[9px] uppercase font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>{day.day}</div>
+                                <div className={`text-[10px] font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>{day.date}</div>
+                            </div>
+                        </div>
+                    )})}
+                </div>
+            </CardContent>
         </Card>
       </div>
 
@@ -508,7 +472,7 @@ export default function WorkloadPage() {
           <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
             <Clock className="h-5 w-5 text-slate-500" />
             {selectedDate
-              ? `Workload for ${selectedDate}`
+              ? `Upcoming Workload (${selectedDate})`
               : `Upcoming Workload (Next ${horizonDays} Days)`}
           </h3>
         </div>
