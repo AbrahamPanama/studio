@@ -279,14 +279,15 @@ export default function WorkloadPage() {
                 <Clock className="h-5 w-5 text-slate-500" />
                 Priority Queue
             </h3>
-            {priorityQueue.length === 0 && (
-                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> All clear
-                </Badge>
-            )}
         </div>
 
-        {priorityQueue.length > 0 && (
+        {priorityQueue.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+            <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
+            <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
+            <p className="text-slate-500">No urgent orders requiring attention.</p>
+          </div>
+        ) : (
             <div className="rounded-md border border-slate-200 bg-white overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-slate-50">
