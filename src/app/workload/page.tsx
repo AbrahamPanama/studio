@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -295,7 +296,7 @@ export default function WorkloadPage() {
                             <TableHead className="w-[100px]">Status</TableHead>
                             <TableHead>Order</TableHead>
                             <TableHead>Client</TableHead>
-                            <TableHead>Products</TableHead> {/* NEW COLUMN */}
+                            <TableHead>Products</TableHead>
                             <TableHead>Target Date</TableHead>
                             <TableHead>Value / Complexity</TableHead>
                             <TableHead className="text-right">Action</TableHead>
