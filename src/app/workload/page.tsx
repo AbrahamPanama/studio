@@ -116,6 +116,7 @@ function getWorkloadData(
       // Sunday Check
       if (!includeSundays && isSunday(targetDate)) return null;
 
+      // Complexity Logic
       const { level: complexityLevel } = getOrderComplexity(order);
 
       // Update Horizon Map
@@ -128,7 +129,7 @@ function getWorkloadData(
         else entry.low += 1;
       }
 
-      return { order, targetDate, complexityLevel };
+      return { order, targetDate };
     })
     .filter((o): o is NonNullable<typeof o> => o !== null);
 
@@ -143,10 +144,11 @@ function getWorkloadData(
 
   const processed: WorkloadItem[] = [];
 
-  viewOrders.forEach(({ order, targetDate, complexityLevel }) => {
+  viewOrders.forEach(({ order, targetDate }) => {
     const dayStart = startOfDay(targetDate);
     const daysUntilDue = differenceInDays(dayStart, now);
 
+    const { level: complexityLevel } = getOrderComplexity(order);
     const safeBuffer = getSafeBuffer(complexityLevel);
 
     let urgency: UrgencyLevel = 'NORMAL';
@@ -376,76 +378,46 @@ export default function WorkloadPage() {
 
       {/* Row 1: The Pulse */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* CARD 1: IMMEDIATE ACTION */}
         <Card
-          onClick={() => handleUrgencyClick('CRITICAL')}
-          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
-            stats.critical > 0
-              ? 'border-l-red-500 bg-red-50/30'
-              : 'border-l-slate-200'
-          } ${
-            selectedUrgency === 'CRITICAL'
-              ? 'ring-2 ring-red-500 ring-offset-2'
-              : ''
-          }`}
+            onClick={() => handleUrgencyClick('CRITICAL')}
+            className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
+                stats.critical > 0 ? 'border-l-red-500 bg-red-50/30' : 'border-l-slate-200'
+            } ${selectedUrgency === 'CRITICAL' ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 uppercase">
-              Immediate Action
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Flame
-                className={`h-8 w-8 ${
-                  stats.critical > 0 ? 'text-red-500' : 'text-slate-300'
-                }`}
-              />
-              <div className="text-3xl font-bold text-slate-900">
-                {stats.critical}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {selectedDate
-                ? 'Critical orders on this day'
-                : 'Total orders overdue or due today'}
-            </p>
-          </CardContent>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-slate-500 uppercase">Immediate Action</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center gap-4">
+                    <Flame className={`h-12 w-12 ${stats.critical > 0 ? 'text-red-500' : 'text-slate-300'}`} />
+                    <div className="text-5xl font-bold text-slate-900">{stats.critical}</div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                    {selectedDate ? 'Critical orders on this day' : 'Total orders overdue or due today'}
+                </p>
+            </CardContent>
         </Card>
 
+        {/* CARD 2: AT RISK */}
         <Card
-          onClick={() => handleUrgencyClick('WARNING')}
-          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
-            stats.warning > 0
-              ? 'border-l-amber-500 bg-amber-50/30'
-              : 'border-l-slate-200'
-          } ${
-            selectedUrgency === 'WARNING'
-              ? 'ring-2 ring-amber-500 ring-offset-2'
-              : ''
-          }`}
+            onClick={() => handleUrgencyClick('WARNING')}
+            className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
+                stats.warning > 0 ? 'border-l-amber-500 bg-amber-50/30' : 'border-l-slate-200'
+            } ${selectedUrgency === 'WARNING' ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 uppercase">
-              At Risk
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <AlertTriangle
-                className={`h-8 w-8 ${
-                  stats.warning > 0 ? 'text-amber-500' : 'text-slate-300'
-                }`}
-              />
-              <div className="text-3xl font-bold text-slate-900">
-                {stats.warning}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {selectedDate
-                ? 'Risk orders on this day'
-                : 'Complex orders due soon'}
-            </p>
-          </CardContent>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-slate-500 uppercase">At Risk</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center gap-4">
+                    <AlertTriangle className={`h-12 w-12 ${stats.warning > 0 ? 'text-amber-500' : 'text-slate-300'}`} />
+                    <div className="text-5xl font-bold text-slate-900">{stats.warning}</div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                    {selectedDate ? 'Risk orders on this day' : 'Complex orders due soon'}
+                </p>
+            </CardContent>
         </Card>
 
         {/* COMPOSITE INTERACTIVE CHART */}
@@ -469,7 +441,7 @@ export default function WorkloadPage() {
               </span>
             </div>
           </CardHeader>
-          <CardContent>
+            <CardContent>
                 <div className="flex items-end justify-between gap-1 h-48 mt-2 overflow-x-auto pb-6">
                     {stats.horizon.map((day, i) => {
                         const isSelected = selectedDate === day.fullDate;
@@ -491,15 +463,21 @@ export default function WorkloadPage() {
                                 >
                                     {/* Low Segment */}
                                     {day.low > 0 && (
-                                        <div style={{ flex: day.low }} className="bg-blue-400 w-full min-h-[4px] border-t border-white/20" />
+                                        <div style={{ flex: day.low }} className="bg-blue-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                                            {day.low > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.low}</span>}
+                                        </div>
                                     )}
                                     {/* Med Segment */}
                                     {day.medium > 0 && (
-                                        <div style={{ flex: day.medium }} className="bg-amber-400 w-full min-h-[4px] border-t border-white/20" />
+                                        <div style={{ flex: day.medium }} className="bg-amber-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                                            {day.medium > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.medium}</span>}
+                                        </div>
                                     )}
                                     {/* High Segment */}
                                     {day.high > 0 && (
-                                        <div style={{ flex: day.high }} className="bg-rose-400 w-full min-h-[4px] border-t border-white/20" />
+                                        <div style={{ flex: day.high }} className="bg-rose-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                                            {day.high > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.high}</span>}
+                                        </div>
                                     )}
                                     
                                     {/* Zero State */}
