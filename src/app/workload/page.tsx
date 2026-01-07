@@ -60,12 +60,12 @@ function getWorkloadData(orders: Order[] = []) {
 
   activeOrders.forEach(order => {
     let dateObj: Date | null = null;
-    if (order.entrega && typeof (order.entrega as any).toDate === 'function') {
-      dateObj = (order.entrega as any).toDate();
-    } else if (order.entrega instanceof Date) {
-      dateObj = order.entrega;
-    } else if (typeof order.entrega === 'string') {
-      dateObj = new Date(order.entrega);
+    if (order.entregaLimite && typeof (order.entregaLimite as any).toDate === 'function') {
+      dateObj = (order.entregaLimite as any).toDate();
+    } else if (order.entregaLimite instanceof Date) {
+      dateObj = order.entregaLimite;
+    } else if (typeof order.entregaLimite === 'string') {
+      dateObj = new Date(order.entregaLimite);
     }
 
     if (!dateObj) return;
@@ -273,7 +273,7 @@ export default function WorkloadPage() {
                                 <TableCell>
                                     <div className="flex flex-col">
                                         <span className="text-sm text-slate-700">
-                                            {order.entrega ? format((order.entrega as any).toDate ? (order.entrega as any).toDate() : new Date(order.entrega as any), 'MMM dd') : '-'}
+                                            {order.entregaLimite ? format((order.entregaLimite as any).toDate ? (order.entregaLimite as any).toDate() : new Date(order.entregaLimite as any), 'MMM dd') : '-'}
                                         </span>
                                         <span className="text-xs text-slate-400">
                                            {order.daysUntilDue === 0 ? 'Today' : order.daysUntilDue === 1 ? 'Tomorrow' : `In ${order.daysUntilDue} days`}
