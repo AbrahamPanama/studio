@@ -118,6 +118,14 @@ const OrderTableRow = ({
     handleFieldUpdate('tagsOther', tags);
   }
 
+  const copyPhoneNumber = (phone: string) => {
+    let clean = phone.replace(/\D/g, '');
+    if (clean.startsWith('507') && clean.length > 7)
+      clean = clean.replace(/^507/, '');
+    navigator.clipboard.writeText(clean);
+    toast({ description: 'Phone copied: ' + clean });
+  };
+
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
       {p.name} {p.description && `(${p.description})`} - {p.quantity}
@@ -150,7 +158,15 @@ const OrderTableRow = ({
       >
         <div className="font-medium text-foreground">{order.name}</div>
         <div className="text-sm font-mono text-muted-foreground">#{order.orderNumber}</div>
-        <div className="text-sm text-muted-foreground">{order.celular}</div>
+        {order.celular && (
+          <button
+            onClick={() => copyPhoneNumber(order.celular!)}
+            className="text-sm text-slate-400 hover:text-indigo-600 hover:underline text-left mt-0.5 w-fit flex items-center gap-1"
+            title="Click to copy sanitized number"
+          >
+            {order.celular}
+          </button>
+        )}
       </TableCell>
       <TableCell>
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
