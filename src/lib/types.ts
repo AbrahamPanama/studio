@@ -4,7 +4,7 @@ import type { Timestamp } from 'firebase/firestore';
 import { orderSchema, productSchema, tagSchema } from '@/lib/schema';
 
 export type Product = z.infer<typeof productSchema> & {
-    id?: string;
+  id?: string;
 };
 
 export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega' | 'entregaLimite' | 'productos'> & {
@@ -31,3 +31,13 @@ export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega'
 };
 
 export type Tag = z.infer<typeof tagSchema>;
+
+import { resourceItemSchema, productionLogSchema } from './schema-production';
+
+export type ResourceItem = z.infer<typeof resourceItemSchema> & {
+  id: string;
+};
+
+export type ProductionLog = z.infer<typeof productionLogSchema> & {
+  id: string;
+};
