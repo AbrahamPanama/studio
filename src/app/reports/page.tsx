@@ -52,17 +52,47 @@ function formatCurrency(value: number) {
     }).format(value);
 }
 
+function getDate(o: any): Date | null {
+    if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') return (o.fechaIngreso as any).toDate();
+    if (o.fechaIngreso instanceof Date) return o.fechaIngreso;
+    if (typeof o.fechaIngreso === 'string') {
+        try {
+            const d = new Date(o.fechaIngreso);
+            if (!isNaN(d.getTime())) return d;
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
+
 function calculateKPIs(orders: Order[] = []) {
     const safeOrders = orders || [];
+    const now = new Date();
 
     // Split into Quotes and Confirmed Orders
     const quotes = safeOrders.filter(o => o.estado === 'Cotización');
     const confirmedOrders = safeOrders.filter(o => o.estado !== 'Cotización');
 
     // Orders Metrics
-    const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
+    const totalRevenueAllTime = confirmedOrders.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
+
+    // Yearly Revenue (YTD)
+    const totalRevenueYear = confirmedOrders.reduce((sum, o) => {
+        const d = getDate(o);
+        if (d && isSameYear(d, now)) {
+            return sum + (o.orderTotal || 0);
+        }
+        return sum;
+    }, 0);
+
+    // Active Revenue (Confirmed but not Done)
+    const activeRevenue = confirmedOrders
+        .filter(o => o.estado !== 'Done')
+        .reduce((sum, o) => sum + (o.orderTotal || 0), 0);
+
     const totalOrders = confirmedOrders.length;
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const averageOrderValue = totalOrders > 0 ? totalRevenueAllTime / totalOrders : 0;
 
     const totalOutstanding = confirmedOrders.reduce((sum, o) => {
         const paid = o.totalAbono || 0;
@@ -84,7 +114,9 @@ function calculateKPIs(orders: Order[] = []) {
     const totalUnoExpress = unoExpressOrders.length;
 
     return {
-        totalRevenue,
+        totalRevenue: totalRevenueYear, // @deprecated use specific ones
+        totalRevenueYear,
+        activeRevenue,
         totalOrders,
         averageOrderValue,
         totalOutstanding,
@@ -485,7 +517,7 @@ function getConversionTrend(orders: Order[]) {
                 const entry = monthsData.get(key)!;
                 // Every record is a "Lead"
                 entry.TotalLeads += 1;
-                
+
                 // If it's not a Quote, it counts as a converted "Order"
                 if (order.estado !== 'Cotización') {
                     entry.Orders += 1;
@@ -504,7 +536,7 @@ function getConversionTrend(orders: Order[]) {
 function getVolumeComparison(orders: Order[]) {
     const now = new Date();
     const confirmedOrders = orders.filter(o => o.estado !== 'Cotización');
-    
+
     // Default: 90 Days
     let startDate = subDays(now, 90);
     let daysPeriod = 90;
@@ -513,12 +545,12 @@ function getVolumeComparison(orders: Order[]) {
         if (o.fechaIngreso && typeof (o.fechaIngreso as any).toDate === 'function') return (o.fechaIngreso as any).toDate();
         if (o.fechaIngreso instanceof Date) return o.fechaIngreso;
         if (typeof o.fechaIngreso === 'string') {
-          try {
-            const d = new Date(o.fechaIngreso);
-            if (!isNaN(d.getTime())) return d;
-          } catch {
-             return null;
-          }
+            try {
+                const d = new Date(o.fechaIngreso);
+                if (!isNaN(d.getTime())) return d;
+            } catch {
+                return null;
+            }
         }
         return null;
     };
@@ -527,16 +559,16 @@ function getVolumeComparison(orders: Order[]) {
     if (confirmedOrders.length > 0) {
         // Orders are usually sorted desc, so check the last one or sort explicitly if unsure
         const sorted = [...confirmedOrders].sort((a, b) => {
-             const dA = getDate(a)?.getTime() || 0;
-             const dB = getDate(b)?.getTime() || 0;
-             return dA - dB;
+            const dA = getDate(a)?.getTime() || 0;
+            const dB = getDate(b)?.getTime() || 0;
+            return dA - dB;
         });
         const oldestDate = getDate(sorted[0]);
 
         if (oldestDate && oldestDate > startDate) {
             startDate = oldestDate;
             const diffTime = Math.abs(now.getTime() - oldestDate.getTime());
-            daysPeriod = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); 
+            daysPeriod = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
         }
     }
 
@@ -620,13 +652,19 @@ export default function ReportsPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard & Reports</h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 {/* Orders KPIs */}
                 <KPICard
-                    title="Total Revenue"
-                    value={formatCurrency(kpis.totalRevenue)}
+                    title="Yearly Revenue"
+                    value={formatCurrency(kpis.totalRevenueYear)}
                     icon={DollarSign}
-                    subtext="Confirmed orders"
+                    subtext="Current Year"
+                />
+                <KPICard
+                    title="Active Revenue"
+                    value={formatCurrency(kpis.activeRevenue)}
+                    icon={DollarSign}
+                    subtext="Processing (Not Done)"
                 />
                 <KPICard
                     title="Total Orders"
@@ -681,7 +719,7 @@ export default function ReportsPage() {
 
             {/* NEW: Conversion & Velocity Row */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                
+
                 {/* 1. Conversion Efficiency Chart */}
                 <Card className="col-span-4">
                     <CardHeader>
@@ -693,46 +731,46 @@ export default function ReportsPage() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={conversionTrend}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        stroke="#888888" 
-                                        fontSize={12} 
-                                        tickLine={false} 
-                                        axisLine={false} 
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
                                     />
                                     {/* Left Axis: Volume */}
-                                    <YAxis 
+                                    <YAxis
                                         yAxisId="left"
-                                        stroke="#888888" 
-                                        fontSize={12} 
-                                        tickLine={false} 
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
                                         axisLine={false}
                                     />
                                     {/* Right Axis: Percentage */}
-                                    <YAxis 
-                                        yAxisId="right" 
-                                        orientation="right" 
-                                        stroke="#82ca9d" 
-                                        unit="%" 
-                                        fontSize={12} 
-                                        tickLine={false} 
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                        stroke="#82ca9d"
+                                        unit="%"
+                                        fontSize={12}
+                                        tickLine={false}
                                         axisLine={false}
                                     />
                                     <Tooltip cursor={{ fill: 'transparent' }} />
                                     <Legend />
-                                    
+
                                     {/* Total Opportunities Bar */}
                                     <Bar yAxisId="left" dataKey="TotalLeads" name="Total Opportunities" fill="#e2e8f0" radius={[4, 4, 0, 0]} barSize={32} />
-                                    
+
                                     {/* Conversion Rate Line */}
-                                    <Line 
-                                        yAxisId="right" 
-                                        type="monotone" 
-                                        dataKey="ConversionRate" 
-                                        name="Conversion Rate" 
-                                        stroke="#10b981" 
-                                        strokeWidth={3} 
-                                        dot={{ r: 4, fill: "#10b981" }} 
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="ConversionRate"
+                                        name="Conversion Rate"
+                                        stroke="#10b981"
+                                        strokeWidth={3}
+                                        dot={{ r: 4, fill: "#10b981" }}
                                     />
                                 </ComposedChart>
                             </ResponsiveContainer>
@@ -751,26 +789,26 @@ export default function ReportsPage() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={volumeComp.dailyData} margin={{ top: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        stroke="#888888" 
-                                        fontSize={12} 
-                                        tickLine={false} 
-                                        axisLine={false} 
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
                                     />
-                                    <YAxis 
-                                        stroke="#888888" 
-                                        fontSize={12} 
-                                        tickLine={false} 
-                                        axisLine={false} 
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
                                         allowDecimals={false}
                                     />
-                                    <Tooltip 
+                                    <Tooltip
                                         cursor={{ fill: '#f1f5f9' }}
                                         formatter={(value: number) => [value, 'Orders']}
                                     />
                                     <Legend />
-                                    
+
                                     {/* Daily Orders Bar */}
                                     <Bar dataKey="Orders" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Daily Orders">
                                         {volumeComp.dailyData.map((entry, index) => (
@@ -779,16 +817,16 @@ export default function ReportsPage() {
                                     </Bar>
 
                                     {/* Avg Reference Line */}
-                                    <ReferenceLine 
-                                        y={volumeComp.avg} 
-                                        stroke="#f59e0b" 
-                                        strokeDasharray="3 3" 
-                                        label={{ 
-                                            position: 'top', 
-                                            value: `${volumeComp.daysUsed}d Avg: ${volumeComp.avg}`, 
-                                            fill: '#f59e0b', 
-                                            fontSize: 12 
-                                        }} 
+                                    <ReferenceLine
+                                        y={volumeComp.avg}
+                                        stroke="#f59e0b"
+                                        strokeDasharray="3 3"
+                                        label={{
+                                            position: 'top',
+                                            value: `${volumeComp.daysUsed}d Avg: ${volumeComp.avg}`,
+                                            fill: '#f59e0b',
+                                            fontSize: 12
+                                        }}
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
