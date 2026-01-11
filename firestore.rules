@@ -25,7 +25,8 @@ service cloud.firestore {
         allow list: if request.auth != null;
     }
 
-    // 3. NEW RULE: Material Options (REQUIRED for Smart List)
+    // 3. UPDATED RULE: Material Options (REQUIRED for Smart List)
+    // Explicitly allows listing the collection and reading/writing individual documents.
     match /material_options/{materialId} {
         allow read, write: if request.auth != null;
     }
