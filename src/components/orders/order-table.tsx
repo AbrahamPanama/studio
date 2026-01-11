@@ -192,15 +192,18 @@ const OrderTableRow = ({
         </Select>
       </TableCell>
       <TableCell>
+        <div className="flex items-center justify-start gap-2">
+          <span>{formatCurrency(order.orderTotal)}</span>
+          <ComplexityTagSelector order={order} />
+        </div>
+      </TableCell>
+      <TableCell>
         <ProductEditPopover order={order} onRefresh={onRefresh}>
           <p className="cursor-pointer hover:text-primary line-clamp-3">{productSummary}</p>
         </ProductEditPopover>
       </TableCell>
       <TableCell>
         {order.servicioEntrega}
-      </TableCell>
-      <TableCell>
-        <p className="line-clamp-3">{order.direccionEnvio}</p>
       </TableCell>
       <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
         {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
@@ -250,10 +253,7 @@ const OrderTableRow = ({
         </Popover>
       </TableCell>
       <TableCell>
-        <div className="flex items-center justify-start gap-2">
-          <span>{formatCurrency(order.orderTotal)}</span>
-          <ComplexityTagSelector order={order} />
-        </div>
+        <p className="line-clamp-3">{order.direccionEnvio}</p>
       </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
@@ -454,16 +454,16 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <div className="flex items-center">Sub-Status <SortIcon columnKey="subEstado" /></div>
               </TableHead>
 
+              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
+              </TableHead>
+
               <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">
                 Items
               </TableHead>
 
               <TableHead onClick={() => requestSort('servicioEntrega')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Method <SortIcon columnKey="servicioEntrega" /></div>
-              </TableHead>
-
-              <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
               </TableHead>
 
               <TableHead onClick={() => requestSort('entregaLimite')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
@@ -473,8 +473,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
 
-              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
+              <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
               </TableHead>
 
               <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
