@@ -1,19 +1,31 @@
-
 'use client';
 
 import * as React from 'react';
-import { useFirestore } from '@/firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function InventoryPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [items, setItems] = React.useState<InventoryItem[]>([]);
   const [search, setSearch] = React.useState('');
 
@@ -27,6 +39,16 @@ export default function InventoryPage() {
     return () => unsubscribe();
   }, [firestore]);
 
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    try {
+      deleteDocumentNonBlocking(doc(firestore, 'inventory', id));
+      toast({ title: "Deleted", description: "Item removed from inventory." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error", description: "Could not delete item." });
+    }
+  };
+
   const filteredItems = items.filter(item => 
     item.name.toLowerCase().includes(search.toLowerCase()) ||
     item.sku?.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,7 +60,7 @@ export default function InventoryPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-muted-foreground">Manage your consumables and stock.</p>
+          <p className="text-muted-foreground">Manage materials (MDF, Acrylic, Vinyl, etc).</p>
         </div>
         <Button asChild>
           <Link href="/inventory/new">
@@ -57,16 +79,16 @@ export default function InventoryPage() {
         />
       </div>
 
-      <div className="rounded-md border bg-white shadow-sm">
+      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Details</TableHead>
+              <TableHead>Color/Details</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead>Supplier</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -76,43 +98,85 @@ export default function InventoryPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     {item.imageUrl ? (
-                      <div className="h-12 w-12 rounded-md overflow-hidden border bg-slate-100">
-                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
-                      </div>
+                       <div className="h-10 w-10 rounded-md overflow-hidden border bg-slate-100">
+                         <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                       </div>
                     ) : (
-                      <div className="h-12 w-12 rounded-md bg-slate-100 flex items-center justify-center text-slate-300">
-                        <ImageIcon className="h-6 w-6" />
-                      </div>
+                       <div className="h-10 w-10 rounded-md bg-slate-50 border flex items-center justify-center text-slate-300">
+                         <ImageIcon className="h-5 w-5" />
+                       </div>
                     )}
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
                       <span>{item.name}</span>
                       <span className="text-xs text-muted-foreground">{item.sku}</span>
+                      <span className="text-xs text-slate-400">{item.category}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                       {item.color && <Badge variant="outline" className="text-xs bg-slate-50">{item.color}</Badge>}
-                       {item.thickness && <Badge variant="outline" className="text-xs bg-slate-50">{item.thickness}</Badge>}
+                    <div className="flex flex-wrap gap-1">
+                       {item.color && (
+                         <Badge variant="outline" className="bg-slate-50 border-slate-200">
+                           <div className="w-2 h-2 rounded-full bg-indigo-500 mr-1.5 opacity-70" />
+                           {item.color}
+                         </Badge>
+                       )}
+                       {item.thickness && (
+                         <Badge variant="outline" className="text-xs text-muted-foreground">
+                           {item.thickness}
+                         </Badge>
+                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={isLowStock ? "text-red-600 font-bold" : ""}>
+                      <span className={`font-mono font-medium ${isLowStock ? "text-red-600" : ""}`}>
                         {item.quantity} {item.unit}
                       </span>
                       {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                     </div>
                   </TableCell>
-                  <TableCell>{item.location || '-'}</TableCell>
-                  <TableCell>{item.supplier || '-'}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{item.location || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-600">
+                        <Link href={`/inventory/${item.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Item?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove <b>{item.name}</b> from your inventory.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item.id!)} className="bg-destructive hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {filteredItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No items found.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  No items found.
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
