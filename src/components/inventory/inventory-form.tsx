@@ -43,8 +43,18 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const form = useForm<InventoryItem>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: initialData || {
-      name: '', sku: '', category: 'Vinyl', color: '', thickness: '',
-      quantity: 0, unit: 'Unit', minStock: 5, location: '', supplier: '',
+      name: '',
+      sku: '',
+      category: 'Vinyl',
+      color: '',
+      thickness: '',
+      width: '',
+      length: '',
+      quantity: 0,
+      unit: 'Unit',
+      minStock: 5,
+      location: '',
+      supplier: '',
       imageUrl: '',
     },
   });
