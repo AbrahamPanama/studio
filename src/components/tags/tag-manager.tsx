@@ -26,7 +26,7 @@ interface TagManagerProps {
   selectedTags: string[];
   onSelectedTagsChange: (tags: string[]) => void;
   onTagsUpdate: (tags: Tag[]) => void;
-  collectionName?: 'tags' | 'tagsOther';
+  collectionName?: 'tagsOther';
 }
 
 export function TagManager({
@@ -34,7 +34,7 @@ export function TagManager({
   selectedTags,
   onSelectedTagsChange,
   onTagsUpdate,
-  collectionName = 'tags'
+  collectionName = 'tagsOther'
 }: TagManagerProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedTags, setEditedTags] = React.useState<Tag[]>([]);
@@ -65,7 +65,7 @@ export function TagManager({
       }
       try {
         // 1. Capture new tags (IDs starting with temp-) BEFORE saving
-        // We capture Labels because the system currently selects by Label
+        // We capture Labels because the system selects by Label
         const newTagsToAutoSelect = editedTags
             .filter(tag => tag.id.startsWith('temp-'))
             .map(tag => tag.label);

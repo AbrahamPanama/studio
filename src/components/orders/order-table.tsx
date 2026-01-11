@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -38,7 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { ORDER_STATUSES, ORDER_SUB_STATUSES } from '@/lib/constants';
+import { ORDER_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants'; // Added PRIVACY_OPTIONS
 import { ProductEditPopover } from './product-edit-popover';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { TagManager } from '../tags/tag-manager';
@@ -46,6 +47,15 @@ import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
 import { ComplexityTagSelector } from '@/components/workload/complexity-tag-selector'; 
+
+// --- NEW: Privacy Color Configuration ---
+const PRIVACY_COLORS: Record<string, string> = {
+  'Por preguntar': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Limitado Fecha': 'bg-orange-100 text-orange-800 border-orange-200',
+  'no respondió': 'bg-slate-100 text-slate-600 border-slate-200',
+  'ilimitado': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Limitado Otros': 'bg-blue-100 text-blue-800 border-blue-200',
+};
 
 const parseDate = (dateInput: any): Date | undefined => {
   if (!dateInput) return undefined;
@@ -58,17 +68,13 @@ const parseDate = (dateInput: any): Date | undefined => {
 
 const OrderTableRow = ({
   order,
-  allTags,
   allOtherTags,
-  onAllTagsUpdate,
   onAllOtherTagsUpdate,
   onDelete,
   onRefresh,
 }: {
   order: Order;
-  allTags: Tag[];
   allOtherTags: Tag[];
-  onAllTagsUpdate: (tags: Tag[]) => void;
   onAllOtherTagsUpdate: (tags: Tag[]) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
@@ -88,7 +94,7 @@ const OrderTableRow = ({
       deleteDocumentNonBlocking(docRef);
       toast({ title: 'Success', description: 'Order will be deleted.' });
       onDelete(order.id);
-      onRefresh(); // Refresh data after delete
+      onRefresh(); 
     });
   }
 
@@ -101,7 +107,7 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        onRefresh(); // Refresh data after update
+        onRefresh(); 
       } catch (error) {
         // Error is handled by global listener
       }
@@ -121,17 +127,13 @@ const OrderTableRow = ({
   };
 
   const productSummary = order.productos.map((p, index) => {
-    // Create the full text string for this item
     const fullText = `${p.name} ${p.description ? `(${p.description})` : ''}`;
-    
-    // Truncate if longer than 50 chars
     const truncatedText = fullText.length > 50 
       ? fullText.substring(0, 50) + '...' 
       : fullText;
 
     return (
       <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
-        {/* Render truncated text followed by the quantity */}
         {truncatedText} - {p.quantity}
         {index < order.productos.length - 1 && ', '}
       </span>
@@ -197,6 +199,35 @@ const OrderTableRow = ({
       <TableCell className={cn("hidden md:table-cell", deadlineStyle)}>
         {hasMounted && <DatePicker value={parseDate(order.entregaLimite)} onChange={(newDeadline) => handleFieldUpdate('entregaLimite', newDeadline)} disabled={isPending} />}
       </TableCell>
+
+      {/* --- NEW: Privacy Column --- */}
+      <TableCell>
+        <Select 
+          value={order.privacidad || 'Por preguntar'} 
+          onValueChange={(newVal) => handleFieldUpdate('privacidad', newVal)} 
+          disabled={isPending}
+        >
+          <SelectTrigger className="w-[130px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
+             <SelectValue asChild>
+                <div 
+                  className={cn(
+                    "flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium border cursor-pointer truncate", 
+                    PRIVACY_COLORS[order.privacidad || 'Por preguntar'] || 'bg-slate-100 text-slate-600 border-slate-200'
+                  )}
+                >
+                  {order.privacidad || 'Por preguntar'}
+                </div>
+             </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {PRIVACY_OPTIONS.map(opt => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+      {/* --------------------------- */}
+
       <TableCell>
         <Popover>
           <PopoverTrigger asChild>
@@ -267,14 +298,11 @@ const OrderTableRow = ({
 
 export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order[], onRefresh: () => void }) {
   const [orders, setOrders] = React.useState(initialOrders);
-  const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const firestore = useFirestore();
 
-  // --- 1. SORTING STATE ---
   const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' } | null>(null);
 
-  // --- 2. SORTING LOGIC ---
   const sortedOrders = React.useMemo(() => {
     if (!sortConfig) return orders;
 
@@ -283,19 +311,16 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       let aValue = a[key];
       let bValue = b[key];
 
-      // Handle Dates
       if (key === 'entregaLimite') {
         const dateA = parseDate(aValue)?.getTime() || 0;
         const dateB = parseDate(bValue)?.getTime() || 0;
         return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
       }
 
-      // Handle Numbers
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
       }
 
-      // Handle Strings (Default)
       aValue = aValue ? String(aValue).toLowerCase() : '';
       bValue = bValue ? String(bValue).toLowerCase() : '';
 
@@ -313,7 +338,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     setSortConfig({ key, direction });
   };
 
-  // --- 3. HELPER FOR HEADERS ---
   const SortIcon = ({ columnKey }: { columnKey: keyof Order }) => {
     if (sortConfig?.key !== columnKey) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/30" />;
     return sortConfig.direction === 'asc'
@@ -321,7 +345,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       : <ArrowDown className="ml-2 h-4 w-4 text-primary" />;
   };
 
-  // --- 4. SCROLL SYNC LOGIC ---
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const [showTopScroll, setShowTopScroll] = useState(false);
@@ -364,9 +387,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
   React.useEffect(() => {
     if (!firestore) return;
     const fetchTags = async () => {
-      const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
       const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
-      setAllTags(tagsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Tag)));
       setAllOtherTags(otherTagsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Tag)));
     };
     fetchTags();
@@ -380,10 +401,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     setOrders(currentOrders => currentOrders.filter(o => o.id !== id));
   };
 
-  const handleAllTagsUpdate = (newTags: Tag[]) => {
-    setAllTags(newTags);
-    onRefresh();
-  }
   const handleAllOtherTagsUpdate = (newTags: Tag[]) => {
     setAllOtherTags(newTags);
     onRefresh();
@@ -391,28 +408,21 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
 
   return (
     <div className="space-y-1">
-      {/* Top Scrollbar */}
       {showTopScroll && (
         <div ref={topScrollRef} className="w-full overflow-x-auto border border-transparent" style={{ height: '12px' }}>
           <div style={{ width: `${contentWidth}px`, height: '1' }} />
         </div>
       )}
 
-      {/* Main Table Container */}
       <div
         ref={tableContainerRef}
-        // CHANGED: max-h-[calc(100vh-280px)] ensures it shrinks when empty but grows to fill screen when full
         className="w-full overflow-auto max-h-[calc(100vh-280px)] relative rounded-md border border-slate-200 shadow-sm bg-white"
       >
         <table className="w-full caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-20 bg-slate-50 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-slate-300">
 
-              {/* STICKY CUSTOMER COLUMN */}
-              <TableHead
-                onClick={() => requestSort('name')}
-                className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors"
-              >
+              <TableHead onClick={() => requestSort('name')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors">
                 <div className="flex items-center">Customer <SortIcon columnKey="name" /></div>
               </TableHead>
 
@@ -431,6 +441,12 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               <TableHead onClick={() => requestSort('entregaLimite')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Deadline <SortIcon columnKey="entregaLimite" /></div>
               </TableHead>
+
+              {/* --- NEW HEADER: Privacy --- */}
+              <TableHead onClick={() => requestSort('privacidad')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center">Privacy <SortIcon columnKey="privacidad" /></div>
+              </TableHead>
+              {/* --------------------------- */}
               
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
               
@@ -451,9 +467,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <OrderTableRow
                   key={order.id}
                   order={order}
-                  allTags={allTags}
                   allOtherTags={allOtherTags}
-                  onAllTagsUpdate={handleAllTagsUpdate}
                   onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                   onDelete={handleDelete}
                   onRefresh={onRefresh}
@@ -461,7 +475,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                   No orders for this view.
                 </TableCell>
               </TableRow>
@@ -472,3 +486,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
     </div>
   );
 }
+
+
+    

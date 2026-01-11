@@ -224,28 +224,14 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
   const [isConverting, startConverting] = React.useTransition();
-  const [allTags, setAllTags] = React.useState<Tag[]>([]);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
 
   React.useEffect(() => {
     if (!firestore) return;
     const fetchTags = async () => {
-      const tagsSnapshot = await getDocs(collection(firestore, 'tags'));
       const otherTagsSnapshot = await getDocs(collection(firestore, 'tagsOther'));
       
-      const seenTagIds = new Set<string>();
-      const uniqueTags = tagsSnapshot.docs
-        .map(doc => ({ ...doc.data(), id: doc.id } as Tag))
-        .filter(tag => {
-          if (seenTagIds.has(tag.id)) {
-            return false;
-          } else {
-            seenTagIds.add(tag.id);
-            return true;
-          }
-        });
-
       const seenOtherTagIds = new Set<string>();
       const uniqueOtherTags = otherTagsSnapshot.docs
         .map(doc => ({ ...doc.data(), id: doc.id } as Tag))
@@ -258,7 +244,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           }
         });
 
-      setAllTags(uniqueTags);
       setAllOtherTags(uniqueOtherTags);
     };
     fetchTags();
@@ -276,7 +261,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         abono: currentOrder.abono || false,
         cancelo: currentOrder.cancelo || false,
         totalAbono: currentOrder.totalAbono || 0,
-        tags: currentOrder.tags || [],
         tagsOther: currentOrder.tagsOther || [],
         itbms: currentOrder.itbms || false,
         createdBy: currentOrder.createdBy,
@@ -308,7 +292,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         abono: false,
         cancelo: false,
         totalAbono: 0,
-        tags: [],
         tagsOther: [],
         createdBy: user?.email || undefined,
       };
