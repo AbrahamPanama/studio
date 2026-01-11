@@ -88,6 +88,10 @@ export const inventoryItemSchema = z.object({
   sku: z.string().optional(),
   category: z.string().default('General'),
 
+  // --- NEW FIELD ---
+  imageUrl: z.string().optional(),
+  // -----------------
+
   // Specific Attributes
   color: z.string().optional(),
   thickness: z.string().optional(), // e.g., "651", "Cardstock 80lb"

@@ -5,8 +5,9 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, storage } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +17,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Package, Ruler, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Package, Ruler, MapPin, Image as ImageIcon } from 'lucide-react';
+import { ImageUpload } from '@/components/shared/image-upload';
 
 const COMMON_CATEGORIES = ['Vinyl', 'Paper', 'Ink', 'Tools', 'Hardware', 'Office', 'Other'];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
@@ -26,26 +28,42 @@ export default function NewInventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
 
   const form = useForm<InventoryItem>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: {
       name: '', sku: '', category: 'Vinyl', color: '', thickness: '',
       quantity: 0, unit: 'Unit', minStock: 5, location: '', supplier: '',
+      imageUrl: '',
     },
   });
 
   function onSubmit(data: InventoryItem) {
-    if (!firestore) return;
+    if (!firestore || !storage) return;
     startTransition(async () => {
       try {
+        let imageUrl = '';
+
+        // 1. Upload Image (if selected)
+        if (imageFile) {
+          // Create a unique path: inventory/{timestamp}_{filename}
+          const storageRef = ref(storage, `inventory/${Date.now()}_${imageFile.name}`);
+          const snapshot = await uploadBytes(storageRef, imageFile);
+          imageUrl = await getDownloadURL(snapshot.ref);
+        }
+
+        // 2. Save Document with Image URL
         await addDocumentNonBlocking(collection(firestore, 'inventory'), {
             ...data,
+            imageUrl, // <--- Save the URL
             updatedAt: serverTimestamp(),
         });
+
         toast({ title: "Success", description: "Item added." });
         router.push('/inventory');
       } catch (error) {
+        console.error("Error saving inventory item:", error);
         toast({ variant: "destructive", title: "Error", description: "Could not save item." });
       }
     });
@@ -79,6 +97,18 @@ export default function NewInventoryPage() {
               <FormField control={form.control} name="sku" render={({ field }) => (
                 <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input placeholder="VIN-001" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-pink-500" /> Photo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImageUpload 
+                 onChange={(file) => setImageFile(file)} 
+                 onClear={() => setImageFile(null)} 
+              />
             </CardContent>
           </Card>
 

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 
@@ -61,6 +61,7 @@ export default function InventoryPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Details</TableHead>
               <TableHead>Stock</TableHead>
@@ -73,6 +74,17 @@ export default function InventoryPage() {
               const isLowStock = item.quantity <= (item.minStock || 0);
               return (
                 <TableRow key={item.id}>
+                  <TableCell>
+                    {item.imageUrl ? (
+                      <div className="h-12 w-12 rounded-md overflow-hidden border bg-slate-100">
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="h-12 w-12 rounded-md bg-slate-100 flex items-center justify-center text-slate-300">
+                        <ImageIcon className="h-6 w-6" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
                       <span>{item.name}</span>
@@ -100,7 +112,7 @@ export default function InventoryPage() {
             })}
             {filteredItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No items found.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No items found.</TableCell>
               </TableRow>
             )}
           </TableBody>
