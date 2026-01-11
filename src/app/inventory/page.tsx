@@ -29,7 +29,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { INVENTORY_COLORS } from '@/lib/constants'; // <--- IMPORT
+import { INVENTORY_COLORS } from '@/lib/constants';
 
 export default function InventoryPage() {
   const firestore = useFirestore();
