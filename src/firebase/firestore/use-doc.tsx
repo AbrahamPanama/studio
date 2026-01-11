@@ -79,7 +79,8 @@ export function useDoc<T = any>(
           operation: 'get',
           path: memoizedDocRef.path,
         })
-
+        
+        // THIS IS THE FIX: Set the error state FIRST, then emit the error globally.
         setError(contextualError)
         setData(null)
         setIsLoading(false)
