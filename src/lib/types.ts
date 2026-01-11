@@ -1,7 +1,7 @@
 
 import { z } from 'zod';
 import type { Timestamp } from 'firebase/firestore';
-import { orderSchema, productSchema, tagSchema } from '@/lib/schema';
+import { orderSchema, productSchema, tagSchema, inventoryItemSchema } from '@/lib/schema';
 
 export type Product = z.infer<typeof productSchema> & {
     id?: string;
@@ -31,3 +31,6 @@ export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega'
 };
 
 export type Tag = z.infer<typeof tagSchema>;
+
+// --- NEW: INVENTORY TYPE ---
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;

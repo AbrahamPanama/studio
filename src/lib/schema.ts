@@ -78,3 +78,29 @@ export const tagSchema = z.object({
   label: z.string().min(1, "Label is required"),
   color: z.string().min(1, "Color is required"),
 });
+
+// --- NEW: INVENTORY SCHEMA ---
+export const inventoryItemSchema = z.object({
+  id: z.string().optional(),
+
+  // Identity
+  name: z.string().min(2, "Name is required"),
+  sku: z.string().optional(),
+  category: z.string().default('General'),
+
+  // Specific Attributes
+  color: z.string().optional(),
+  thickness: z.string().optional(), // e.g., "651", "Cardstock 80lb"
+
+  // Quantities
+  quantity: z.coerce.number().min(0).default(0),
+  unit: z.enum(['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack']).default('Unit'),
+  minStock: z.coerce.number().min(0).default(5),
+
+  // Location & Supplier
+  location: z.string().optional(),
+  supplier: z.string().optional(),
+
+  // Metadata
+  updatedAt: z.any().optional(),
+});
