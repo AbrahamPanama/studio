@@ -157,7 +157,8 @@ function DashboardPageContent({
               <p className="text-muted-foreground text-lg">{t('manageOrders')}</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+            {/* Changed 'items-stretch sm:items-center' to 'sm:items-start' to fix alignment */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
               <div className="w-full sm:w-80">
                 <SearchInput placeholder={t('searchPlaceholder')} />
               </div>
