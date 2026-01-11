@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useState, useEffect } from 'react';
@@ -47,11 +48,11 @@ export function useDoc<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as loading
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { isUserLoading } = useUser(); // Get user loading state
+  const { user, isUserLoading } = useUser(); // Get user loading state
 
   useEffect(() => {
-    // Wait for both the user to be loaded and the doc ref to be available
-    if (isUserLoading || !memoizedDocRef) {
+    // Wait for both the user to be loaded/exist and the doc ref to be available
+    if (isUserLoading || !user || !memoizedDocRef) {
       setIsLoading(true); // Keep loading if user is not ready or ref is null
       setData(null);
       setError(null);
@@ -88,7 +89,7 @@ export function useDoc<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef, isUserLoading]); // Re-run if the doc ref or user loading state changes
+  }, [memoizedDocRef, user, isUserLoading]); // Re-run if the doc ref or user state changes
 
   return { data, isLoading, error };
 }
