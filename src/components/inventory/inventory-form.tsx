@@ -27,6 +27,8 @@ const COMMON_CATEGORIES = [
   'Ink', 'Tools', 'Hardware', 'Office', 'Other'
 ];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
+const DIMENSION_UNITS = ['in', 'cm', 'mm', 'yrds'];
+const THICKNESS_UNITS = ['in', 'mm'];
 
 interface InventoryFormProps {
   initialData?: InventoryItem;
@@ -47,9 +49,11 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
       sku: '',
       category: 'Vinyl',
       color: '',
-      thickness: '',
       width: '',
       length: '',
+      dimensionUnit: 'in',
+      thickness: '',
+      thicknessUnit: 'mm',
       quantity: 0,
       unit: 'Unit',
       minStock: 5,
@@ -137,13 +141,10 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details & Dimensions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             
-             {/* Color Picker (Keep as is) */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
-                    {/* ... (Keep your color picker code here) ... */}
                     <div className="space-y-4">
                       <div className="flex flex-wrap gap-3">
                         {INVENTORY_COLORS.map((c) => (
@@ -190,28 +191,23 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                 </FormItem>
               )} />
 
-              {/* --- NEW DIMENSIONS GRID --- */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end pt-2">
                 <FormField control={form.control} name="width" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Width</FormLabel>
-                    <FormControl><Input placeholder="e.g. 4 ft" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Width</FormLabel><FormControl><Input placeholder="e.g. 48" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="length" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Length</FormLabel>
-                    <FormControl><Input placeholder="e.g. 8 ft" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Length</FormLabel><FormControl><Input placeholder="e.g. 96" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
+                <FormField control={form.control} name="dimensionUnit" render={({ field }) => (
+                  <FormItem><FormLabel>&nbsp;</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{DIMENSION_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-x-4 gap-y-2 items-end pt-2">
                 <FormField control={form.control} name="thickness" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Thickness/Weight</FormLabel>
-                    <FormControl><Input placeholder="e.g. 3mm / 80lb" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Thickness/Weight</FormLabel><FormControl><Input placeholder="e.g. 3" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="thicknessUnit" render={({ field }) => (
+                  <FormItem><FormLabel>&nbsp;</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{THICKNESS_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
               </div>
           </CardContent>

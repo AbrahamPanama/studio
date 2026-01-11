@@ -91,12 +91,13 @@ export const inventoryItemSchema = z.object({
 
   // Specific Attributes
   color: z.string().optional(),
-  thickness: z.string().optional(),
   
-  // --- NEW FIELDS ---
-  length: z.string().optional(),
+  // Dimensions
   width: z.string().optional(),
-  // ------------------
+  length: z.string().optional(),
+  dimensionUnit: z.string().optional(),
+  thickness: z.string().optional(),
+  thicknessUnit: z.string().optional(),
 
   // Quantities
   quantity: z.coerce.number().min(0).default(0),

@@ -118,14 +118,13 @@ export default function InventoryPage() {
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
-              // Color Logic (Keep existing)
               const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
               const isHex = item.color?.startsWith('#');
               const finalStyle = colorConfig?.style || (isHex ? { backgroundColor: item.color, border: '1px solid #cbd5e1' } : { backgroundColor: '#e2e8f0' });
               
-              // --- NEW: Format Dimensions String ---
               const hasDimensions = item.width || item.length;
-              const dimensionString = [item.width, item.length].filter(Boolean).join(' x ');
+              const dimensionString = [item.width, item.length].filter(Boolean).join('x') + (item.dimensionUnit || '');
+              const thicknessString = item.thickness ? item.thickness + (item.thicknessUnit || '') : '';
 
               return (
                 <TableRow key={item.id}>
@@ -156,7 +155,6 @@ export default function InventoryPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1.5 items-start">
-                       {/* Color Badge */}
                        {item.color && (
                          <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5 h-6">
                            <div className="w-3 h-3 rounded-full shadow-sm" style={finalStyle} />
@@ -164,12 +162,11 @@ export default function InventoryPage() {
                          </Badge>
                        )}
                        
-                       {/* Dimensions & Thickness */}
-                       {(hasDimensions || item.thickness) && (
+                       {(hasDimensions || thicknessString) && (
                          <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                            {hasDimensions && <span>{dimensionString}</span>}
-                           {hasDimensions && item.thickness && <span className="text-slate-300">|</span>}
-                           {item.thickness && <span>{item.thickness}</span>}
+                           {hasDimensions && thicknessString && <span className="text-slate-300">|</span>}
+                           {thicknessString && <span>{thicknessString}</span>}
                          </div>
                        )}
                     </div>
