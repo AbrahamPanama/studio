@@ -118,15 +118,12 @@ export default function InventoryPage() {
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
-              // 1. Try to find the predefined class
+              // 1. Get Preset Style
               const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
               
-              // 2. If no class, check if it's a Hex code to style inline
+              // 2. Or fallback to Hex/Default
               const isHex = item.color?.startsWith('#');
-              const customStyle = isHex ? { backgroundColor: item.color, border: '1px solid #e2e8f0' } : {};
-              
-              // 3. Fallback class if neither
-              const fallbackClass = 'bg-slate-200';
+              const finalStyle = colorConfig?.style || (isHex ? { backgroundColor: item.color, border: '1px solid #cbd5e1' } : { backgroundColor: '#e2e8f0' });
 
               return (
                 <TableRow key={item.id}>
@@ -159,9 +156,10 @@ export default function InventoryPage() {
                     <div className="flex flex-wrap gap-1">
                        {item.color && (
                          <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5 h-7">
+                           {/* Use the exact style object from constants */}
                            <div 
-                              className={cn("w-4 h-4 rounded-full shadow-sm", colorConfig?.class || (!isHex && fallbackClass))} 
-                              style={customStyle}
+                              className="w-4 h-4 rounded-full shadow-sm"
+                              style={finalStyle}
                            />
                            {item.color}
                          </Badge>

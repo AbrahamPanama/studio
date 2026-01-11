@@ -12,7 +12,7 @@ import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage, cn } from '@/lib/utils';
-import { INVENTORY_COLORS } from '@/lib/constants'; 
+import { INVENTORY_COLORS } from '@/lib/constants'; // <--- Import
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -128,7 +128,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-1">
              
-             {/* --- IMPROVED COLOR PICKER --- */}
+             {/* --- UPDATED COLOR PICKER (Uses 'style' prop) --- */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
@@ -141,17 +141,18 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                             key={c.value}
                             type="button"
                             onClick={() => field.onChange(c.value)}
+                            // Apply the style directly here
+                            style={c.style}
                             className={cn(
-                              "h-10 w-10 rounded-full cursor-pointer flex items-center justify-center transition-all relative",
-                              c.class,
+                              "h-10 w-10 rounded-full cursor-pointer flex items-center justify-center transition-all relative shadow-sm",
                               field.value === c.value 
                                 ? "ring-2 ring-offset-2 ring-indigo-600 scale-110 shadow-md" 
-                                : "hover:scale-105 hover:shadow-sm"
+                                : "hover:scale-105"
                             )}
                             title={c.label}
                           >
                              {field.value === c.value && (
-                               <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Transparent' || c.value === 'Frost') ? "text-black" : "text-white drop-shadow-md")} />
+                               <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Frost' || c.value === 'Transparent') ? "text-black" : "text-white drop-shadow-md")} />
                              )}
                           </button>
                         ))}
@@ -163,7 +164,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                         <span className="text-sm font-medium text-slate-700">Custom:</span>
                         
                         {/* 1. Visual Color Picker */}
-                        <div className="relative h-9 w-9 overflow-hidden rounded-full border shadow-sm cursor-pointer">
+                        <div className="relative h-9 w-9 overflow-hidden rounded-full border shadow-sm cursor-pointer group">
                             <input 
                                 type="color" 
                                 className="absolute -top-2 -left-2 h-16 w-16 cursor-pointer"

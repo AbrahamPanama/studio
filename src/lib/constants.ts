@@ -4,42 +4,52 @@ export const PRIVACY_OPTIONS = ['Por preguntar', 'Limitado Fecha', 'no respondi√
 export const DELIVERY_SERVICES = ['Uno Express', 'Delivery Rolando', 'Delivery Daniel', 'Delivery Otros', 'Uber', 'InDriver', 'Retiro taller'] as const;
 
 export const INVENTORY_COLORS = [
-  // Special Finishes
+  // SPECIAL FINISHES
   { 
     label: 'Transparent', 
     value: 'Transparent', 
-    // Diagonal stripes pattern
-    class: 'bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#e5e7eb_5px,#e5e7eb_10px)] bg-white border border-slate-400' 
+    style: { 
+      background: 'repeating-linear-gradient(45deg, #e5e7eb 0px, #e5e7eb 5px, #ffffff 5px, #ffffff 10px)',
+      border: '1px solid #cbd5e1'
+    } 
   },
   { 
     label: 'Frost', 
     value: 'Frost', 
-    // Hazy/Blurry look
-    class: 'bg-white/60 backdrop-blur-md border-2 border-slate-200 shadow-inner' 
+    style: { 
+      background: 'rgba(255,255,255,0.6)', 
+      backdropFilter: 'blur(4px)',
+      border: '2px solid #e2e8f0',
+      boxShadow: 'inset 0 0 6px rgba(0,0,0,0.05)'
+    } 
   },
   { 
     label: 'Gold', 
     value: 'Gold', 
-    // Shiny Gold Gradient
-    class: 'bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#C06C02] border border-yellow-700' 
+    style: { 
+      background: 'linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #b45309 100%)', 
+      border: '1px solid #b45309' 
+    } 
   },
   { 
     label: 'Silver', 
     value: 'Silver', 
-    // Shiny Silver Gradient
-    class: 'bg-gradient-to-br from-[#E0E0E0] via-[#BDBDBD] to-[#757575] border border-slate-600' 
+    style: { 
+      background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 50%, #475569 100%)', 
+      border: '1px solid #475569' 
+    } 
   },
 
-  // Standard Colors
-  { label: 'White', value: 'White', class: 'bg-white border border-slate-300' },
-  { label: 'Black', value: 'Black', class: 'bg-neutral-900 border border-neutral-700' },
-  { label: 'Grey', value: 'Grey', class: 'bg-gray-500 border border-gray-600' },
-  { label: 'Red', value: 'Red', class: 'bg-red-600 border border-red-700' },
-  { label: 'Blue', value: 'Blue', class: 'bg-blue-600 border border-blue-700' },
-  { label: 'Green', value: 'Green', class: 'bg-emerald-600 border border-emerald-700' },
-  { label: 'Yellow', value: 'Yellow', class: 'bg-yellow-400 border border-yellow-500' },
-  { label: 'Orange', value: 'Orange', class: 'bg-orange-500 border border-orange-600' },
-  { label: 'Purple', value: 'Purple', class: 'bg-purple-600 border border-purple-700' },
-  { label: 'Pink', value: 'Pink', class: 'bg-pink-500 border border-pink-600' },
-  { label: 'Brown', value: 'Brown', class: 'bg-amber-800 border border-amber-900' },
+  // STANDARD COLORS
+  { label: 'White', value: 'White', style: { background: '#ffffff', border: '1px solid #e2e8f0' } },
+  { label: 'Black', value: 'Black', style: { background: '#171717', border: '1px solid #171717' } },
+  { label: 'Grey', value: 'Grey', style: { background: '#6b7280', border: '1px solid #4b5563' } },
+  { label: 'Red', value: 'Red', style: { background: '#dc2626', border: '1px solid #b91c1c' } },
+  { label: 'Blue', value: 'Blue', style: { background: '#2563eb', border: '1px solid #1d4ed8' } },
+  { label: 'Green', value: 'Green', style: { background: '#16a34a', border: '1px solid #15803d' } },
+  { label: 'Yellow', value: 'Yellow', style: { background: '#facc15', border: '1px solid #eab308' } },
+  { label: 'Orange', value: 'Orange', style: { background: '#f97316', border: '1px solid #ea580c' } },
+  { label: 'Purple', value: 'Purple', style: { background: '#9333ea', border: '1px solid #7e22ce' } },
+  { label: 'Pink', value: 'Pink', style: { background: '#ec4899', border: '1px solid #db2777' } },
+  { label: 'Brown', value: 'Brown', style: { background: '#78350f', border: '1px solid #451a03' } },
 ] as const;
