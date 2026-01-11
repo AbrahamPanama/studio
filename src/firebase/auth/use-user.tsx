@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
-import { useFirebaseApp } from '@/firebase/provider';
+import { useFirebase } from '@/firebase/provider';
+import type { User } from 'firebase/auth';
 
 interface UserState {
   user: User | null;
@@ -11,38 +10,6 @@ interface UserState {
 }
 
 export function useUser(): UserState {
-  const firebaseApp = useFirebaseApp();
-  const [userState, setUserState] = useState<UserState>({
-    user: null,
-    isUserLoading: true,
-    error: null,
-  });
-
-  useEffect(() => {
-    if (!firebaseApp) {
-      setUserState({
-        user: null,
-        isUserLoading: false,
-        error: new Error("Firebase app is not initialized."),
-      });
-      return;
-    }
-    
-    const auth = getAuth(firebaseApp);
-
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        setUserState({ user, isUserLoading: false, error: null });
-      },
-      (error) => {
-        console.error("useUser: onAuthStateChanged error:", error);
-        setUserState({ user: null, isUserLoading: false, error });
-      }
-    );
-
-    return () => unsubscribe();
-  }, [firebaseApp]);
-
-  return userState;
+  const { user, isUserLoading, userError } = useFirebase();
+  return { user, isUserLoading, error: userError };
 }
