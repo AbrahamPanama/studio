@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -121,13 +120,23 @@ const OrderTableRow = ({
     toast({ description: 'Phone copied: ' + clean });
   };
 
-  const productSummary = order.productos.map((p, index) => (
-    <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
-      {p.name.length > 50 ? `${p.name.substring(0, 50)}...` : p.name}{' '}
-      {p.description && `(${p.description})`} - {p.quantity}
-      {index < order.productos.length - 1 && ', '}
-    </span>
-  ));
+  const productSummary = order.productos.map((p, index) => {
+    // Create the full text string for this item
+    const fullText = `${p.name} ${p.description ? `(${p.description})` : ''}`;
+    
+    // Truncate if longer than 50 chars
+    const truncatedText = fullText.length > 50 
+      ? fullText.substring(0, 50) + '...' 
+      : fullText;
+
+    return (
+      <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
+        {/* Render truncated text followed by the quantity */}
+        {truncatedText} - {p.quantity}
+        {index < order.productos.length - 1 && ', '}
+      </span>
+    );
+  });
 
   const orderOtherTags = (order.tagsOther || [])
     .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
@@ -385,7 +394,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
       {/* Top Scrollbar */}
       {showTopScroll && (
         <div ref={topScrollRef} className="w-full overflow-x-auto border border-transparent" style={{ height: '12px' }}>
-          <div style={{ width: `${contentWidth}px`, height: '1px' }} />
+          <div style={{ width: `${contentWidth}px`, height: '1' }} />
         </div>
       )}
 
