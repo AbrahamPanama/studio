@@ -446,7 +446,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <div className="flex items-center">Customer <SortIcon columnKey="name" /></div>
               </TableHead>
 
-              <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+              <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[80px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
               </TableHead>
 
