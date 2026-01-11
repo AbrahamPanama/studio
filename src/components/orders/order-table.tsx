@@ -109,9 +109,6 @@ const OrderTableRow = ({
     });
   };
 
-  const handleTagsUpdate = (tags: string[]) => {
-    handleFieldUpdate('tags', tags);
-  }
   const handleOtherTagsUpdate = (tags: string[]) => {
     handleFieldUpdate('tagsOther', tags);
   }
@@ -126,14 +123,11 @@ const OrderTableRow = ({
 
   const productSummary = order.productos.map((p, index) => (
     <span key={p.id || index} className={cn(p.materialsReady && "font-bold text-green-600")}>
-      {p.name} {p.description && `(${p.description})`} - {p.quantity}
+      {p.name.length > 50 ? `${p.name.substring(0, 50)}...` : p.name}{' '}
+      {p.description && `(${p.description})`} - {p.quantity}
       {index < order.productos.length - 1 && ', '}
     </span>
   ));
-
-  const orderTags = (order.tags || [])
-    .map(tagId => allTags.find(t => t.id === tagId || t.label === tagId))
-    .filter((t): t is Tag => !!t);
 
   const orderOtherTags = (order.tagsOther || [])
     .map(tagId => allOtherTags.find(t => t.id === tagId || t.label === tagId))
@@ -166,7 +160,7 @@ const OrderTableRow = ({
           </button>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-[80px]">
         <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
           <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
             <SelectValue asChild>
