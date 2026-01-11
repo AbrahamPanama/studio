@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,14 +11,15 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { compressImage } from '@/lib/utils';
+import { compressImage, cn } from '@/lib/utils';
+import { INVENTORY_COLORS } from '@/lib/constants'; // <--- IMPORT THIS
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check } from 'lucide-react';
 import { ImageUpload } from '@/components/shared/image-upload';
 
 // Updated Categories per your request
@@ -137,10 +139,43 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-4 sm:grid-cols-1">
+             {/* --- NEW COLOR PICKER --- */}
              <FormField control={form.control} name="color" render={({ field }) => (
-                <FormItem><FormLabel>Color</FormLabel><FormControl><Input placeholder="Matte Red" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Color / Finish</FormLabel>
+                  <FormControl>
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {INVENTORY_COLORS.map((c) => (
+                          <div
+                            key={c.value}
+                            onClick={() => field.onChange(c.value)}
+                            className={cn(
+                              "h-8 w-8 rounded-full cursor-pointer shadow-sm flex items-center justify-center transition-all hover:scale-110 active:scale-95",
+                              c.class,
+                              field.value === c.value ? "ring-2 ring-offset-2 ring-indigo-500 scale-110" : "hover:ring-2 hover:ring-offset-1 hover:ring-slate-300"
+                            )}
+                            title={c.label}
+                          >
+                             {field.value === c.value && <Check className={cn("h-4 w-4", c.value === 'White' || c.value === 'Transparent' || c.value === 'Frost' ? "text-black" : "text-white")} />}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Fallback Text Input for custom colors */}
+                      <Input 
+                        placeholder="Or type a custom color..." 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        className="max-w-xs" 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )} />
+              {/* ------------------------ */}
+
               <FormField control={form.control} name="thickness" render={({ field }) => (
                 <FormItem><FormLabel>Thickness/Size</FormLabel><FormControl><Input placeholder="24 inch roll, 3mm" {...field} /></FormControl><FormMessage /></FormItem>
               )} />

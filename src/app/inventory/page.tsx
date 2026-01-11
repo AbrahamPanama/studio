@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -28,6 +29,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { INVENTORY_COLORS } from '@/lib/constants'; // <--- IMPORT
 
 export default function InventoryPage() {
   const firestore = useFirestore();
@@ -115,6 +117,11 @@ export default function InventoryPage() {
           <TableBody>
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
+              
+              // Find the specific class for this color, or default to generic
+              const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
+              const colorClass = colorConfig?.class || 'bg-slate-200';
+
               return (
                 <TableRow key={item.id}>
                   <TableCell>
@@ -145,8 +152,8 @@ export default function InventoryPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                        {item.color && (
-                         <Badge variant="outline" className="bg-slate-50 border-slate-200">
-                           <div className="w-2 h-2 rounded-full bg-indigo-500 mr-1.5 opacity-70" />
+                         <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5">
+                           <div className={cn("w-3 h-3 rounded-full shadow-sm border border-black/5", colorClass)} />
                            {item.color}
                          </Badge>
                        )}
