@@ -4,8 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // ⚠️ GLOBAL PERMISSION RULE
-    // This single rule allows ANY authenticated user to read/write
-    // to ANY collection (existing or new) in the entire database.
+    // Allows any logged-in user to read/write ANY collection (orders, inventory, etc.)
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
