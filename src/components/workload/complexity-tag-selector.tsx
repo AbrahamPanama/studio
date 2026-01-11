@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -111,10 +112,14 @@ export function ComplexityTagSelector({ order }: { order: Order }) {
         </Badge>
       );
     }
+    
+    // MODIFIED: Added color coding to the Auto badge
     return (
       <Badge
-        variant="outline"
-        className="flex items-center gap-1.5 border-dashed"
+        className={cn(
+          'flex items-center gap-1.5 text-white border-2 border-dashed border-white/40', // Added border styling
+          complexityConfig[level].color // Apply the background color
+        )}
       >
         <Wand2 className="h-3 w-3" />
         <span>Auto ({complexityConfig[level].label})</span>
