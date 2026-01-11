@@ -7,13 +7,16 @@ export type Product = z.infer<typeof productSchema> & {
     id?: string;
 };
 
-export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega' | 'entregaLimite' | 'productos'> & {
+export type Material = z.infer<typeof orderSchema>['materials'][number];
+
+export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega' | 'entregaLimite' | 'productos' | 'materials'> & {
   id: string;
   orderNumber: string;
   fechaIngreso: Timestamp | string | Date;
   entrega: Timestamp | string | Date;
   entregaLimite: Timestamp | string | Date;
   productos: Product[];
+  materials: Material[];
   abono?: boolean;
   cancelo?: boolean;
   totalAbono?: number;

@@ -12,6 +12,14 @@ export const productSchema = z.object({
   isTaxable: z.boolean().default(true),
 });
 
+export const materialSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"), 
+  quantity: z.coerce.number().min(1, "Qty must be at least 1").default(1),
+  dimensions: z.string().optional(), // e.g., "10x10cm"
+  status: z.enum(['Pending', 'Ready']).default('Pending'),
+});
+
 export const orderSchema = z.object({
   orderNumber: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.').max(100),
@@ -44,6 +52,8 @@ export const orderSchema = z.object({
   tagsOther: z.array(z.string()).default([]),
   
   productos: z.array(productSchema).min(1, 'At least one product is required.'),
+
+  materials: z.array(materialSchema).optional().default([]),
 
   itbms: z.boolean().default(false),
   subtotal: z.coerce.number().default(0),
