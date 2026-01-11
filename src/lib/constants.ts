@@ -4,7 +4,7 @@ export const PRIVACY_OPTIONS = ['Por preguntar', 'Limitado Fecha', 'no respondi√
 export const DELIVERY_SERVICES = ['Uno Express', 'Delivery Rolando', 'Delivery Daniel', 'Delivery Otros', 'Uber', 'InDriver', 'Retiro taller'] as const;
 
 export const INVENTORY_COLORS = [
-  // --- ROW 1: LIGHTS, VIBRANTS & PASTELS (13) ---
+  // --- ROW 1: LIGHTS, VIBRANTS & PASTELS (13 + 2 new) ---
   { 
     label: 'Transparent', 
     value: 'Transparent', 
@@ -20,9 +20,11 @@ export const INVENTORY_COLORS = [
   { label: 'Yellow', value: 'Yellow', style: { background: '#facc15', border: '1px solid #eab308' } },
   { label: 'Orange', value: 'Orange', style: { background: '#fb923c', border: '1px solid #ea580c' } },
   { label: 'Red', value: 'Red', style: { background: '#dc2626', border: '1px solid #b91c1c' } },
+  { label: 'Baby Pink', value: 'Baby Pink', style: { background: '#fbcfe8', border: '1px solid #f9a8d4' } },
   { label: 'Pink', value: 'Pink', style: { background: '#ec4899', border: '1px solid #db2777' } },
   { label: 'Purple', value: 'Purple', style: { background: '#9333ea', border: '1px solid #7e22ce' } },
   { label: 'Blue', value: 'Blue', style: { background: '#2563eb', border: '1px solid #1d4ed8' } },
+  { label: 'Aqua', value: 'Aqua', style: { background: '#22d3ee', border: '1px solid #06b6d4' } },
   { label: 'Teal', value: 'Teal', style: { background: '#14b8a6', border: '1px solid #0d9488' } },
   { label: 'Green', value: 'Green', style: { background: '#22c55e', border: '1px solid #16a34a' } },
   { label: 'Mint', value: 'Mint', style: { background: '#6ee7b7', border: '1px solid #34d399' } },
