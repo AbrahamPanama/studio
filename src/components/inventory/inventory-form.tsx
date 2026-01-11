@@ -115,7 +115,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             </div>
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{COMMON_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-              )} />
+            )} />
             <FormField control={form.control} name="sku" render={({ field }) => (
               <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input placeholder="VIN-001" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
@@ -140,42 +140,44 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-1">
-             {/* --- NEW COLOR PICKER --- */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-3">
                         {INVENTORY_COLORS.map((c) => (
-                          <div
+                          <button
                             key={c.value}
+                            type="button"
                             onClick={() => field.onChange(c.value)}
                             className={cn(
-                              "h-8 w-8 rounded-full cursor-pointer shadow-sm flex items-center justify-center transition-all hover:scale-110 active:scale-95",
+                              "h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center relative overflow-hidden",
                               c.class,
-                              field.value === c.value ? "ring-2 ring-offset-2 ring-indigo-500 scale-110" : "hover:ring-2 hover:ring-offset-1 hover:ring-slate-300"
+                              field.value === c.value ? "ring-2 ring-indigo-500 ring-offset-2 border-transparent scale-110" : "border-transparent hover:scale-105"
                             )}
                             title={c.label}
                           >
-                             {field.value === c.value && <Check className={cn("h-4 w-4", c.value === 'White' || c.value === 'Transparent' || c.value === 'Frost' ? "text-black" : "text-white")} />}
-                          </div>
+                            {field.value === c.value && (
+                              <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Frost' || c.value === 'Transparent') ? "text-black" : "text-white")} />
+                            )}
+                          </button>
                         ))}
                       </div>
-                      {/* Fallback Text Input for custom colors */}
-                      <Input 
-                        placeholder="Or type a custom color..." 
-                        value={field.value || ''} 
-                        onChange={field.onChange}
-                        className="max-w-xs" 
-                      />
+                      
+                      <div className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Custom Color:</span>
+                          <Input 
+                              placeholder="Hex or Name (e.g. Neon Pink)" 
+                              {...field}
+                              className="max-w-[200px] h-8 text-sm"
+                          />
+                      </div>
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              {/* ------------------------ */}
-
               <FormField control={form.control} name="thickness" render={({ field }) => (
                 <FormItem><FormLabel>Thickness/Size</FormLabel><FormControl><Input placeholder="24 inch roll, 3mm" {...field} /></FormControl><FormMessage /></FormItem>
               )} />

@@ -118,9 +118,8 @@ export default function InventoryPage() {
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
-              // Find the specific class for this color, or default to generic
-              const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
-              const colorClass = colorConfig?.class || 'bg-slate-200';
+              // Find visual config for the circle
+              const colorStyle = INVENTORY_COLORS.find(c => c.value === item.color);
 
               return (
                 <TableRow key={item.id}>
@@ -150,15 +149,18 @@ export default function InventoryPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 items-center">
                        {item.color && (
-                         <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5">
-                           <div className={cn("w-3 h-3 rounded-full shadow-sm border border-black/5", colorClass)} />
+                         <Badge variant="outline" className="bg-white/50 border-slate-200 pl-1 flex items-center gap-1.5 h-7">
+                           <div className={cn(
+                             "w-4 h-4 rounded-full border border-black/10 shadow-sm", 
+                             colorStyle ? colorStyle.class : "bg-slate-300" // Fallback if custom
+                           )} />
                            {item.color}
                          </Badge>
                        )}
                        {item.thickness && (
-                         <Badge variant="outline" className="text-xs text-muted-foreground">
+                         <Badge variant="secondary" className="text-[10px] h-5">
                            {item.thickness}
                          </Badge>
                        )}
