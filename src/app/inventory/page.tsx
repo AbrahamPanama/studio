@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon, Minus, PlusCircle } from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -22,12 +22,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [items, setItems] = React.useState<InventoryItem[]>([]);
   const [search, setSearch] = React.useState('');
+  const [isPending, startTransition] = React.useTransition();
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -47,6 +49,20 @@ export default function InventoryPage() {
     } catch (err) {
       toast({ variant: "destructive", title: "Error", description: "Could not delete item." });
     }
+  };
+  
+  const handleStockChange = (item: InventoryItem, amount: number) => {
+    if (!firestore || !item.id) return;
+
+    startTransition(() => {
+        const newQuantity = (item.quantity || 0) + amount;
+        if (newQuantity < 0) {
+            toast({ variant: "destructive", title: "Invalid Quantity", description: "Stock cannot be negative." });
+            return;
+        }
+        const docRef = doc(firestore, 'inventory', item.id);
+        updateDocumentNonBlocking(docRef, { quantity: newQuantity });
+    });
   };
 
   const filteredItems = items.filter(item => 
@@ -131,10 +147,19 @@ export default function InventoryPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={`font-mono font-medium ${isLowStock ? "text-red-600" : ""}`}>
-                        {item.quantity} {item.unit}
-                      </span>
-                      {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, -1)} disabled={isPending}>
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-baseline justify-center w-16">
+                            <span className={cn("font-mono text-lg font-bold", isLowStock ? "text-red-600" : "text-slate-800")}>
+                                {item.quantity}
+                            </span>
+                            <span className="text-xs text-muted-foreground ml-1">{item.unit}</span>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, 1)} disabled={isPending}>
+                            <PlusCircle className="h-4 w-4" />
+                        </Button>
+                        {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{item.location || '-'}</TableCell>
