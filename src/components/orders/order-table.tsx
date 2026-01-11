@@ -201,28 +201,6 @@ const OrderTableRow = ({
         <Popover>
           <PopoverTrigger asChild>
             <div className="flex flex-wrap gap-1 cursor-pointer">
-              {orderTags.length > 0 ? orderTags.map(tag => (
-                <Badge key={tag.id} style={{ backgroundColor: tag.color }} className="text-white">
-                  {tag.label}
-                </Badge>
-              )) : <span className="text-muted-foreground text-xs">No tags</span>}
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-96">
-            <TagManager
-              allTags={allTags}
-              selectedTags={order.tags || []}
-              onSelectedTagsChange={handleTagsUpdate}
-              onTagsUpdate={onAllTagsUpdate}
-              collectionName="tags"
-            />
-          </PopoverContent>
-        </Popover>
-      </TableCell>
-      <TableCell>
-        <Popover>
-          <PopoverTrigger asChild>
-            <div className="flex flex-wrap gap-1 cursor-pointer">
               {orderOtherTags.length > 0 ? orderOtherTags.map(tag => (
                 <Badge key={tag.id} style={{ backgroundColor: tag.color }} className="text-white">
                   {tag.label}
@@ -454,8 +432,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               <TableHead onClick={() => requestSort('entregaLimite')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Deadline <SortIcon columnKey="entregaLimite" /></div>
               </TableHead>
-
-              <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
+              
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
               
               <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
@@ -481,7 +458,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                   No orders for this view.
                 </TableCell>
               </TableRow>

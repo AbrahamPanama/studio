@@ -295,7 +295,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         description: '',
         comentarios: '',
         estado: isQuote ? 'Cotización' : 'New',
-        subEstado: 'Pendiente',
         entrega: new Date(),
         entregaLimite: new Date(),
         servicioEntrega: 'Retiro taller',
@@ -988,22 +987,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                 <FormMessage />
                               </FormItem>
                             )} />
-                            <FormField
-                              control={form.control}
-                              name="tags"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>{t('formLabelTagsShipping')}</FormLabel>
-                                  <TagManager
-                                    allTags={allTags}
-                                    selectedTags={field.value || []}
-                                    onSelectedTagsChange={field.onChange}
-                                    onTagsUpdate={setAllTags}
-                                  />
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
                             <FormField
                               control={form.control}
                               name="tagsOther"
