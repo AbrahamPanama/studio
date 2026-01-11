@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save, Package, Ruler, MapPin, Image as ImageIcon } from 'lucide-react';
 import { ImageUpload } from '@/components/shared/image-upload';
+import { compressImage } from '@/lib/utils';
 
 const COMMON_CATEGORIES = ['Vinyl', 'Paper', 'Ink', 'Tools', 'Hardware', 'Office', 'Other'];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
@@ -39,32 +40,50 @@ export default function NewInventoryPage() {
     },
   });
 
-  function onSubmit(data: InventoryItem) {
+  async function onSubmit(data: InventoryItem) {
     if (!firestore || !storage) return;
+
     startTransition(async () => {
       try {
         let imageUrl = '';
 
-        // 1. Upload Image (if selected)
+        // 1. Compress & Upload Image (if selected)
         if (imageFile) {
-          // Create a unique path: inventory/{timestamp}_{filename}
-          const storageRef = ref(storage, `inventory/${Date.now()}_${imageFile.name}`);
-          const snapshot = await uploadBytes(storageRef, imageFile);
-          imageUrl = await getDownloadURL(snapshot.ref);
+          try {
+            console.log("Original size:", (imageFile.size / 1024 / 1024).toFixed(2), "MB");
+            
+            // --- COMPRESSION STEP ---
+            const compressedFile = await compressImage(imageFile);
+            console.log("Compressed size:", (compressedFile.size / 1024 / 1024).toFixed(2), "MB");
+            // ------------------------
+
+            const storageRef = ref(storage, `inventory/${Date.now()}_${compressedFile.name}`);
+            const snapshot = await uploadBytes(storageRef, compressedFile);
+            imageUrl = await getDownloadURL(snapshot.ref);
+            
+          } catch (uploadError) {
+            console.error("Upload failed:", uploadError);
+            toast({ variant: "destructive", title: "Upload Failed", description: "Could not upload image." });
+            return; // Stop saving if upload fails
+          }
         }
 
-        // 2. Save Document with Image URL
-        await addDocumentNonBlocking(collection(firestore, 'inventory'), {
+        // 2. Save Document
+        const docRef = await addDocumentNonBlocking(collection(firestore, 'inventory'), {
             ...data,
-            imageUrl, // <--- Save the URL
+            imageUrl,
             updatedAt: serverTimestamp(),
         });
 
-        toast({ title: "Success", description: "Item added." });
-        router.push('/inventory');
+        if (docRef) {
+          toast({ title: "Success", description: "Item added to inventory." });
+          router.push('/inventory');
+        } else {
+           toast({ variant: "destructive", title: "Save Failed", description: "Could not save to database." });
+        }
       } catch (error) {
-        console.error("Error saving inventory item:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not save item." });
+        console.error("Critical error:", error);
+        toast({ variant: "destructive", title: "Error", description: "Something went wrong." });
       }
     });
   }
