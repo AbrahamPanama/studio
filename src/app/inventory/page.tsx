@@ -22,6 +22,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 export default function InventoryPage() {
@@ -114,9 +119,16 @@ export default function InventoryPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     {item.imageUrl ? (
-                       <div className="h-10 w-10 rounded-md overflow-hidden border bg-slate-100">
-                         <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
-                       </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <div className="h-10 w-10 rounded-md overflow-hidden border bg-slate-100 cursor-zoom-in">
+                            <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0">
+                          <img src={item.imageUrl} alt={item.name} className="w-full h-auto rounded-md" />
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                        <div className="h-10 w-10 rounded-md bg-slate-50 border flex items-center justify-center text-slate-300">
                          <ImageIcon className="h-5 w-5" />
