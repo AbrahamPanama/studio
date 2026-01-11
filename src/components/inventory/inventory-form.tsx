@@ -22,7 +22,7 @@ import { ImageUpload } from '@/components/shared/image-upload';
 
 // Updated Categories per your request
 const COMMON_CATEGORIES = [
-  'Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 
+  'Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 'Cuts',
   'Ink', 'Tools', 'Hardware', 'Office', 'Other'
 ];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
