@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import { ORDER_STATUSES, ORDER_SUB_STATUSES, DELIVERY_SERVICES, PRIVACY_OPTIONS } from './constants';
+import { ORDER_STATUSES, DELIVERY_SERVICES, PRIVACY_OPTIONS } from './constants';
 
 export const productSchema = z.object({
   id: z.string().optional(), // for existing products
@@ -10,14 +10,6 @@ export const productSchema = z.object({
   price: z.coerce.number().min(0, 'Price cannot be negative.'),
   materialsReady: z.boolean().default(false),
   isTaxable: z.boolean().default(true),
-});
-
-export const materialSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, "Name is required"), 
-  quantity: z.coerce.number().min(1, "Qty must be at least 1").default(1),
-  dimensions: z.string().optional(), // e.g., "10x10cm"
-  status: z.enum(['Pending', 'Ready']).default('Pending'),
 });
 
 export const orderSchema = z.object({
@@ -31,15 +23,11 @@ export const orderSchema = z.object({
   description: z.string().max(300, 'Description cannot exceed 300 characters.').optional(),
   comentarios: z.string().optional(),
   
-  // CORRECCIÓN CRÍTICA 1: Permitir explícitamente el estado 'Cotización'
   estado: z.enum(ORDER_STATUSES).or(z.literal('Cotización')).default('New'),
-  subEstado: z.enum(ORDER_SUB_STATUSES).default('Pendiente'),
 
-  // CORRECCIÓN CRÍTICA 2: Pre-procesar fechas para que los strings vacíos no rompan la validación
   entrega: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
   entregaLimite: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
   
-  // CORRECCIÓN CRÍTICA 3: Permitir strings vacíos en selectores ocultos
   servicioEntrega: z.enum(DELIVERY_SERVICES).optional().or(z.literal('')),
   direccionEnvio: z.string().optional(),
 
@@ -52,8 +40,6 @@ export const orderSchema = z.object({
   tagsOther: z.array(z.string()).default([]),
   
   productos: z.array(productSchema).min(1, 'At least one product is required.'),
-
-  materials: z.array(materialSchema).optional().default([]),
 
   itbms: z.boolean().default(false),
   subtotal: z.coerce.number().default(0),
