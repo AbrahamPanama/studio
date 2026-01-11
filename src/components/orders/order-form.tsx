@@ -55,7 +55,10 @@ import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
-import { collection, doc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, getDocs, query, orderBy, setDoc } from 'firebase/firestore';
+import { CheckSquare, Square, Box, Plus } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
@@ -228,6 +231,19 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
 
+  const [materialOptions, setMaterialOptions] = React.useState<{label: string, value: string}[]>([]);
+  const [openComboboxIndex, setOpenComboboxIndex] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!firestore) return;
+    const fetchMaterials = async () => {
+      const snap = await getDocs(collection(firestore, 'material_options'));
+      const opts = snap.docs.map(d => ({ label: d.id, value: d.id }));
+      setMaterialOptions(opts);
+    };
+    fetchMaterials();
+  }, [firestore]);
+
   React.useEffect(() => {
     if (!firestore) return;
     const fetchTags = async () => {
@@ -278,6 +294,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         totalAbono: currentOrder.totalAbono || 0,
         tags: currentOrder.tags || [],
         tagsOther: currentOrder.tagsOther || [],
+        materials: currentOrder.materials || [],
         itbms: currentOrder.itbms || false,
         createdBy: currentOrder.createdBy,
         productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })),
@@ -301,6 +318,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         direccionEnvio: 'Retiro Taller',
         privacidad: 'Por preguntar',
         productos: [{ name: '', description: '', quantity: 1, price: 0, materialsReady: false, isTaxable: true }],
+        materials: [],
         subtotal: 0,
         tax: 0,
         orderTotal: 0,
@@ -322,6 +340,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'productos',
+  });
+
+  const materialsField = useFieldArray({
+    control: form.control,
+    name: 'materials',
   });
   
   const watchedValues = form.watch();
@@ -496,6 +519,18 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   function onSubmit(data: OrderFormValues) {
     handleCalculateTotals();
     const finalValues = form.getValues();
+
+    if (data.materials && data.materials.length > 0) {
+      data.materials.forEach(mat => {
+         if (mat.name) {
+           const cleanName = mat.name.trim();
+           if (firestore) {
+              setDoc(doc(firestore, 'material_options', cleanName), { label: cleanName })
+               .catch(e => console.error("Error saving material option", e));
+           }
+         }
+      });
+    }
 
     startTransition(async () => {
       if (!firestore) {
@@ -863,6 +898,184 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                 <span>{formatCurrency(orderTotal)}</span>
                             </div>
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Box className="h-5 w-5 text-indigo-500" />
+                        Materials & Cuts
+                      </CardTitle>
+                      <CardDescription>
+                        Inventory needed for this order.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Table Header */}
+                        {materialsField.fields.length > 0 && (
+                          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 mb-2 px-1">
+                            <div className="col-span-1 text-center">Status</div>
+                            <div className="col-span-5">Material Name</div>
+                            <div className="col-span-3">Dimensions (Opt)</div>
+                            <div className="col-span-2">Qty</div>
+                            <div className="col-span-1"></div>
+                          </div>
+                        )}
+
+                        {/* List Items */}
+                        {materialsField.fields.map((item, index) => (
+                          <div key={item.id} className="grid grid-cols-12 gap-2 items-start">
+                            
+                            {/* Status Checkbox */}
+                            <div className="col-span-1 flex justify-center pt-2">
+                              <FormField
+                                control={form.control}
+                                name={`materials.${index}.status`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <button
+                                        type="button"
+                                        onClick={() => field.onChange(field.value === 'Ready' ? 'Pending' : 'Ready')}
+                                      >
+                                        {field.value === 'Ready' ? (
+                                          <CheckSquare className="h-5 w-5 text-emerald-600" />
+                                        ) : (
+                                          <Square className="h-5 w-5 text-slate-300 hover:text-slate-400" />
+                                        )}
+                                      </button>
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Smart Name Picker */}
+                            <div className="col-span-5">
+                              <FormField
+                                control={form.control}
+                                name={`materials.${index}.name`}
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-col">
+                                    <Popover 
+                                      open={openComboboxIndex === index} 
+                                      onOpenChange={(isOpen) => setOpenComboboxIndex(isOpen ? index : null)}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <FormControl>
+                                          <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn(
+                                              "w-full justify-between pl-3 text-left font-normal",
+                                              !field.value && "text-muted-foreground"
+                                            )}
+                                          >
+                                            {field.value || "Select material..."}
+                                          </Button>
+                                        </FormControl>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-[200px] p-0" align="start">
+                                        <Command>
+                                          <CommandInput placeholder="Search material..." />
+                                          <CommandList>
+                                            <CommandEmpty>
+                                               <div className="p-2 text-xs text-muted-foreground">Type to create custom...</div>
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                              {materialOptions.map((option) => (
+                                                <CommandItem
+                                                  value={option.label}
+                                                  key={option.value}
+                                                  onSelect={() => {
+                                                    form.setValue(`materials.${index}.name`, option.label);
+                                                    setOpenComboboxIndex(null);
+                                                  }}
+                                                >
+                                                  {option.label}
+                                                </CommandItem>
+                                              ))}
+                                              {/* Option to explicitly create new if search fails */}
+                                               <CommandItem 
+                                                  value="create-custom-material"
+                                                  className="text-indigo-600 font-bold border-t cursor-pointer"
+                                                  onSelect={() => {
+                                                     const custom = window.prompt("Enter new material name:");
+                                                     if(custom) form.setValue(`materials.${index}.name`, custom);
+                                                     setOpenComboboxIndex(null);
+                                                  }}
+                                               >
+                                                 <Plus className="mr-2 h-3 w-3" /> Create New
+                                               </CommandItem>
+                                            </CommandGroup>
+                                          </CommandList>
+                                        </Command>
+                                      </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Dimensions */}
+                            <div className="col-span-3">
+                              <FormField
+                                control={form.control}
+                                name={`materials.${index}.dimensions`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input placeholder="Size (e.g. 10x10)" {...field} />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Quantity */}
+                            <div className="col-span-2">
+                              <FormField
+                                control={form.control}
+                                name={`materials.${index}.quantity`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input type="number" min="1" {...field} />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Delete Button */}
+                            <div className="col-span-1 pt-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                onClick={() => materialsField.remove(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Add Button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => materialsField.append({ name: '', quantity: 1, status: 'Pending', dimensions: '' })}
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Material
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

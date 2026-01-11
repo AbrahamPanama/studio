@@ -1,17 +1,17 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authorized users to read and write to the orders collection
+    
+    // 1. Existing Orders Rule (Covers the new 'materials' array inside orders)
     match /orders/{orderId} {
       allow read, write, list: if request.auth != null;
-
-      // Allow authorized users to read and write to the products subcollection
       match /products/{productId} {
         allow read, write: if request.auth != null;
       }
     }
 
-    // Allow authorized users to read, write, and list the tags collections
+    // 2. Existing Tags Rules
     match /tags/{tagId} {
         allow read, write: if request.auth != null;
     }
@@ -22,6 +22,15 @@ service cloud.firestore {
         allow read, write: if request.auth != null;
     }
     match /tagsOther {
+        allow list: if request.auth != null;
+    }
+
+    // 3. UPDATED RULE: Material Options (REQUIRED for Smart List)
+    // Explicitly allows listing the collection and reading/writing individual documents.
+    match /material_options/{materialId} {
+        allow read, write: if request.auth != null;
+    }
+    match /material_options {
         allow list: if request.auth != null;
     }
   }
