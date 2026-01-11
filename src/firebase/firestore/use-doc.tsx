@@ -48,12 +48,12 @@ export function useDoc<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as loading
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { user, isUserLoading } = useUser(); // Get user loading state
+  const { user } = useUser(); // Get user loading state
 
   useEffect(() => {
-    // Wait for both the user to be loaded/exist and the doc ref to be available
-    if (isUserLoading || !user || !memoizedDocRef) {
-      setIsLoading(true); // Keep loading if user is not ready or ref is null
+    // Stricter Check: Wait for the user object to be definitively available.
+    if (!user || !memoizedDocRef) {
+      setIsLoading(true); 
       setData(null);
       setError(null);
       return;
@@ -89,7 +89,7 @@ export function useDoc<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef, user, isUserLoading]); // Re-run if the doc ref or user state changes
+  }, [memoizedDocRef, user]); // Re-run only if the doc ref or user object changes
 
   return { data, isLoading, error };
 }

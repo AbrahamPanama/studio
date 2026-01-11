@@ -62,12 +62,12 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as loading
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { user, isUserLoading } = useUser(); // Get user loading state
+  const { user } = useUser(); // Get user loading state
 
   useEffect(() => {
-    // Wait for both the user to be loaded/exist and the query to be available
-    if (isUserLoading || !user || !memoizedTargetRefOrQuery) {
-      setIsLoading(true); // Keep loading if user is not ready or query is null
+    // Stricter Check: Wait for the user object to be definitively available.
+    if (!user || !memoizedTargetRefOrQuery) {
+      setIsLoading(true);
       setData(null);
       setError(null);
       return;
@@ -107,7 +107,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, user, isUserLoading]); // Re-run if the query or user state changes.
+  }, [memoizedTargetRefOrQuery, user]); // Re-run only if the query or user object changes.
   
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
