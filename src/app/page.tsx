@@ -7,11 +7,10 @@ import React from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card'; // Simplificado, no necesitamos Header/Title/etc para los grupos
+import { Card } from '@/components/ui/card';
 import { OrderTable } from '@/components/orders/order-table';
 import type { Order } from '@/lib/types';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { Input } from '@/components/ui/input';
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +22,7 @@ import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
+import { SearchInput } from '@/components/search-input';
 
 // --- Helper Functions ---
 
@@ -65,69 +65,90 @@ const groupAndSortOrders = (orders: Order[]) => {
   return sortedGroups;
 };
 
-const filterOrders = (orders: Order[], query: string, tab: string) => {
+const filterOrders = (orders: Order[], query: string, tab: string, excludeCompleted: boolean) => {
+  
+  // --- 1. SEARCH MODE (High Priority) ---
+  if (query) {
+    const normalizedQuery = normalizeText(query);
+    const numericQuery = cleanNumber(query);
+    const isNumericSearch = numericQuery.length > 0;
+
+    // First, filter by the text query (Global Search)
+    let filtered = orders.filter(order => {
+      const matchesText = (field?: string | null) =>
+        field ? normalizeText(field).includes(normalizedQuery) : false;
+
+      const matchesPhone = (field?: string | null) => {
+        if (!field) return false;
+        return normalizeText(field).includes(normalizedQuery) ||
+               (isNumericSearch && cleanNumber(field).includes(numericQuery));
+      };
+
+      return (
+        matchesText(order.name) ||
+        matchesText(order.description) ||
+        matchesText(order.orderNumber) ||
+        matchesText(order.email) ||
+        matchesText(order.companyName) ||
+        matchesText(order.ruc) ||
+        matchesText(order.direccionEnvio) ||
+        matchesText(order.estado) ||
+        matchesText(order.subEstado) ||
+        matchesPhone(order.celular) ||
+        matchesPhone(order.celularSecundario) ||
+        (order.tags || []).some(tag => matchesText(tag)) ||
+        (order.tagsOther || []).some(tag => matchesText(tag)) ||
+        (order.productos || []).some(p => matchesText(p.name))
+      );
+    });
+
+    // Second, apply the "Exclude Completed" checkbox logic
+    // If Checked (excludeCompleted = true), REMOVE 'Done' orders
+    if (excludeCompleted) {
+      filtered = filtered.filter(o => o.estado !== 'Done');
+    }
+
+    return filtered;
+  }
+
+  // --- 2. TAB MODE (Standard Fallback) ---
+  // This only runs if there is NO search query
   const activeStatuses: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New'];
 
-  let tabFilteredOrders = orders;
   if (tab === 'active') {
-    tabFilteredOrders = orders.filter(o => activeStatuses.includes(o.estado));
+    return orders.filter(o => activeStatuses.includes(o.estado));
   } else if (tab === 'quotes') {
-    tabFilteredOrders = orders.filter(o => o.estado === 'Cotización');
+    return orders.filter(o => o.estado === 'Cotización');
   } else if (tab === 'completed') {
-    tabFilteredOrders = orders.filter(o => o.estado === 'Done');
+    return orders.filter(o => o.estado === 'Done');
   }
 
-  if (!query) {
-    return tabFilteredOrders;
-  }
-
-  const normalizedQuery = normalizeText(query);
-  const numericQuery = cleanNumber(query);
-  const isNumericSearch = numericQuery.length > 0;
-
-  return tabFilteredOrders.filter(order => {
-    // 1. Generic Text Matcher (Safe for nulls)
-    const matchesText = (field?: string | null) =>
-      field ? normalizeText(field).includes(normalizedQuery) : false;
-
-    // 2. Smart Phone Matcher
-    const matchesPhone = (field?: string | null) => {
-      if (!field) return false;
-      // Match text (for partials like "00-12") OR match cleaned numbers
-      return normalizeText(field).includes(normalizedQuery) ||
-             (isNumericSearch && cleanNumber(field).includes(numericQuery));
-    };
-
-    return (
-      matchesText(order.name) ||
-      matchesText(order.description) ||
-      matchesText(order.orderNumber) ||
-      matchesText(order.email) ||
-      matchesText(order.companyName) ||
-      matchesText(order.ruc) ||
-      matchesText(order.direccionEnvio) ||
-      matchesText(order.estado) ||
-      matchesText(order.subEstado) ||
-      matchesPhone(order.celular) ||
-      matchesPhone(order.celularSecundario) ||
-      (order.tags || []).some(tag => matchesText(tag)) ||
-      (order.tagsOther || []).some(tag => matchesText(tag)) ||
-      (order.productos || []).some(p => matchesText(p.name))
-    );
-  });
+  return orders;
 }
 
 // --- Main Content Component ---
-function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders: Order[], query: string, tab: string, onRefresh: () => void }) {
+function DashboardPageContent({ 
+  allOrders, 
+  query, 
+  tab, 
+  excludeCompleted,
+  onRefresh 
+}: { 
+  allOrders: Order[], 
+  query: string, 
+  tab: string, 
+  excludeCompleted: boolean,
+  onRefresh: () => void 
+}) {
   const { t } = useLanguage();
 
-  const filteredOrders = filterOrders(allOrders, query, tab);
+  const filteredOrders = filterOrders(allOrders, query, tab, excludeCompleted);
   const orderGroups = groupAndSortOrders(filteredOrders);
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-[95vw] mx-auto">
-        <Tabs value={tab} className="space-y-8">
+        <Tabs value={query ? '' : tab} className="space-y-8">
 
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-end gap-4 px-2">
@@ -138,24 +159,7 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
 
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
               <div className="w-full sm:w-80">
-                <form className="relative" action="/">
-                  <input type="hidden" name="tab" value={tab} />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                  <Input
-                    key={query}
-                    name="query"
-                    placeholder={t('searchPlaceholder')}
-                    className="pl-9 bg-white shadow-sm border-slate-200 focus-visible:ring-indigo-500"
-                    defaultValue={query}
-                  />
-                  {query && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                      <Link href={`/?tab=${tab}`} className="text-xs text-muted-foreground hover:text-foreground bg-slate-100 px-2 py-1 rounded-md">
-                        {t('clear')}
-                      </Link>
-                    </div>
-                  )}
-                </form>
+                <SearchInput placeholder={t('searchPlaceholder')} />
               </div>
               <div className="flex gap-2">
                 <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
@@ -173,60 +177,67 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
               </div>
             </div>
           </div>
+          
+          { !query && (
+            <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start border-b border-slate-200">
+              {/* Active Tab */}
+              <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                <Link
+                  href="/?tab=active"
+                  className={cn(
+                    "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                    tab === 'active'
+                      ? "border-emerald-600 font-bold text-slate-900"
+                      : ""
+                  )}
+                >
+                  {t('active')}
+                </Link>
+              </TabsTrigger>
 
-          <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start border-b border-slate-200">
-            {/* Active Tab */}
-            <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              <Link
-                href="/?tab=active"
-                className={cn(
-                  "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                  // The Condition: If URL param is 'active', FORCE these styles:
-                  tab === 'active'
-                    ? "border-emerald-600 font-bold text-slate-900"
-                    : ""
-                )}
-              >
-                {t('active')}
-              </Link>
-            </TabsTrigger>
+              {/* Quotes Tab */}
+              <TabsTrigger value="quotes" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                <Link
+                  href="/?tab=quotes"
+                  className={cn(
+                    "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                    tab === 'quotes'
+                      ? "border-emerald-600 font-bold text-slate-900"
+                      : ""
+                  )}
+                >
+                  {t('quotes')}
+                </Link>
+              </TabsTrigger>
 
-            {/* Quotes Tab */}
-            <TabsTrigger value="quotes" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              <Link
-                href="/?tab=quotes"
-                className={cn(
-                  "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                  tab === 'quotes'
-                    ? "border-emerald-600 font-bold text-slate-900"
-                    : ""
-                )}
-              >
-                {t('quotes')}
-              </Link>
-            </TabsTrigger>
-
-            {/* Completed Tab */}
-            <TabsTrigger value="completed" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              <Link
-                href="/?tab=completed"
-                className={cn(
-                  "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
-                  tab === 'completed'
-                    ? "border-emerald-600 font-bold text-slate-900"
-                    : ""
-                )}
-              >
-                {t('completed')}
-              </Link>
-            </TabsTrigger>
-          </TabsList>
-
+              {/* Completed Tab */}
+              <TabsTrigger value="completed" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                <Link
+                  href="/?tab=completed"
+                  className={cn(
+                    "rounded-none border-b-[3px] border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-slate-300",
+                    tab === 'completed'
+                      ? "border-emerald-600 font-bold text-slate-900"
+                      : ""
+                  )}
+                >
+                  {t('completed')}
+                </Link>
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           {/* Orders Grid */}
           <div className="space-y-6">
-            <TabsContent value={tab} className="mt-0 space-y-6 animate-in fade-in-50 duration-300">
-
+            <div className="mt-0 space-y-6 animate-in fade-in-50 duration-300">
+            
+              {query && (
+                <div className="px-2">
+                  <h3 className="text-lg font-semibold text-slate-800">Search Results for "{query}"</h3>
+                  <p className="text-sm text-muted-foreground">{filteredOrders.length} order(s) found.</p>
+                </div>
+              )}
+            
               {orderGroups.map(({ status, orders }) => (
                 <div key={status} className="group">
                   <Card className="border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white overflow-hidden rounded-xl">
@@ -259,11 +270,11 @@ function DashboardPageContent({ allOrders, query, tab, onRefresh }: { allOrders:
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900">{t('noOrders')}</h3>
                   <p className="text-sm text-muted-foreground mt-1 max-w-sm text-center">
-                    No hay pedidos en esta categoría actualmente.
+                    {query ? 'Your search returned no results.' : 'No hay pedidos en esta categoría actualmente.'}
                   </p>
                 </div>
               )}
-            </TabsContent>
+            </div>
           </div>
         </Tabs>
       </div>
@@ -275,6 +286,8 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const queryParam = searchParams.get('query') || '';
   const tab = searchParams.get('tab') || 'active';
+  const excludeCompleted = searchParams.get('excludeCompleted') !== 'false';
+  
   const firestore = useFirestore();
 
   const [refreshKey, setRefreshKey] = React.useState(0);
@@ -296,5 +309,11 @@ export default function DashboardPage() {
     return <div className="flex justify-center items-center h-screen bg-red-50"><p className="text-red-500 font-medium">Error: {error.message}</p></div>
   }
 
-  return <DashboardPageContent allOrders={allOrders || []} query={queryParam} tab={tab} onRefresh={forceRefresh} />;
+  return <DashboardPageContent 
+      allOrders={allOrders || []} 
+      query={queryParam} 
+      tab={tab}
+      excludeCompleted={excludeCompleted}
+      onRefresh={forceRefresh} 
+    />;
 }
