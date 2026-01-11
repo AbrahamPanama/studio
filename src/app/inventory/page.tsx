@@ -118,8 +118,15 @@ export default function InventoryPage() {
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
-              // Find visual config for the circle
-              const colorStyle = INVENTORY_COLORS.find(c => c.value === item.color);
+              // 1. Try to find the predefined class
+              const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
+              
+              // 2. If no class, check if it's a Hex code to style inline
+              const isHex = item.color?.startsWith('#');
+              const customStyle = isHex ? { backgroundColor: item.color, border: '1px solid #e2e8f0' } : {};
+              
+              // 3. Fallback class if neither
+              const fallbackClass = 'bg-slate-200';
 
               return (
                 <TableRow key={item.id}>
@@ -149,18 +156,18 @@ export default function InventoryPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1 items-center">
+                    <div className="flex flex-wrap gap-1">
                        {item.color && (
-                         <Badge variant="outline" className="bg-white/50 border-slate-200 pl-1 flex items-center gap-1.5 h-7">
-                           <div className={cn(
-                             "w-4 h-4 rounded-full border border-black/10 shadow-sm", 
-                             colorStyle ? colorStyle.class : "bg-slate-300" // Fallback if custom
-                           )} />
+                         <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5 h-7">
+                           <div 
+                              className={cn("w-4 h-4 rounded-full shadow-sm", colorConfig?.class || (!isHex && fallbackClass))} 
+                              style={customStyle}
+                           />
                            {item.color}
                          </Badge>
                        )}
                        {item.thickness && (
-                         <Badge variant="secondary" className="text-[10px] h-5">
+                         <Badge variant="secondary" className="text-[10px] h-6 border-dashed border border-slate-300">
                            {item.thickness}
                          </Badge>
                        )}

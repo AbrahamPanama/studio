@@ -12,17 +12,16 @@ import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage, cn } from '@/lib/utils';
-import { INVENTORY_COLORS } from '@/lib/constants'; // <--- IMPORT THIS
+import { INVENTORY_COLORS } from '@/lib/constants'; 
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check } from 'lucide-react';
+import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check, Palette } from 'lucide-react';
 import { ImageUpload } from '@/components/shared/image-upload';
 
-// Updated Categories per your request
 const COMMON_CATEGORIES = [
   'Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 'Cuts',
   'Ink', 'Tools', 'Hardware', 'Office', 'Other'
@@ -30,8 +29,8 @@ const COMMON_CATEGORIES = [
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
 
 interface InventoryFormProps {
-  initialData?: InventoryItem; // If present, we are editing
-  id?: string;                 // The doc ID (required for editing)
+  initialData?: InventoryItem;
+  id?: string;
 }
 
 export function InventoryForm({ initialData, id }: InventoryFormProps) {
@@ -57,7 +56,6 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
       try {
         let imageUrl = data.imageUrl || '';
 
-        // 1. Handle Image Upload (if new file selected)
         if (imageFile) {
           try {
             const compressedFile = await compressImage(imageFile);
@@ -71,23 +69,12 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           }
         }
 
-        // 2. Save or Update
         if (initialData && id) {
-          // UPDATE EXISTING
           const docRef = doc(firestore, 'inventory', id);
-          updateDocumentNonBlocking(docRef, {
-            ...data,
-            imageUrl,
-            updatedAt: serverTimestamp(),
-          });
+          updateDocumentNonBlocking(docRef, { ...data, imageUrl, updatedAt: serverTimestamp() });
           toast({ title: "Updated", description: "Item updated successfully." });
         } else {
-          // CREATE NEW
-          addDocumentNonBlocking(collection(firestore, 'inventory'), {
-            ...data,
-            imageUrl,
-            updatedAt: serverTimestamp(),
-          });
+          addDocumentNonBlocking(collection(firestore, 'inventory'), { ...data, imageUrl, updatedAt: serverTimestamp() });
           toast({ title: "Created", description: "Item added to inventory." });
         }
 
@@ -140,11 +127,14 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-1">
+             
+             {/* --- IMPROVED COLOR PICKER --- */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
+                      {/* Presets */}
                       <div className="flex flex-wrap gap-3">
                         {INVENTORY_COLORS.map((c) => (
                           <button
@@ -152,32 +142,51 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                             type="button"
                             onClick={() => field.onChange(c.value)}
                             className={cn(
-                              "h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center relative overflow-hidden",
+                              "h-10 w-10 rounded-full cursor-pointer flex items-center justify-center transition-all relative",
                               c.class,
-                              field.value === c.value ? "ring-2 ring-indigo-500 ring-offset-2 border-transparent scale-110" : "border-transparent hover:scale-105"
+                              field.value === c.value 
+                                ? "ring-2 ring-offset-2 ring-indigo-600 scale-110 shadow-md" 
+                                : "hover:scale-105 hover:shadow-sm"
                             )}
                             title={c.label}
                           >
-                            {field.value === c.value && (
-                              <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Frost' || c.value === 'Transparent') ? "text-black" : "text-white")} />
-                            )}
+                             {field.value === c.value && (
+                               <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Transparent' || c.value === 'Frost') ? "text-black" : "text-white drop-shadow-md")} />
+                             )}
                           </button>
                         ))}
                       </div>
                       
-                      <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Custom Color:</span>
-                          <Input 
-                              placeholder="Hex or Name (e.g. Neon Pink)" 
-                              {...field}
-                              className="max-w-[200px] h-8 text-sm"
-                          />
+                      {/* Custom Color Input */}
+                      <div className="flex items-center gap-3 p-3 border rounded-md bg-slate-50">
+                        <Palette className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-slate-700">Custom:</span>
+                        
+                        {/* 1. Visual Color Picker */}
+                        <div className="relative h-9 w-9 overflow-hidden rounded-full border shadow-sm cursor-pointer">
+                            <input 
+                                type="color" 
+                                className="absolute -top-2 -left-2 h-16 w-16 cursor-pointer"
+                                onChange={(e) => field.onChange(e.target.value)}
+                                value={field.value?.startsWith('#') ? field.value : '#000000'}
+                            />
+                        </div>
+
+                        {/* 2. Text Input for Name or Hex */}
+                        <Input 
+                            placeholder="e.g. Neon Pink or #FF00FF" 
+                            value={field.value || ''} 
+                            onChange={field.onChange}
+                            className="flex-1 bg-white" 
+                        />
                       </div>
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
+              {/* ------------------------ */}
+
               <FormField control={form.control} name="thickness" render={({ field }) => (
                 <FormItem><FormLabel>Thickness/Size</FormLabel><FormControl><Input placeholder="24 inch roll, 3mm" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
