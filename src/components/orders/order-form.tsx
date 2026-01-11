@@ -910,18 +910,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                 <FormMessage />
                               </FormItem>
                             )} />
-                            <FormField control={form.control} name="subEstado" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{t('formLabelSubStatus')}</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectSubStatus')} /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    {ORDER_SUB_STATUSES.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
                             <div className="flex space-x-4">
                               <FormField control={form.control} name="abono" render={({ field }) => (
                                 <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-2">

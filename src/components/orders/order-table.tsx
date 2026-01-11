@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -174,18 +175,6 @@ const OrderTableRow = ({
           </SelectTrigger>
           <SelectContent>
             {ORDER_STATUSES.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Select value={order.subEstado} onValueChange={(newSubStatus) => handleFieldUpdate('subEstado', newSubStatus)} disabled={isPending || order.estado === 'Cotización'}>
-          <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent capitalize">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ORDER_SUB_STATUSES.map(s => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
           </SelectContent>
@@ -450,10 +439,6 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
               </TableHead>
 
-              <TableHead onClick={() => requestSort('subEstado')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Sub-Status <SortIcon columnKey="subEstado" /></div>
-              </TableHead>
-
               <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
               </TableHead>
@@ -472,7 +457,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
 
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
-
+              
               <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
               </TableHead>
@@ -496,7 +481,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                   No orders for this view.
                 </TableCell>
               </TableRow>
