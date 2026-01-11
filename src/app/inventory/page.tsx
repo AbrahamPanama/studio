@@ -118,12 +118,14 @@ export default function InventoryPage() {
             {filteredItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
-              // 1. Get Preset Style
+              // Color Logic (Keep existing)
               const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
-              
-              // 2. Or fallback to Hex/Default
               const isHex = item.color?.startsWith('#');
               const finalStyle = colorConfig?.style || (isHex ? { backgroundColor: item.color, border: '1px solid #cbd5e1' } : { backgroundColor: '#e2e8f0' });
+              
+              // --- NEW: Format Dimensions String ---
+              const hasDimensions = item.width || item.length;
+              const dimensionString = [item.width, item.length].filter(Boolean).join(' x ');
 
               return (
                 <TableRow key={item.id}>
@@ -153,21 +155,22 @@ export default function InventoryPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col gap-1.5 items-start">
+                       {/* Color Badge */}
                        {item.color && (
-                         <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5 h-7">
-                           {/* Use the exact style object from constants */}
-                           <div 
-                              className="w-4 h-4 rounded-full shadow-sm"
-                              style={finalStyle}
-                           />
+                         <Badge variant="outline" className="bg-slate-50 border-slate-200 pl-1.5 flex items-center gap-1.5 h-6">
+                           <div className="w-3 h-3 rounded-full shadow-sm" style={finalStyle} />
                            {item.color}
                          </Badge>
                        )}
-                       {item.thickness && (
-                         <Badge variant="secondary" className="text-[10px] h-6 border-dashed border border-slate-300">
-                           {item.thickness}
-                         </Badge>
+                       
+                       {/* Dimensions & Thickness */}
+                       {(hasDimensions || item.thickness) && (
+                         <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                           {hasDimensions && <span>{dimensionString}</span>}
+                           {hasDimensions && item.thickness && <span className="text-slate-300">|</span>}
+                           {item.thickness && <span>{item.thickness}</span>}
+                         </div>
                        )}
                     </div>
                   </TableCell>

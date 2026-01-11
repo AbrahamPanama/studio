@@ -124,24 +124,23 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details & Dimensions</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-1">
+          <CardContent className="space-y-4">
              
-             {/* --- UPDATED COLOR PICKER (Uses 'style' prop) --- */}
+             {/* Color Picker (Keep as is) */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
+                    {/* ... (Keep your color picker code here) ... */}
                     <div className="space-y-4">
-                      {/* Presets */}
                       <div className="flex flex-wrap gap-3">
                         {INVENTORY_COLORS.map((c) => (
                           <button
                             key={c.value}
                             type="button"
                             onClick={() => field.onChange(c.value)}
-                            // Apply the style directly here
                             style={c.style}
                             className={cn(
                               "h-10 w-10 rounded-full cursor-pointer flex items-center justify-center transition-all relative shadow-sm",
@@ -152,18 +151,14 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                             title={c.label}
                           >
                              {field.value === c.value && (
-                               <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Frost' || c.value === 'Transparent') ? "text-black" : "text-white drop-shadow-md")} />
+                               <Check className={cn("h-5 w-5", (c.value === 'White' || c.value === 'Cream' || c.value === 'Transparent' || c.value === 'Frost' || c.value === 'Baby Pink' || c.value === 'Mint') ? "text-black" : "text-white drop-shadow-md")} />
                              )}
                           </button>
                         ))}
                       </div>
-                      
-                      {/* Custom Color Input */}
                       <div className="flex items-center gap-3 p-3 border rounded-md bg-slate-50">
                         <Palette className="h-5 w-5 text-muted-foreground" />
                         <span className="text-sm font-medium text-slate-700">Custom:</span>
-                        
-                        {/* 1. Visual Color Picker */}
                         <div className="relative h-9 w-9 overflow-hidden rounded-full border shadow-sm cursor-pointer group">
                             <input 
                                 type="color" 
@@ -172,8 +167,6 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                                 value={field.value?.startsWith('#') ? field.value : '#000000'}
                             />
                         </div>
-
-                        {/* 2. Text Input for Name or Hex */}
                         <Input 
                             placeholder="e.g. Neon Pink or #FF00FF" 
                             value={field.value || ''} 
@@ -186,11 +179,31 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                   <FormMessage />
                 </FormItem>
               )} />
-              {/* ------------------------ */}
 
-              <FormField control={form.control} name="thickness" render={({ field }) => (
-                <FormItem><FormLabel>Thickness/Size</FormLabel><FormControl><Input placeholder="24 inch roll, 3mm" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
+              {/* --- NEW DIMENSIONS GRID --- */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <FormField control={form.control} name="width" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Width</FormLabel>
+                    <FormControl><Input placeholder="e.g. 4 ft" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="length" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Length</FormLabel>
+                    <FormControl><Input placeholder="e.g. 8 ft" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="thickness" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Thickness/Weight</FormLabel>
+                    <FormControl><Input placeholder="e.g. 3mm / 80lb" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
           </CardContent>
         </Card>
 
