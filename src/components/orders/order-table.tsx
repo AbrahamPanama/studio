@@ -45,7 +45,6 @@ import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
-// --- 1. NEW IMPORT ADDED HERE ---
 import { ComplexityTagSelector } from '@/components/workload/complexity-tag-selector'; 
 
 const parseDate = (dateInput: any): Date | undefined => {
@@ -250,8 +249,8 @@ const OrderTableRow = ({
           </PopoverContent>
         </Popover>
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
+      <TableCell>
+        <div className="flex items-center justify-start gap-2">
           <span>{formatCurrency(order.orderTotal)}</span>
           <ComplexityTagSelector order={order} />
         </div>
@@ -474,8 +473,8 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
 
-              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap text-right min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center justify-end">Total <SortIcon columnKey="orderTotal" /></div>
+              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
+                <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
               </TableHead>
 
               <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
