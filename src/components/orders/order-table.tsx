@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -46,15 +45,14 @@ import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
+// --- 1. NEW IMPORT ADDED HERE ---
+import { ComplexityTagSelector } from '@/components/workload/complexity-tag-selector'; 
+
 const parseDate = (dateInput: any): Date | undefined => {
   if (!dateInput) return undefined;
-  // If it's already a Date object
   if (dateInput instanceof Date) return dateInput;
-  // If it's a Firestore Timestamp (has toDate method)
   if (typeof dateInput.toDate === 'function') return dateInput.toDate();
-  // If it's a raw object with seconds (serialized Timestamp)
   if (dateInput.seconds) return new Date(dateInput.seconds * 1000);
-  // If it's a string
   return new Date(dateInput);
 };
 
@@ -252,7 +250,12 @@ const OrderTableRow = ({
           </PopoverContent>
         </Popover>
       </TableCell>
-      <TableCell className="text-right">{formatCurrency(order.orderTotal)}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          <span>{formatCurrency(order.orderTotal)}</span>
+          <ComplexityTagSelector order={order} />
+        </div>
+      </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
           <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -471,7 +474,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Shipping</TableHead>
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
 
-              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap text-right min-w-[120px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
+              <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap text-right min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center justify-end">Total <SortIcon columnKey="orderTotal" /></div>
               </TableHead>
 
