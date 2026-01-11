@@ -12,7 +12,7 @@ import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { compressImage, cn } from '@/lib/utils';
-import { INVENTORY_COLORS } from '@/lib/constants'; // <--- Import
+import { INVENTORY_COLORS } from '@/lib/constants';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +27,8 @@ const COMMON_CATEGORIES = [
   'Ink', 'Tools', 'Hardware', 'Office', 'Other'
 ];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
-const DIMENSION_UNITS = ['in', 'cm', 'mm', 'yrds'];
-const THICKNESS_UNITS = ['in', 'mm'];
+const DIMENSION_UNITS = ['inch', 'cm', 'mm', 'yrds'];
+const THICKNESS_UNITS = ['inch', 'mm'];
 
 interface InventoryFormProps {
   initialData?: InventoryItem;
@@ -49,10 +49,10 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
       sku: '',
       category: 'Vinyl',
       color: '',
-      width: '',
-      length: '',
-      dimensionUnit: 'in',
-      thickness: '',
+      width: undefined,
+      length: undefined,
+      dimensionUnit: 'inch',
+      thickness: undefined,
       thicknessUnit: 'mm',
       quantity: 0,
       unit: 'Unit',
@@ -83,12 +83,13 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           }
         }
 
+        const payload = { ...data, imageUrl, updatedAt: serverTimestamp() };
+
         if (initialData && id) {
-          const docRef = doc(firestore, 'inventory', id);
-          updateDocumentNonBlocking(docRef, { ...data, imageUrl, updatedAt: serverTimestamp() });
+          updateDocumentNonBlocking(doc(firestore, 'inventory', id), payload);
           toast({ title: "Updated", description: "Item updated successfully." });
         } else {
-          addDocumentNonBlocking(collection(firestore, 'inventory'), { ...data, imageUrl, updatedAt: serverTimestamp() });
+          addDocumentNonBlocking(collection(firestore, 'inventory'), payload);
           toast({ title: "Created", description: "Item added to inventory." });
         }
 
@@ -140,7 +141,9 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details & Dimensions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+             
+             {/* Color Picker */}
              <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Color / Finish</FormLabel>
@@ -167,6 +170,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                           </button>
                         ))}
                       </div>
+                      
                       <div className="flex items-center gap-3 p-3 border rounded-md bg-slate-50">
                         <Palette className="h-5 w-5 text-muted-foreground" />
                         <span className="text-sm font-medium text-slate-700">Custom:</span>
@@ -191,25 +195,42 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                 </FormItem>
               )} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end pt-2">
-                <FormField control={form.control} name="width" render={({ field }) => (
-                  <FormItem><FormLabel>Width</FormLabel><FormControl><Input placeholder="e.g. 48" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="length" render={({ field }) => (
-                  <FormItem><FormLabel>Length</FormLabel><FormControl><Input placeholder="e.g. 96" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="dimensionUnit" render={({ field }) => (
-                  <FormItem><FormLabel>&nbsp;</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{DIMENSION_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                )} />
+              {/* --- DIMENSIONS ROW --- */}
+              <div className="space-y-4">
+                <div className="flex gap-4 items-end">
+                    <FormField control={form.control} name="width" render={({ field }) => (
+                      <FormItem className="flex-1"><FormLabel>Width</FormLabel><FormControl><Input type="number" step="0.01" placeholder="4" {...field} /></FormControl></FormItem>
+                    )} />
+                    <span className="pb-3 text-muted-foreground font-bold">x</span>
+                    <FormField control={form.control} name="length" render={({ field }) => (
+                      <FormItem className="flex-1"><FormLabel>Length</FormLabel><FormControl><Input type="number" step="0.01" placeholder="8" {...field} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="dimensionUnit" render={({ field }) => (
+                      <FormItem className="w-[100px]"><FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>{DIMENSION_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                </div>
+
+                {/* --- THICKNESS ROW --- */}
+                <div className="flex gap-4 items-end max-w-[300px]">
+                   <FormField control={form.control} name="thickness" render={({ field }) => (
+                      <FormItem className="flex-1"><FormLabel>Thickness</FormLabel><FormControl><Input type="number" step="0.1" placeholder="3" {...field} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="thicknessUnit" render={({ field }) => (
+                      <FormItem className="w-[100px]"><FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>{THICKNESS_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-x-4 gap-y-2 items-end pt-2">
-                <FormField control={form.control} name="thickness" render={({ field }) => (
-                  <FormItem><FormLabel>Thickness/Weight</FormLabel><FormControl><Input placeholder="e.g. 3" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="thicknessUnit" render={({ field }) => (
-                  <FormItem><FormLabel>&nbsp;</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{THICKNESS_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                )} />
-              </div>
+
           </CardContent>
         </Card>
 

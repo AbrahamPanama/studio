@@ -79,7 +79,7 @@ export const tagSchema = z.object({
   color: z.string().min(1, "Color is required"),
 });
 
-// --- NEW: INVENTORY SCHEMA ---
+// --- UPDATED INVENTORY SCHEMA ---
 export const inventoryItemSchema = z.object({
   id: z.string().optional(),
 
@@ -89,15 +89,17 @@ export const inventoryItemSchema = z.object({
   category: z.string().default('General'),
   imageUrl: z.string().optional(),
 
-  // Specific Attributes
+  // Appearance
   color: z.string().optional(),
-  
+
   // Dimensions
-  width: z.string().optional(),
-  length: z.string().optional(),
-  dimensionUnit: z.string().optional(),
-  thickness: z.string().optional(),
-  thicknessUnit: z.string().optional(),
+  width: z.coerce.number().optional(),
+  length: z.coerce.number().optional(),
+  dimensionUnit: z.enum(['inch', 'cm', 'mm', 'yrds']).default('inch'),
+
+  // Thickness
+  thickness: z.coerce.number().optional(),
+  thicknessUnit: z.enum(['inch', 'mm']).default('mm'),
 
   // Quantities
   quantity: z.coerce.number().min(0).default(0),

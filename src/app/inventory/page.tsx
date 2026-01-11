@@ -122,9 +122,14 @@ export default function InventoryPage() {
               const isHex = item.color?.startsWith('#');
               const finalStyle = colorConfig?.style || (isHex ? { backgroundColor: item.color, border: '1px solid #cbd5e1' } : { backgroundColor: '#e2e8f0' });
               
-              const hasDimensions = item.width || item.length;
-              const dimensionString = [item.width, item.length].filter(Boolean).join('x') + (item.dimensionUnit || '');
-              const thicknessString = item.thickness ? item.thickness + (item.thicknessUnit || '') : '';
+              // --- FORMAT DIMENSIONS ---
+              const dimString = (item.width && item.length) 
+                ? `${item.width}x${item.length} ${item.dimensionUnit}`
+                : item.width ? `${item.width} ${item.dimensionUnit}` : item.length ? `${item.length} ${item.dimensionUnit}` : null;
+              
+              const thickString = item.thickness 
+                ? `${item.thickness}${item.thicknessUnit}`
+                : null;
 
               return (
                 <TableRow key={item.id}>
@@ -162,11 +167,11 @@ export default function InventoryPage() {
                          </Badge>
                        )}
                        
-                       {(hasDimensions || thicknessString) && (
+                       {(dimString || thickString) && (
                          <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                           {hasDimensions && <span>{dimensionString}</span>}
-                           {hasDimensions && thicknessString && <span className="text-slate-300">|</span>}
-                           {thicknessString && <span>{thicknessString}</span>}
+                           {dimString && <span>{dimString}</span>}
+                           {dimString && thickString && <span className="text-slate-300 mx-1">|</span>}
+                           {thickString && <span>{thickString}</span>}
                          </div>
                        )}
                     </div>
