@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check, Palette, Scissors } from 'lucide-react';
 import { ImageUpload } from '@/components/shared/image-upload';
 
-const COMMON_CATEGORIES = ['Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 'Cuts', 'Ink', 'Tools', 'Hardware', 'Office', 'Other'];
+const COMMON_CATEGORIES = ['Acrylic', 'Cuts', 'Hardware', 'Ink', 'MDF', 'Office', 'Other', 'Paper', 'Plywood', 'PVC', 'ribbons/rope', 'Tools', 'Vinyl', 'Wood'];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
 const DIMENSION_UNITS = ['inch', 'cm', 'mm', 'yrds'];
 const THICKNESS_UNITS = ['inch', 'mm'];
@@ -42,8 +42,8 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const sanitizeNumber = (val: any) => {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
-      const parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
-      return isNaN(parsed) ? 0 : parsed;
+        const parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
+        return isNaN(parsed) ? 0 : parsed;
     }
     return 0;
   };
@@ -51,14 +51,14 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const form = useForm<InventoryItem>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: initialData ? {
-      ...initialData,
-      quantity: sanitizeNumber(initialData.quantity),
-      minStock: sanitizeNumber(initialData.minStock),
-      width: sanitizeNumber(initialData.width),
-      length: sanitizeNumber(initialData.length),
-      thickness: sanitizeNumber(initialData.thickness),
+        ...initialData,
+        quantity: sanitizeNumber(initialData.quantity),
+        minStock: sanitizeNumber(initialData.minStock),
+        width: sanitizeNumber(initialData.width),
+        length: sanitizeNumber(initialData.length),
+        thickness: sanitizeNumber(initialData.thickness),
     } : {
-      name: '', sku: '', category: 'Vinyl', color: '',
+      name: '', sku: '', category: 'Acrylic', color: '',
       quantity: 0, unit: 'Unit', minStock: 5, location: '', supplier: '',
       imageUrl: '',
     },
@@ -179,7 +179,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-2 w-fit">
+                      <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-2 w-fit">
                         {INVENTORY_COLORS.map((c) => (
                           <button key={c.value} type="button" onClick={() => field.onChange(c.value)} style={c.style}
                             className={cn("h-8 w-8 rounded-full border shadow-sm transition-all flex items-center justify-center", field.value === c.value ? "ring-2 ring-indigo-600 ring-offset-2 scale-110" : "hover:scale-110")}
