@@ -639,7 +639,7 @@ export default function ReportsPage() {
     const volumeComp = useMemo(() => getVolumeComparison(allOrders || []), [allOrders]);
 
     if (isLoading) {
-        return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">Loading reports...</p></div>;
+        return <div className="flex justify-center items-center h-screen bg-slate-50"><p className="text-slate-500 font-medium animate-pulse">{t('loadingReports')}</p></div>;
     }
 
     if (error) {
@@ -649,71 +649,71 @@ export default function ReportsPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6 min-h-screen bg-slate-50/50">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard & Reports</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900">{t('dashboardReports')}</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 {/* Orders KPIs */}
                 <KPICard
-                    title="Yearly Revenue"
+                    title={t('yearlyRevenue')}
                     value={formatCurrency(kpis.totalRevenueYear)}
                     icon={DollarSign}
-                    subtext="Current Year"
+                    subtext={t('currentYear')}
                 />
                 <KPICard
-                    title="Active Revenue"
+                    title={t('activeRevenue')}
                     value={formatCurrency(kpis.activeRevenue)}
                     icon={DollarSign}
-                    subtext="Processing (Not Done)"
+                    subtext={t('processingNotDone')}
                 />
                 <KPICard
-                    title="Total Orders"
+                    title={t('totalOrders')}
                     value={kpis.totalOrders.toString()}
                     icon={ShoppingCart}
-                    subtext="Confirmed orders"
+                    subtext={t('confirmedOrders')}
                 />
 
                 {/* Quotes KPIs - Highlighted */}
                 <KPICard
-                    title="Potential Revenue"
+                    title={t('potentialRevenue')}
                     value={formatCurrency(kpis.potentialRevenue)}
                     icon={DollarSign}
-                    subtext="Active Quotes"
+                    subtext={t('activeQuotes')}
                     highlight={true}
                 />
                 <KPICard
-                    title="Active Quotes"
+                    title={t('activeQuotes')}
                     value={kpis.totalQuotes.toString()}
                     icon={FileText}
-                    subtext="Pending conversion"
+                    subtext={t('pendingConversion')}
                     highlight={true}
                 />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KPICard
-                    title="Outstanding Balance"
+                    title={t('outstandingBalance')}
                     value={formatCurrency(kpis.totalOutstanding)}
                     icon={DollarSign}
-                    subtext="Pending payments"
+                    subtext={t('pendingPayments')}
                 />
                 <KPICard
-                    title="Avg. Order Value"
+                    title={t('avgOrderValue')}
                     value={formatCurrency(kpis.averageOrderValue)}
                     icon={TrendingUp}
-                    subtext="Revenue / Total Orders"
+                    subtext={t('revenuePerOrders')}
                 />
                 <KPICard
-                    title="ITBMS Collected"
+                    title={t('itbmsCollected')}
                     value={formatCurrency(kpis.totalITBMS)}
                     icon={Building2}
-                    subtext="Total Tax"
+                    subtext={t('totalTax')}
                 />
                 <KPICard
-                    title="Uno Express Volume"
+                    title={t('unoExpressVolume')}
                     value={kpis.totalUnoExpress.toString()}
                     icon={Truck}
-                    subtext="Dispatched Orders"
+                    subtext={t('dispatchedOrders')}
                 />
             </div>
 
@@ -723,8 +723,8 @@ export default function ReportsPage() {
                 {/* 1. Conversion Efficiency Chart */}
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Conversion Efficiency</CardTitle>
-                        <CardDescription>Quotes turned into Orders (Last 6 Months)</CardDescription>
+                        <CardTitle>{t('conversionEfficiency')}</CardTitle>
+                        <CardDescription>{t('quotesToOrders')}</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <div className="h-[350px] w-full">
@@ -781,8 +781,8 @@ export default function ReportsPage() {
                 {/* 2. Volume Velocity Chart */}
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Order Velocity</CardTitle>
-                        <CardDescription>Last 7 Days vs {volumeComp.daysUsed}-Day Avg</CardDescription>
+                        <CardTitle>{t('orderVelocity')}</CardTitle>
+                        <CardDescription>{t('last7DaysVsAvg', { days: volumeComp.daysUsed })}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[350px] w-full">

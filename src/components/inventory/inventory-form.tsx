@@ -10,6 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { inventoryItemSchema } from '@/lib/schema';
 import type { InventoryItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 import { compressImage, cn } from '@/lib/utils';
 import { INVENTORY_COLORS } from '@/lib/constants';
 
@@ -35,6 +36,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isPending, startTransition] = React.useTransition();
   const [imageFile, setImageFile] = React.useState<File | null>(null);
 
@@ -83,7 +85,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             const snapshot = await uploadBytes(storageRef, compressedFile);
             imageUrl = await getDownloadURL(snapshot.ref);
           } catch (uploadError) {
-            toast({ variant: "destructive", title: "Image Error", description: "Could not upload image." });
+            toast({ variant: "destructive", title: t('imageError'), description: t('uploadFailed') });
             return;
           }
         }
@@ -109,17 +111,17 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
 
         if (initialData && id) {
           await updateDocumentNonBlocking(doc(firestore, 'inventory', id), payload);
-          toast({ title: "Updated", description: "Item updated successfully." });
+          toast({ title: t('updated'), description: t('itemUpdated') });
         } else {
           await addDocumentNonBlocking(collection(firestore, 'inventory'), payload);
-          toast({ title: "Created", description: "Item added to inventory." });
+          toast({ title: t('created'), description: t('itemCreated') });
         }
 
         router.push('/inventory');
         router.refresh();
       } catch (error) {
         console.error("Save failed:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not save item. Check console for details." });
+        toast({ variant: "destructive", title: t('toastError'), description: t('saveItemFailed') });
       }
     });
   }
@@ -133,14 +135,14 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {isCut ? <Scissors className="h-5 w-5 text-orange-500" /> : <Package className="h-5 w-5 text-indigo-500" />}
-              {isCut ? "Cut Details" : "Identity"}
+              {isCut ? t('cutDetails') : t('identity')}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{isCut ? "Descriptive Name" : "Item Name"}</FormLabel>
+                  <FormLabel>{isCut ? t('descriptiveName') : t('itemName')}</FormLabel>
                   <FormControl><Input placeholder={isCut ? "e.g. Scrap White Acrylic 10x10" : "e.g. Oracal 651 Red"} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,12 +150,12 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
             </div>
 
             <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{COMMON_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+              <FormItem><FormLabel>{t('category')}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{COMMON_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
             )} />
 
             {!isCut && (
               <FormField control={form.control} name="sku" render={({ field }) => (
-                <FormItem><FormLabel>SKU (Optional)</FormLabel><FormControl><Input placeholder="VIN-001" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>{t('skuOptional')}</FormLabel><FormControl><Input placeholder="VIN-001" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             )}
           </CardContent>
@@ -161,7 +163,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
 
         {/* --- PHOTO CARD --- */}
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-pink-500" /> Photo</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-pink-500" /> {t('photo')}</CardTitle></CardHeader>
           <CardContent>
             <ImageUpload value={form.watch('imageUrl')} onChange={(file) => setImageFile(file)} onClear={() => { setImageFile(null); form.setValue('imageUrl', ''); }} />
           </CardContent>
@@ -170,11 +172,11 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
         {/* --- DETAILS CARD (Hidden for Cuts) --- */}
         {!isCut && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> Details & Dimensions</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5 text-emerald-500" /> {t('detailsDimensions')}</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="color" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Color / Finish</FormLabel>
+                  <FormLabel>{t('colorFinish')}</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
                       <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-2 w-fit">
@@ -191,7 +193,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                         <div className="relative h-8 w-8 overflow-hidden rounded-full border shadow-sm cursor-pointer">
                           <input type="color" className="absolute -top-2 -left-2 h-12 w-12 cursor-pointer" onChange={(e) => field.onChange(e.target.value)} value={field.value?.startsWith('#') ? field.value : '#000000'} />
                         </div>
-                        <Input placeholder="Custom Name or Hex" value={field.value || ''} onChange={field.onChange} className="flex-1 h-8 bg-white" />
+                        <Input placeholder={t('customNameOrHex')} value={field.value || ''} onChange={field.onChange} className="flex-1 h-8 bg-white" />
                       </div>
                     </div>
                   </FormControl>
@@ -200,7 +202,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 <div className="space-y-2">
-                  <FormLabel>Dimensions (W x L)</FormLabel>
+                  <FormLabel>{t('dimensions')}</FormLabel>
                   <div className="flex gap-2 items-center">
                     <FormField control={form.control} name="width" render={({ field }) => (
                       <FormItem className="flex-1"><FormControl><Input type="number" step="0.01" placeholder="Width" {...field} /></FormControl></FormItem>
@@ -215,7 +217,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <FormLabel>Thickness</FormLabel>
+                  <FormLabel>{t('thickness')}</FormLabel>
                   <div className="flex gap-2 items-center">
                     <FormField control={form.control} name="thickness" render={({ field }) => (
                       <FormItem className="flex-1"><FormControl><Input type="number" step="0.01" placeholder="Value" {...field} /></FormControl></FormItem>
@@ -232,28 +234,28 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
 
         {/* --- STOCK CARD --- */}
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5 text-amber-500" /> Stock</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5 text-amber-500" /> {t('stock')}</CardTitle></CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-3">
             <FormField control={form.control} name="quantity" render={({ field }) => (
-              <FormItem><FormLabel>{isCut ? "Amount / Qty" : "Current Qty"}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>{isCut ? t('amountQty') : t('currentQty')}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
 
             <FormField control={form.control} name="unit" render={({ field }) => (
-              <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{COMMON_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+              <FormItem><FormLabel>{t('unit')}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{COMMON_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
             )} />
 
             <FormField control={form.control} name="minStock" render={({ field }) => (
-              <FormItem><FormLabel>Low Stock Alert</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>{t('lowStockAlert')}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
 
             <div className="sm:col-span-3 grid gap-4 sm:grid-cols-2 pt-2">
               <FormField control={form.control} name="location" render={({ field }) => (
-                <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="Shelf A" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>{t('location')}</FormLabel><FormControl><Input placeholder="Shelf A" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
 
               {!isCut && (
                 <FormField control={form.control} name="supplier" render={({ field }) => (
-                  <FormItem><FormLabel>Supplier</FormLabel><FormControl><Input placeholder="Amazon" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t('supplier')}</FormLabel><FormControl><Input placeholder="Amazon" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               )}
             </div>
@@ -261,10 +263,10 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>{t('cancel')}</Button>
           <Button type="submit" disabled={isPending} className="min-w-[120px]">
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {initialData ? 'Update Item' : 'Save Item'}
+            {initialData ? t('updateItem') : t('saveItem')}
           </Button>
         </div>
       </form>

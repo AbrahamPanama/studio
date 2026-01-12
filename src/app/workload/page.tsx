@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 
 import type { Order } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -138,8 +139,8 @@ function getWorkloadData(
   // ------------------------------------------------
   const viewOrders = selectedDate
     ? preparedOrders.filter(
-        (o) => format(startOfDay(o.targetDate), 'yyyy-MM-dd') === selectedDate
-      )
+      (o) => format(startOfDay(o.targetDate), 'yyyy-MM-dd') === selectedDate
+    )
     : preparedOrders;
 
   const processed: WorkloadItem[] = [];
@@ -229,6 +230,7 @@ function UrgencyBadge({ level, days }: { level: UrgencyLevel; days: number }) {
 export default function WorkloadPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // State
   const [includeSundays, setIncludeSundays] = useState(false);
@@ -294,7 +296,7 @@ export default function WorkloadPage() {
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center text-slate-400">
-        Loading Workload...
+        {t('loadingWorkload')}
       </div>
     );
   if (error) return <div className="p-8 text-red-500">Error: {error.message}</div>;
@@ -303,13 +305,13 @@ export default function WorkloadPage() {
   const maxDailyVolume = Math.max(...stats.horizon.map((d) => d.total), 1);
 
   const getPageTitle = () => {
-      if (selectedUrgency) {
-          return selectedUrgency === 'CRITICAL' ? 'Immediate Action Items' : 'At Risk Items';
-      }
-      if (selectedDate) {
-          return `Workload for ${selectedDate}`;
-      }
-      return `Upcoming Workload (Next ${horizonDays} Days)`;
+    if (selectedUrgency) {
+      return selectedUrgency === 'CRITICAL' ? t('immediateActionItems') : t('atRiskItems');
+    }
+    if (selectedDate) {
+      return t('workloadForDate', { date: selectedDate });
+    }
+    return t('upcomingWorkload', { days: horizonDays });
   }
 
   return (
@@ -318,18 +320,18 @@ export default function WorkloadPage() {
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-            Production Workload
+            {t('productionWorkload')}
           </h2>
           <p className="text-muted-foreground text-lg">
-            Operational health & priority queue
+            {t('operationalHealth')}
             {selectedDate && (
               <span className="text-indigo-600 font-medium ml-2">
-                • Filtered by {selectedDate}
+                • {t('filteredBy', { filter: selectedDate })}
               </span>
             )}
-             {selectedUrgency && (
+            {selectedUrgency && (
               <span className="text-indigo-600 font-medium ml-2">
-                • Filtered by {selectedUrgency}
+                • {t('filteredBy', { filter: selectedUrgency })}
               </span>
             )}
           </p>
@@ -344,7 +346,7 @@ export default function WorkloadPage() {
               onClick={clearFilters}
               className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8"
             >
-              <X className="h-4 w-4 mr-1" /> Clear Filter
+              <X className="h-4 w-4 mr-1" /> {t('clearFilter')}
             </Button>
           )}
           <div className="h-4 w-px bg-slate-200 hidden md:block" />
@@ -355,7 +357,7 @@ export default function WorkloadPage() {
               onCheckedChange={setIncludeSundays}
             />
             <Label htmlFor="sunday-mode" className="text-sm text-slate-600">
-              Sundays
+              {t('sundays')}
             </Label>
           </div>
           <div className="flex items-center space-x-2">
@@ -368,8 +370,8 @@ export default function WorkloadPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7">1 Week</SelectItem>
-                <SelectItem value="14">2 Weeks</SelectItem>
+                <SelectItem value="7">{t('oneWeek')}</SelectItem>
+                <SelectItem value="14">{t('twoWeeks')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -380,44 +382,42 @@ export default function WorkloadPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* CARD 1: IMMEDIATE ACTION */}
         <Card
-            onClick={() => handleUrgencyClick('CRITICAL')}
-            className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
-                stats.critical > 0 ? 'border-l-red-500 bg-red-50/30' : 'border-l-slate-200'
+          onClick={() => handleUrgencyClick('CRITICAL')}
+          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${stats.critical > 0 ? 'border-l-red-500 bg-red-50/30' : 'border-l-slate-200'
             } ${selectedUrgency === 'CRITICAL' ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}
         >
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 uppercase">Immediate Action</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center gap-4">
-                    <Flame className={`h-12 w-12 ${stats.critical > 0 ? 'text-red-500' : 'text-slate-300'}`} />
-                    <div className="text-5xl font-bold text-slate-900">{stats.critical}</div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                    {selectedDate ? 'Critical orders on this day' : 'Total orders overdue or due today'}
-                </p>
-            </CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500 uppercase">{t('immediateAction')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Flame className={`h-12 w-12 ${stats.critical > 0 ? 'text-red-500' : 'text-slate-300'}`} />
+              <div className="text-5xl font-bold text-slate-900">{stats.critical}</div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {selectedDate ? t('criticalOrdersOnDay') : t('totalOverdueOrDueToday')}
+            </p>
+          </CardContent>
         </Card>
 
         {/* CARD 2: AT RISK */}
         <Card
-            onClick={() => handleUrgencyClick('WARNING')}
-            className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${
-                stats.warning > 0 ? 'border-l-amber-500 bg-amber-50/30' : 'border-l-slate-200'
+          onClick={() => handleUrgencyClick('WARNING')}
+          className={`border-l-4 cursor-pointer transition-all hover:scale-[1.02] ${stats.warning > 0 ? 'border-l-amber-500 bg-amber-50/30' : 'border-l-slate-200'
             } ${selectedUrgency === 'WARNING' ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}
         >
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 uppercase">At Risk</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center gap-4">
-                    <AlertTriangle className={`h-12 w-12 ${stats.warning > 0 ? 'text-amber-500' : 'text-slate-300'}`} />
-                    <div className="text-5xl font-bold text-slate-900">{stats.warning}</div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                    {selectedDate ? 'Risk orders on this day' : 'Complex orders due soon'}
-                </p>
-            </CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500 uppercase">{t('atRisk')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <AlertTriangle className={`h-12 w-12 ${stats.warning > 0 ? 'text-amber-500' : 'text-slate-300'}`} />
+              <div className="text-5xl font-bold text-slate-900">{stats.warning}</div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {selectedDate ? t('riskOrdersOnDay') : t('complexOrdersDueSoon')}
+            </p>
+          </CardContent>
         </Card>
 
         {/* COMPOSITE INTERACTIVE CHART */}
@@ -429,75 +429,76 @@ export default function WorkloadPage() {
             <div className="flex gap-2 text-[10px] text-slate-400">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-rose-400 rounded-full mr-1" />
-                High ($500+)
+                {t('complexityHigh')}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-amber-400 rounded-full mr-1" />
-                Med
+                {t('complexityMed')}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-blue-400 rounded-full mr-1" />
-                Low
+                {t('complexityLow')}
               </span>
             </div>
           </CardHeader>
-            <CardContent>
-                <div className="flex items-end justify-between gap-1 h-48 mt-2 overflow-x-auto pb-6">
-                    {stats.horizon.map((day, i) => {
-                        const isSelected = selectedDate === day.fullDate;
-                        // Calculate relative height for the whole bar
-                        const barHeightPercent = Math.max(15, (day.total / maxDailyVolume) * 100); 
-                        
-                        return (
-                        <div 
-                            key={i} 
-                            onClick={() => handleBarClick(day.fullDate)}
-                            className={`flex flex-col items-center gap-2 min-w-[35px] flex-1 cursor-pointer group transition-all rounded-md p-1 ${isSelected ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'}`}
-                            title={`Date: ${day.date}\nTotal: ${day.total}\nHigh: ${day.high}\nMedium: ${day.medium}\nLow: ${day.low}`}
-                        >
-                            <div className="relative w-full flex items-end justify-center h-32">
-                                {/* Stacked Bar Container */}
-                                <div 
-                                    className={`w-full max-w-[24px] rounded-sm overflow-hidden flex flex-col-reverse transition-all opacity-90 group-hover:opacity-100 ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-1' : ''}`}
-                                    style={{ height: `${barHeightPercent}%` }}
-                                >
-                                    {/* Low Segment */}
-                                    {day.low > 0 && (
-                                        <div style={{ flex: day.low }} className="bg-blue-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
-                                            {day.low > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.low}</span>}
-                                        </div>
-                                    )}
-                                    {/* Med Segment */}
-                                    {day.medium > 0 && (
-                                        <div style={{ flex: day.medium }} className="bg-amber-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
-                                            {day.medium > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.medium}</span>}
-                                        </div>
-                                    )}
-                                    {/* High Segment */}
-                                    {day.high > 0 && (
-                                        <div style={{ flex: day.high }} className="bg-rose-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
-                                            {day.high > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.high}</span>}
-                                        </div>
-                                    )}
-                                    
-                                    {/* Zero State */}
-                                    {day.total === 0 && <div className="h-1 bg-slate-100 w-full" />}
-                                </div>
-                                
-                                {day.total > 0 && (
-                                    <span className={`absolute -top-6 text-[10px] font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
-                                        {day.total}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="text-center">
-                                <div className={`text-[9px] uppercase font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>{day.day}</div>
-                                <div className={`text-[10px] font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>{day.date}</div>
-                            </div>
-                        </div>
-                    )})}
-                </div>
-            </CardContent>
+          <CardContent>
+            <div className="flex items-end justify-between gap-1 h-48 mt-2 overflow-x-auto pb-6">
+              {stats.horizon.map((day, i) => {
+                const isSelected = selectedDate === day.fullDate;
+                // Calculate relative height for the whole bar
+                const barHeightPercent = Math.max(15, (day.total / maxDailyVolume) * 100);
+
+                return (
+                  <div
+                    key={i}
+                    onClick={() => handleBarClick(day.fullDate)}
+                    className={`flex flex-col items-center gap-2 min-w-[35px] flex-1 cursor-pointer group transition-all rounded-md p-1 ${isSelected ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'}`}
+                    title={`Date: ${day.date}\nTotal: ${day.total}\nHigh: ${day.high}\nMedium: ${day.medium}\nLow: ${day.low}`}
+                  >
+                    <div className="relative w-full flex items-end justify-center h-32">
+                      {/* Stacked Bar Container */}
+                      <div
+                        className={`w-full max-w-[24px] rounded-sm overflow-hidden flex flex-col-reverse transition-all opacity-90 group-hover:opacity-100 ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-1' : ''}`}
+                        style={{ height: `${barHeightPercent}%` }}
+                      >
+                        {/* Low Segment */}
+                        {day.low > 0 && (
+                          <div style={{ flex: day.low }} className="bg-blue-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                            {day.low > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.low}</span>}
+                          </div>
+                        )}
+                        {/* Med Segment */}
+                        {day.medium > 0 && (
+                          <div style={{ flex: day.medium }} className="bg-amber-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                            {day.medium > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.medium}</span>}
+                          </div>
+                        )}
+                        {/* High Segment */}
+                        {day.high > 0 && (
+                          <div style={{ flex: day.high }} className="bg-rose-400 w-full min-h-[4px] border-t border-white/20 flex items-center justify-center">
+                            {day.high > 0 && barHeightPercent > 10 && <span className="text-[9px] font-bold text-white/90 leading-none">{day.high}</span>}
+                          </div>
+                        )}
+
+                        {/* Zero State */}
+                        {day.total === 0 && <div className="h-1 bg-slate-100 w-full" />}
+                      </div>
+
+                      {day.total > 0 && (
+                        <span className={`absolute -top-6 text-[10px] font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                          {day.total}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-[9px] uppercase font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>{day.day}</div>
+                      <div className={`text-[10px] font-medium ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>{day.date}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -514,12 +515,12 @@ export default function WorkloadPage() {
           <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
             <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
             <h3 className="text-lg font-medium text-slate-900">
-              All caught up!
+              {t('allCaughtUp')}
             </h3>
             <p className="text-slate-500">
               {selectedDate
-                ? `No orders due on ${selectedDate}.`
-                : 'No active orders in this window.'}
+                ? t('noOrdersDue', { date: selectedDate })
+                : t('noActiveOrders')}
             </p>
           </div>
         ) : (
@@ -527,13 +528,13 @@ export default function WorkloadPage() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Target Date</TableHead>
-                  <TableHead>Value / Complexity</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead className="w-[100px]">{t('colStatus')}</TableHead>
+                  <TableHead>{t('colOrder')}</TableHead>
+                  <TableHead>{t('colClient')}</TableHead>
+                  <TableHead>{t('colProducts')}</TableHead>
+                  <TableHead>{t('colTargetDate')}</TableHead>
+                  <TableHead>{t('colValueComplexity')}</TableHead>
+                  <TableHead className="text-right">{t('colAction')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -600,10 +601,10 @@ export default function WorkloadPage() {
                         </span>
                         <span className="text-xs text-slate-400">
                           {order.daysUntilDue === 0
-                            ? 'Today'
+                            ? t('today')
                             : order.daysUntilDue === 1
-                            ? 'Tomorrow'
-                            : `In ${order.daysUntilDue} days`}
+                              ? t('tomorrow')
+                              : t('inDays', { days: order.daysUntilDue })}
                         </span>
                       </div>
                     </TableCell>
@@ -617,7 +618,7 @@ export default function WorkloadPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="ghost">
-                        <Link href={`/orders/${order.id}/edit`}>Edit</Link>
+                        <Link href={`/orders/${order.id}/edit`}>{t('edit')}</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
