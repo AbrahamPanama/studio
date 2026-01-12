@@ -8,7 +8,7 @@ type Language = 'en' | 'es';
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, options?: { [key: string]: string | number }) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -16,8 +16,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('es');
 
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || translations['en'][key];
+  const t = (key: TranslationKey, options?: { [key: string]: string | number }): string => {
+    let text = translations[language][key] || translations['en'][key];
+    if (options) {
+      Object.keys(options).forEach(placeholder => {
+        const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+        text = text.replace(regex, String(options[placeholder]));
+      });
+    }
+    return text;
   };
 
   return (

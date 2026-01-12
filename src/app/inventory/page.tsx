@@ -8,13 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // <--- Import Tabs
-import { 
-  Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon, 
-  Minus, PlusCircle, ArrowUpDown, ArrowUp, ArrowDown, Scissors, Package 
+import {
+  Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon,
+  Minus, PlusCircle, ArrowUpDown, ArrowUp, ArrowDown, Scissors, Package
 } from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,7 @@ type SortConfig = { key: keyof InventoryItem; direction: 'asc' | 'desc'; };
 export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [items, setItems] = React.useState<InventoryItem[]>([]);
   const [search, setSearch] = React.useState('');
   const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'name', direction: 'asc' });
@@ -54,18 +56,18 @@ export default function InventoryPage() {
     if (!firestore) return;
     try {
       deleteDocumentNonBlocking(doc(firestore, 'inventory', id));
-      toast({ title: "Deleted", description: "Item removed." });
+      toast({ title: t('deleted'), description: t('itemRemoved') });
     } catch (err) {
-      toast({ variant: "destructive", title: "Error", description: "Could not delete item." });
+      toast({ variant: "destructive", title: t('toastError'), description: t('deleteItemFailed') });
     }
   };
-  
+
   const handleStockChange = (item: InventoryItem, amount: number) => {
     if (!firestore || !item.id) return;
     startTransition(() => {
-        const newQuantity = (item.quantity || 0) + amount;
-        if (newQuantity < 0) return toast({ variant: "destructive", title: "Invalid", description: "Negative stock." });
-        updateDocumentNonBlocking(doc(firestore, 'inventory', item.id), { quantity: newQuantity });
+      const newQuantity = (item.quantity || 0) + amount;
+      if (newQuantity < 0) return toast({ variant: "destructive", title: t('invalid'), description: t('negativeStock') });
+      updateDocumentNonBlocking(doc(firestore, 'inventory', item.id), { quantity: newQuantity });
     });
   };
 
@@ -78,7 +80,7 @@ export default function InventoryPage() {
 
   // --- SPLIT ITEMS LOGIC ---
   const filteredItems = React.useMemo(() => {
-    return items.filter(item => 
+    return items.filter(item =>
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.sku?.toLowerCase().includes(search.toLowerCase()) ||
       item.color?.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,7 +95,7 @@ export default function InventoryPage() {
       if (aVal === bVal) return 0;
       if (aVal === undefined || aVal === null) return 1;
       if (bVal === undefined || bVal === null) return -1;
-      
+
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
@@ -137,7 +139,7 @@ export default function InventoryPage() {
             </Popover>
           ) : <div className="h-10 w-10 rounded-md bg-slate-50 border flex items-center justify-center text-slate-300"><ImageIcon className="h-5 w-5" /></div>}
         </TableCell>
-        
+
         <TableCell className="font-medium">
           <div className="flex flex-col">
             <span className="text-base">{item.name}</span>
@@ -169,18 +171,18 @@ export default function InventoryPage() {
 
         <TableCell>
           <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, -1)} disabled={isPending}><Minus className="h-4 w-4" /></Button>
-              <div className="flex items-baseline justify-center w-16">
-                  <span className={cn("font-mono text-lg font-bold", isLowStock ? "text-red-600" : "text-slate-800")}>{item.quantity}</span>
-                  {!isCut && <span className="text-xs text-muted-foreground ml-1">{item.unit}</span>}
-              </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, 1)} disabled={isPending}><PlusCircle className="h-4 w-4" /></Button>
-              {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, -1)} disabled={isPending}><Minus className="h-4 w-4" /></Button>
+            <div className="flex items-baseline justify-center w-16">
+              <span className={cn("font-mono text-lg font-bold", isLowStock ? "text-red-600" : "text-slate-800")}>{item.quantity}</span>
+              {!isCut && <span className="text-xs text-muted-foreground ml-1">{item.unit}</span>}
+            </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleStockChange(item, 1)} disabled={isPending}><PlusCircle className="h-4 w-4" /></Button>
+            {isLowStock && <AlertTriangle className="h-4 w-4 text-amber-500" />}
           </div>
         </TableCell>
-        
+
         <TableCell className="text-muted-foreground text-sm">{item.location || '-'}</TableCell>
-        
+
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-600">
@@ -191,8 +193,8 @@ export default function InventoryPage() {
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600"><Trash2 className="h-4 w-4" /></Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Delete Item?</AlertDialogTitle><AlertDialogDescription>Permanently remove <b>{item.name}</b>?</AlertDialogDescription></AlertDialogHeader>
-                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id!)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+                <AlertDialogHeader><AlertDialogTitle>{t('deleteItemTitle')}</AlertDialogTitle><AlertDialogDescription>{t('deleteItemDesc', { name: item.name })}</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id!)} className="bg-destructive hover:bg-destructive/90">{t('delete')}</AlertDialogAction></AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
@@ -205,23 +207,23 @@ export default function InventoryPage() {
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-muted-foreground">Manage materials and cuts.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('inventory')}</h1>
+          <p className="text-muted-foreground">{t('inventoryDesc')}</p>
         </div>
         <Button asChild>
-          <Link href="/inventory/new"><Plus className="mr-2 h-4 w-4" /> Add Item</Link>
+          <Link href="/inventory/new"><Plus className="mr-2 h-4 w-4" /> {t('addItem')}</Link>
         </Button>
       </div>
 
       <div className="flex items-center space-x-2 bg-white p-2 rounded-md border shadow-sm w-full sm:w-80">
         <Search className="h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} className="border-0 focus-visible:ring-0" />
+        <Input placeholder={t('searchItems')} value={search} onChange={(e) => setSearch(e.target.value)} className="border-0 focus-visible:ring-0" />
       </div>
 
       <Tabs defaultValue="materials" className="w-full">
         <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-          <TabsTrigger value="materials" className="flex items-center gap-2"><Package className="h-4 w-4" /> Standard Stock</TabsTrigger>
-          <TabsTrigger value="cuts" className="flex items-center gap-2"><Scissors className="h-4 w-4" /> Cuts</TabsTrigger>
+          <TabsTrigger value="materials" className="flex items-center gap-2"><Package className="h-4 w-4" /> {t('standardStock')}</TabsTrigger>
+          <TabsTrigger value="cuts" className="flex items-center gap-2"><Scissors className="h-4 w-4" /> {t('cuts')}</TabsTrigger>
         </TabsList>
 
         {/* --- STANDARD MATERIALS TAB --- */}
@@ -230,16 +232,16 @@ export default function InventoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('name')}><div className="flex items-center">Name / SKU <SortIcon columnKey="name" /></div></TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('color')}><div className="flex items-center">Details <SortIcon columnKey="color" /></div></TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('quantity')}><div className="flex items-center">Stock <SortIcon columnKey="quantity" /></div></TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('location')}><div className="flex items-center">Location <SortIcon columnKey="location" /></div></TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[80px]">{t('colImage')}</TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('name')}><div className="flex items-center">{t('colNameSku')} <SortIcon columnKey="name" /></div></TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('color')}><div className="flex items-center">{t('colDetails')} <SortIcon columnKey="color" /></div></TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('quantity')}><div className="flex items-center">{t('colStock')} <SortIcon columnKey="quantity" /></div></TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('location')}><div className="flex items-center">{t('colLocation')} <SortIcon columnKey="location" /></div></TableHead>
+                  <TableHead className="text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {standardItems.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No standard items found.</TableCell></TableRow>}
+                {standardItems.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">{t('noStandardItems')}</TableCell></TableRow>}
                 {standardItems.map(item => renderRow(item, false))}
               </TableBody>
             </Table>
@@ -252,15 +254,15 @@ export default function InventoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('name')}><div className="flex items-center">Descriptive Name <SortIcon columnKey="name" /></div></TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('quantity')}><div className="flex items-center">Amount <SortIcon columnKey="quantity" /></div></TableHead>
-                  <TableHead className={headerClass} onClick={() => handleSort('location')}><div className="flex items-center">Location <SortIcon columnKey="location" /></div></TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[80px]">{t('colImage')}</TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('name')}><div className="flex items-center">{t('colDescName')} <SortIcon columnKey="name" /></div></TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('quantity')}><div className="flex items-center">{t('colAmount')} <SortIcon columnKey="quantity" /></div></TableHead>
+                  <TableHead className={headerClass} onClick={() => handleSort('location')}><div className="flex items-center">{t('colLocation')} <SortIcon columnKey="location" /></div></TableHead>
+                  <TableHead className="text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cutsItems.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No cuts found.</TableCell></TableRow>}
+                {cutsItems.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">{t('noCutsFound')}</TableCell></TableRow>}
                 {cutsItems.map(item => renderRow(item, true))}
               </TableBody>
             </Table>

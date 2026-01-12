@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 
 
 export default function Header() {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -31,18 +31,18 @@ export default function Header() {
 
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Button asChild variant="ghost">
-            <Link href="/inventory">Inventory</Link>
+            <Link href="/inventory">{t('navInventory')}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/workload">Workload</Link>
+            <Link href="/workload">{t('navWorkload')}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/reports">Reports</Link>
+            <Link href="/reports">{t('navReports')}</Link>
           </Button>
 
           <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
             <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Language" />
+              <SelectValue placeholder={t('language')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="en">English</SelectItem>

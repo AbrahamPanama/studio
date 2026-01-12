@@ -20,6 +20,7 @@ import type { Order, Tag } from '@/lib/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +88,7 @@ const OrderTableRow = ({
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const firestore = useFirestore();
 
   const [hasMounted, setHasMounted] = React.useState(false);
@@ -102,7 +104,7 @@ const OrderTableRow = ({
     startTransition(() => {
       const docRef = doc(firestore, 'orders', order.id);
       deleteDocumentNonBlocking(docRef);
-      toast({ title: 'Success', description: 'Order will be deleted.' });
+      toast({ title: t('toastSuccess'), description: t('orderDeleted') });
       onDelete(order.id);
       onRefresh();
     });
@@ -114,8 +116,8 @@ const OrderTableRow = ({
         const docRef = doc(firestore, 'orders', order.id);
         updateDocumentNonBlocking(docRef, { [fieldName]: value });
         toast({
-          title: 'Success',
-          description: `Order ${fieldName.toString()} updated.`,
+          title: t('toastSuccess'),
+          description: t('orderFieldUpdated', { field: fieldName.toString() }),
         });
         onRefresh();
       } catch (error) {
@@ -161,7 +163,7 @@ const OrderTableRow = ({
     if (clean.startsWith('507') && clean.length > 7)
       clean = clean.replace(/^507/, '');
     navigator.clipboard.writeText(clean);
-    toast({ description: 'Phone copied: ' + clean });
+    toast({ description: t('phoneCopied', { phone: clean }) });
   };
 
   const productSummary = order.productos.map((p, index) => {
@@ -276,7 +278,7 @@ const OrderTableRow = ({
                 <Badge key={tag.id} style={{ backgroundColor: tag.color }} className="text-white">
                   {tag.label}
                 </Badge>
-              )) : <span className="text-muted-foreground text-xs">No tags</span>}
+              )) : <span className="text-muted-foreground text-xs">{t('noTags')}</span>}
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-96">
@@ -301,31 +303,31 @@ const OrderTableRow = ({
           <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
             <Link href={editUrl}>
               <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit Order</span>
+              <span className="sr-only">{t('editOrder')}</span>
             </Link>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete Order</span>
+                <span className="sr-only">{t('deleteOrder')}</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>{t('confirmDeleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the order for {order.name}.
+                  {t('confirmDeleteDesc', { name: order.name })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
                   disabled={isPending}
                   className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
-                  {isPending ? "Deleting..." : "Delete"}
+                  {isPending ? t('deleting') : t('delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -337,17 +339,17 @@ const OrderTableRow = ({
       <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirmStatusChangeTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Estás a punto de cambiar el estado del pedido de <strong>{order.name}</strong> de <strong>{order.estado}</strong> a <strong>{pendingStatus}</strong>.
-              {pendingStatus === 'Cotización' && ' Esto moverá el pedido a la pestaña de Cotizaciones.'}
-              {pendingStatus === 'Done' && ' Esto marcará el pedido como completado.'}
+              {t('confirmStatusChangeDesc', { from: order.estado, to: pendingStatus || '' })}
+              {pendingStatus === 'Cotización' && ` ${t('statusChangeToQuote')}`}
+              {pendingStatus === 'Done' && ` ${t('statusChangeToDone')}`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelStatusChange}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelStatusChange}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmStatusChange} className="bg-indigo-600 hover:bg-indigo-700">
-              Confirmar
+              {t('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -360,6 +362,7 @@ export function OrderTable({ orders: initialOrders, onRefresh, hideStatusColumn 
   const [orders, setOrders] = React.useState(initialOrders);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const firestore = useFirestore();
+  const { t } = useLanguage();
 
   const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' } | null>(null);
 
@@ -483,44 +486,44 @@ export function OrderTable({ orders: initialOrders, onRefresh, hideStatusColumn 
             <TableRow className="hover:bg-transparent border-b border-slate-300">
 
               <TableHead onClick={() => requestSort('name')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-pointer hover:bg-slate-100 transition-colors">
-                <div className="flex items-center">Customer <SortIcon columnKey="name" /></div>
+                <div className="flex items-center">{t('colCustomer')} <SortIcon columnKey="name" /></div>
               </TableHead>
 
               {!hideStatusColumn && (
                 <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[80px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                  <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
+                  <div className="flex items-center">{t('colStatus')} <SortIcon columnKey="estado" /></div>
                 </TableHead>
               )}
 
               <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
+                <div className="flex items-center justify-start">{t('colTotal')} <SortIcon columnKey="orderTotal" /></div>
               </TableHead>
 
               <TableHead className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">
-                Items
+                {t('colItems')}
               </TableHead>
 
               <TableHead onClick={() => requestSort('entregaLimite')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Deadline <SortIcon columnKey="entregaLimite" /></div>
+                <div className="flex items-center">{t('colDeadline')} <SortIcon columnKey="entregaLimite" /></div>
               </TableHead>
 
               {/* --- NEW HEADER: Privacy --- */}
               <TableHead onClick={() => requestSort('privacidad')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Privacy <SortIcon columnKey="privacidad" /></div>
+                <div className="flex items-center">{t('colPrivacy')} <SortIcon columnKey="privacidad" /></div>
               </TableHead>
               {/* --------------------------- */}
 
-              <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
+              <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">{t('colTagsOther')}</TableHead>
 
               <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
+                <div className="flex items-center">{t('colAddress')} <SortIcon columnKey="direccionEnvio" /></div>
               </TableHead>
 
               <TableHead onClick={() => requestSort('servicioEntrega')} className="whitespace-nowrap min-w-[150px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Method <SortIcon columnKey="servicioEntrega" /></div>
+                <div className="flex items-center">{t('colMethod')} <SortIcon columnKey="servicioEntrega" /></div>
               </TableHead>
 
-              <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">Actions</span></TableHead>
+              <TableHead className="whitespace-nowrap min-w-[100px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle"><span className="sr-only">{t('colActions')}</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -539,7 +542,7 @@ export function OrderTable({ orders: initialOrders, onRefresh, hideStatusColumn 
             ) : (
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
-                  No orders for this view.
+                  {t('noOrdersInView')}
                 </TableCell>
               </TableRow>
             )}
