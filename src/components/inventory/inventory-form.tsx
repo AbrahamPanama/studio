@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check, Palette, Scissors } from 'lucide-react';
 import { ImageUpload } from '@/components/shared/image-upload';
 
-const COMMON_CATEGORIES = ['Acrylic', 'Cuts', 'Hardware', 'Ink', 'MDF', 'Office', 'Other', 'Paper', 'Plywood', 'PVC', 'ribbons/rope', 'Tools', 'Vinyl', 'Wood'];
+const COMMON_CATEGORIES = ['Acrylic', 'Bags', 'Boxes', 'Cuts', 'Hardware', 'Ink', 'MDF', 'Office', 'Other', 'Paper', 'Plywood', 'PVC', 'ribbons/rope', 'Tools', 'Vinyl', 'Wood', 'Wraps'];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
 const DIMENSION_UNITS = ['inch', 'cm', 'mm', 'yrds'];
 const THICKNESS_UNITS = ['inch', 'mm'];
