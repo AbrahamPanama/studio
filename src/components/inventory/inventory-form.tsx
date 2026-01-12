@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -24,7 +23,7 @@ import { ImageUpload } from '@/components/shared/image-upload';
 
 const COMMON_CATEGORIES = [
   'Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 'Cuts',
-  'Ink', 'Tools', 'Hardware', 'Office', 'Other'
+  'Ink', 'Tools', 'Hardware', 'Office', 'ribbons/rope', 'Other'
 ];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
 const DIMENSION_UNITS = ['inch', 'cm', 'mm', 'yrds'];
