@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,8 +23,8 @@ import { Save, Package, Ruler, MapPin, Image as ImageIcon, Loader2, Check, Palet
 import { ImageUpload } from '@/components/shared/image-upload';
 
 const COMMON_CATEGORIES = [
-  'Vinyl', 'Paper', 'MDF', 'Acrylic', 'Plywood', 'PVC', 'Wood', 'Cuts',
-  'Ink', 'Tools', 'Hardware', 'Office', 'ribbons/rope', 'Other'
+  'Acrylic', 'Cuts', 'Hardware', 'Ink', 'MDF', 'Office', 'Other', 'Paper', 
+  'Plywood', 'PVC', 'ribbons/rope', 'Tools', 'Vinyl', 'Wood'
 ];
 const COMMON_UNITS = ['Unit', 'Roll', 'Sheet', 'Box', 'Liter', 'Meter', 'Pack'];
 const DIMENSION_UNITS = ['inch', 'cm', 'mm', 'yrds'];
