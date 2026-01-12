@@ -47,7 +47,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
     defaultValues: initialData || {
       name: '',
       sku: '',
-      category: 'Vinyl',
+      category: 'Acrylic',
       color: '',
       width: undefined,
       length: undefined,
