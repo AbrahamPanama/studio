@@ -125,21 +125,18 @@ export default function InventoryPage() {
 
     return (
       <TableRow key={item.id}>
-        {/* Only show image column for standard items */}
-        {!isCut && (
-          <TableCell>
-            {item.imageUrl ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <div className="h-10 w-10 rounded-md overflow-hidden border bg-slate-100 cursor-zoom-in">
-                    <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0"><img src={item.imageUrl} alt={item.name} className="w-full h-auto rounded-md" /></PopoverContent>
-              </Popover>
-            ) : <div className="h-10 w-10 rounded-md bg-slate-50 border flex items-center justify-center text-slate-300"><ImageIcon className="h-5 w-5" /></div>}
-          </TableCell>
-        )}
+        <TableCell>
+          {item.imageUrl ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="h-10 w-10 rounded-md overflow-hidden border bg-slate-100 cursor-zoom-in">
+                  <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0"><img src={item.imageUrl} alt={item.name} className="w-full h-auto rounded-md" /></PopoverContent>
+            </Popover>
+          ) : <div className="h-10 w-10 rounded-md bg-slate-50 border flex items-center justify-center text-slate-300"><ImageIcon className="h-5 w-5" /></div>}
+        </TableCell>
         
         <TableCell className="font-medium">
           <div className="flex flex-col">
@@ -255,6 +252,7 @@ export default function InventoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">Image</TableHead>
                   <TableHead className={headerClass} onClick={() => handleSort('name')}><div className="flex items-center">Descriptive Name <SortIcon columnKey="name" /></div></TableHead>
                   <TableHead className={headerClass} onClick={() => handleSort('quantity')}><div className="flex items-center">Amount <SortIcon columnKey="quantity" /></div></TableHead>
                   <TableHead className={headerClass} onClick={() => handleSort('location')}><div className="flex items-center">Location <SortIcon columnKey="location" /></div></TableHead>
@@ -262,7 +260,7 @@ export default function InventoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cutsItems.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No cuts found.</TableCell></TableRow>}
+                {cutsItems.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">No cuts found.</TableCell></TableRow>}
                 {cutsItems.map(item => renderRow(item, true))}
               </TableBody>
             </Table>
