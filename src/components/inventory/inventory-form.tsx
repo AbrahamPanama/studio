@@ -42,8 +42,8 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const sanitizeNumber = (val: any) => {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
-        const parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
-        return isNaN(parsed) ? 0 : parsed;
+      const parsed = parseFloat(val.replace(/[^\d.-]/g, ''));
+      return isNaN(parsed) ? 0 : parsed;
     }
     return 0;
   };
@@ -51,12 +51,12 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
   const form = useForm<InventoryItem>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: initialData ? {
-        ...initialData,
-        quantity: sanitizeNumber(initialData.quantity),
-        minStock: sanitizeNumber(initialData.minStock),
-        width: sanitizeNumber(initialData.width),
-        length: sanitizeNumber(initialData.length),
-        thickness: sanitizeNumber(initialData.thickness),
+      ...initialData,
+      quantity: sanitizeNumber(initialData.quantity),
+      minStock: sanitizeNumber(initialData.minStock),
+      width: sanitizeNumber(initialData.width),
+      length: sanitizeNumber(initialData.length),
+      thickness: sanitizeNumber(initialData.thickness),
     } : {
       name: '', sku: '', category: 'Acrylic', color: '',
       quantity: 0, unit: 'Unit', minStock: 5, location: '', supplier: '',
@@ -75,8 +75,8 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
       try {
         let imageUrl = data.imageUrl || '';
 
-        // Only upload image if NOT a cut
-        if (imageFile && !isCut) {
+        // Upload image
+        if (imageFile) {
           try {
             const compressedFile = await compressImage(imageFile);
             const storageRef = ref(storage, `inventory/${Date.now()}_${compressedFile.name}`);
@@ -102,7 +102,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           thickness: isCut ? 0 : (data.thickness ? Number(data.thickness) : null),
 
           color: isCut ? '' : (data.color || null),
-          imageUrl: isCut ? '' : imageUrl,
+          imageUrl: imageUrl,
 
           updatedAt: serverTimestamp(),
         };
@@ -159,15 +159,13 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
           </CardContent>
         </Card>
 
-        {/* --- PHOTO CARD (Hidden for Cuts) --- */}
-        {!isCut && (
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-pink-500" /> Photo</CardTitle></CardHeader>
-            <CardContent>
-              <ImageUpload value={form.watch('imageUrl')} onChange={(file) => setImageFile(file)} onClear={() => { setImageFile(null); form.setValue('imageUrl', ''); }} />
-            </CardContent>
-          </Card>
-        )}
+        {/* --- PHOTO CARD --- */}
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5 text-pink-500" /> Photo</CardTitle></CardHeader>
+          <CardContent>
+            <ImageUpload value={form.watch('imageUrl')} onChange={(file) => setImageFile(file)} onClear={() => { setImageFile(null); form.setValue('imageUrl', ''); }} />
+          </CardContent>
+        </Card>
 
         {/* --- DETAILS CARD (Hidden for Cuts) --- */}
         {!isCut && (
