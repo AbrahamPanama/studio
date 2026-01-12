@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon, Minus, PlusCircle } from 'lucide-react';
+import { 
+  Plus, Search, AlertTriangle, Edit, Trash2, Image as ImageIcon, 
+  Minus, PlusCircle, ArrowUpDown, ArrowUp, ArrowDown 
+} from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -23,13 +26,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { INVENTORY_COLORS } from '@/lib/constants';
+
+// Type for our sort config
+type SortConfig = {
+  key: keyof InventoryItem;
+  direction: 'asc' | 'desc';
+};
 
 export default function InventoryPage() {
   const firestore = useFirestore();
@@ -37,9 +42,13 @@ export default function InventoryPage() {
   const [items, setItems] = React.useState<InventoryItem[]>([]);
   const [search, setSearch] = React.useState('');
   const [isPending, startTransition] = React.useTransition();
+  
+  // Default sort by Name Ascending
+  const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'name', direction: 'asc' });
 
   React.useEffect(() => {
     if (!firestore) return;
+    // Initial fetch ordered by name
     const q = query(collection(firestore, 'inventory'), orderBy('name'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
@@ -60,23 +69,70 @@ export default function InventoryPage() {
   
   const handleStockChange = (item: InventoryItem, amount: number) => {
     if (!firestore || !item.id) return;
-
     startTransition(() => {
         const newQuantity = (item.quantity || 0) + amount;
-        if (newQuantity < 0) {
-            toast({ variant: "destructive", title: "Invalid Quantity", description: "Stock cannot be negative." });
-            return;
-        }
-        const docRef = doc(firestore, 'inventory', item.id);
-        updateDocumentNonBlocking(docRef, { quantity: newQuantity });
+        if (newQuantity < 0) return toast({ variant: "destructive", title: "Invalid", description: "Negative stock." });
+        updateDocumentNonBlocking(doc(firestore, 'inventory', item.id), { quantity: newQuantity });
     });
   };
 
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.sku?.toLowerCase().includes(search.toLowerCase()) ||
-    item.color?.toLowerCase().includes(search.toLowerCase())
-  );
+  // --- SORTING LOGIC ---
+  const handleSort = (key: keyof InventoryItem) => {
+    setSortConfig((current) => {
+      if (current.key === key) {
+        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const processedItems = React.useMemo(() => {
+    // 1. Filter first
+    let result = items.filter(item => 
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(search.toLowerCase()) ||
+      item.color?.toLowerCase().includes(search.toLowerCase()) ||
+      item.category?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // 2. Then Sort
+    result.sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (aValue === bValue) return 0;
+      
+      // Handle null/undefined values by pushing them to the end
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      // String comparison (case-insensitive)
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Number comparison
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      
+      return 0;
+    });
+
+    return result;
+  }, [items, search, sortConfig]);
+
+  // Helper to render sort arrow
+  const SortIcon = ({ columnKey }: { columnKey: keyof InventoryItem }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown className="ml-2 h-3 w-3 text-muted-foreground/30" />;
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="ml-2 h-3 w-3 text-foreground" />
+      : <ArrowDown className="ml-2 h-3 w-3 text-foreground" />;
+  };
+
+  // Shared classes for sortable headers
+  const headerClass = "cursor-pointer hover:bg-slate-50 transition-colors select-none group";
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -107,28 +163,65 @@ export default function InventoryPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Color/Details</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Location</TableHead>
+              
+              <TableHead 
+                className={headerClass} 
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center">
+                  Name / SKU
+                  <SortIcon columnKey="name" />
+                </div>
+              </TableHead>
+
+              <TableHead 
+                className={headerClass}
+                onClick={() => handleSort('color')}
+              >
+                <div className="flex items-center">
+                  Color / Details
+                  <SortIcon columnKey="color" />
+                </div>
+              </TableHead>
+
+              <TableHead 
+                className={headerClass}
+                onClick={() => handleSort('quantity')}
+              >
+                <div className="flex items-center">
+                  Stock
+                  <SortIcon columnKey="quantity" />
+                </div>
+              </TableHead>
+
+              <TableHead 
+                className={headerClass}
+                onClick={() => handleSort('location')}
+              >
+                <div className="flex items-center">
+                  Location
+                  <SortIcon columnKey="location" />
+                </div>
+              </TableHead>
+
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredItems.map((item) => {
+            {processedItems.map((item) => {
               const isLowStock = item.quantity <= (item.minStock || 0);
               
               const colorConfig = INVENTORY_COLORS.find(c => c.value === item.color);
               const isHex = item.color?.startsWith('#');
               const finalStyle = colorConfig?.style || (isHex ? { backgroundColor: item.color, border: '1px solid #cbd5e1' } : { backgroundColor: '#e2e8f0' });
-              
-              // --- FORMAT DIMENSIONS ---
+
               const dimString = (item.width && item.length) 
-                ? `${item.width}x${item.length} ${item.dimensionUnit}`
-                : item.width ? `${item.width} ${item.dimensionUnit}` : item.length ? `${item.length} ${item.dimensionUnit}` : null;
+                ? `${item.width} x ${item.length} ${item.dimensionUnit || 'inch'}`
+                : null;
               
+              const isNumericThickness = typeof item.thickness === 'number';
               const thickString = item.thickness 
-                ? `${item.thickness}${item.thicknessUnit}`
+                ? (isNumericThickness ? `${item.thickness} ${item.thicknessUnit || 'mm'}` : item.thickness)
                 : null;
 
               return (
@@ -168,7 +261,7 @@ export default function InventoryPage() {
                        )}
                        
                        {(dimString || thickString) && (
-                         <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                            {dimString && <span>{dimString}</span>}
                            {dimString && thickString && <span className="text-slate-300 mx-1">|</span>}
                            {thickString && <span>{thickString}</span>}
@@ -228,7 +321,7 @@ export default function InventoryPage() {
                 </TableRow>
               );
             })}
-            {filteredItems.length === 0 && (
+            {processedItems.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   No items found.
