@@ -179,7 +179,7 @@ export function InventoryForm({ initialData, id }: InventoryFormProps) {
                   <FormLabel>Color / Finish</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-13 gap-2 w-fit">
+                      <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-2 w-fit">
                         {INVENTORY_COLORS.map((c) => (
                           <button key={c.value} type="button" onClick={() => field.onChange(c.value)} style={c.style}
                             className={cn("h-8 w-8 rounded-full border shadow-sm transition-all flex items-center justify-center", field.value === c.value ? "ring-2 ring-indigo-600 ring-offset-2 scale-110" : "hover:scale-110")}
