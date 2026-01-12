@@ -46,7 +46,7 @@ import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
-import { ComplexityTagSelector } from '@/components/workload/complexity-tag-selector'; 
+import { ComplexityTagSelector } from '@/components/workload/complexity-tag-selector';
 
 // --- NEW: Privacy Color Configuration ---
 const PRIVACY_COLORS: Record<string, string> = {
@@ -66,18 +66,24 @@ const parseDate = (dateInput: any): Date | undefined => {
 };
 
 
+// Define active statuses for confirmation logic
+const ACTIVE_STATUSES: Order['estado'][] = ['Packaging', 'Urgent', 'On Hand/Working', 'Pending', 'New'];
+const CONFIRMATION_TARGET_STATUSES: Order['estado'][] = ['Cotización', 'Done'];
+
 const OrderTableRow = ({
   order,
   allOtherTags,
   onAllOtherTagsUpdate,
   onDelete,
   onRefresh,
+  hideStatusColumn,
 }: {
   order: Order;
   allOtherTags: Tag[];
   onAllOtherTagsUpdate: (tags: Tag[]) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
+  hideStatusColumn?: boolean;
 }) => {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
@@ -88,13 +94,17 @@ const OrderTableRow = ({
     setHasMounted(true);
   }, []);
 
+  // State for status change confirmation dialog
+  const [pendingStatus, setPendingStatus] = React.useState<Order['estado'] | null>(null);
+  const [showStatusDialog, setShowStatusDialog] = React.useState(false);
+
   const handleDelete = () => {
     startTransition(() => {
       const docRef = doc(firestore, 'orders', order.id);
       deleteDocumentNonBlocking(docRef);
       toast({ title: 'Success', description: 'Order will be deleted.' });
       onDelete(order.id);
-      onRefresh(); 
+      onRefresh();
     });
   }
 
@@ -107,11 +117,39 @@ const OrderTableRow = ({
           title: 'Success',
           description: `Order ${fieldName.toString()} updated.`,
         });
-        onRefresh(); 
+        onRefresh();
       } catch (error) {
         // Error is handled by global listener
       }
     });
+  };
+
+  // Handle status change with confirmation for risky transitions
+  const handleStatusChange = (newStatus: Order['estado']) => {
+    const isCurrentlyActive = ACTIVE_STATUSES.includes(order.estado);
+    const isTargetRisky = CONFIRMATION_TARGET_STATUSES.includes(newStatus);
+
+    if (isCurrentlyActive && isTargetRisky) {
+      // Show confirmation dialog
+      setPendingStatus(newStatus);
+      setShowStatusDialog(true);
+    } else {
+      // Direct update without confirmation
+      handleFieldUpdate('estado', newStatus);
+    }
+  };
+
+  const confirmStatusChange = () => {
+    if (pendingStatus) {
+      handleFieldUpdate('estado', pendingStatus);
+      setPendingStatus(null);
+      setShowStatusDialog(false);
+    }
+  };
+
+  const cancelStatusChange = () => {
+    setPendingStatus(null);
+    setShowStatusDialog(false);
   };
 
   const handleOtherTagsUpdate = (tags: string[]) => {
@@ -128,8 +166,8 @@ const OrderTableRow = ({
 
   const productSummary = order.productos.map((p, index) => {
     const fullText = `${p.name} ${p.description ? `(${p.description})` : ''}`;
-    const truncatedText = fullText.length > 50 
-      ? fullText.substring(0, 50) + '...' 
+    const truncatedText = fullText.length > 50
+      ? fullText.substring(0, 50) + '...'
       : fullText;
 
     return (
@@ -171,20 +209,22 @@ const OrderTableRow = ({
           </button>
         )}
       </TableCell>
-      <TableCell className="w-[80px]">
-        <Select value={order.estado} onValueChange={(newStatus) => handleFieldUpdate('estado', newStatus)} disabled={isPending}>
-          <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
-            <SelectValue asChild>
-              <StatusBadge status={order.estado} showText={false} />
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {ORDER_STATUSES.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
+      {!hideStatusColumn && (
+        <TableCell className="w-[80px]">
+          <Select value={order.estado} onValueChange={handleStatusChange} disabled={isPending}>
+            <SelectTrigger className="w-full border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
+              <SelectValue asChild>
+                <StatusBadge status={order.estado} showText={false} />
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {ORDER_STATUSES.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </TableCell>
+      )}
       <TableCell>
         <div className="flex items-center justify-start gap-2">
           <span>{formatCurrency(order.orderTotal)}</span>
@@ -202,22 +242,22 @@ const OrderTableRow = ({
 
       {/* --- NEW: Privacy Column --- */}
       <TableCell>
-        <Select 
-          value={order.privacidad || 'Por preguntar'} 
-          onValueChange={(newVal) => handleFieldUpdate('privacidad', newVal)} 
+        <Select
+          value={order.privacidad || 'Por preguntar'}
+          onValueChange={(newVal) => handleFieldUpdate('privacidad', newVal)}
           disabled={isPending}
         >
           <SelectTrigger className="w-[130px] border-0 focus:ring-1 focus:ring-ring p-0 h-auto bg-transparent">
-             <SelectValue asChild>
-                <div 
-                  className={cn(
-                    "flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium border cursor-pointer truncate", 
-                    PRIVACY_COLORS[order.privacidad || 'Por preguntar'] || 'bg-slate-100 text-slate-600 border-slate-200'
-                  )}
-                >
-                  {order.privacidad || 'Por preguntar'}
-                </div>
-             </SelectValue>
+            <SelectValue asChild>
+              <div
+                className={cn(
+                  "flex items-center justify-center px-2 py-1 rounded-md text-xs font-medium border cursor-pointer truncate",
+                  PRIVACY_COLORS[order.privacidad || 'Por preguntar'] || 'bg-slate-100 text-slate-600 border-slate-200'
+                )}
+              >
+                {order.privacidad || 'Por preguntar'}
+              </div>
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {PRIVACY_OPTIONS.map(opt => (
@@ -292,11 +332,31 @@ const OrderTableRow = ({
           </AlertDialog>
         </div>
       </TableCell>
+
+      {/* Status Change Confirmation Dialog */}
+      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de cambiar el estado del pedido de <strong>{order.name}</strong> de <strong>{order.estado}</strong> a <strong>{pendingStatus}</strong>.
+              {pendingStatus === 'Cotización' && ' Esto moverá el pedido a la pestaña de Cotizaciones.'}
+              {pendingStatus === 'Done' && ' Esto marcará el pedido como completado.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelStatusChange}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmStatusChange} className="bg-indigo-600 hover:bg-indigo-700">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TableRow>
   )
 }
 
-export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order[], onRefresh: () => void }) {
+export function OrderTable({ orders: initialOrders, onRefresh, hideStatusColumn }: { orders: Order[], onRefresh: () => void, hideStatusColumn?: boolean }) {
   const [orders, setOrders] = React.useState(initialOrders);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const firestore = useFirestore();
@@ -426,9 +486,11 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <div className="flex items-center">Customer <SortIcon columnKey="name" /></div>
               </TableHead>
 
-              <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[80px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
-                <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
-              </TableHead>
+              {!hideStatusColumn && (
+                <TableHead onClick={() => requestSort('estado')} className="whitespace-nowrap min-w-[80px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
+                  <div className="flex items-center">Status <SortIcon columnKey="estado" /></div>
+                </TableHead>
+              )}
 
               <TableHead onClick={() => requestSort('orderTotal')} className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center justify-start">Total <SortIcon columnKey="orderTotal" /></div>
@@ -447,9 +509,9 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                 <div className="flex items-center">Privacy <SortIcon columnKey="privacidad" /></div>
               </TableHead>
               {/* --------------------------- */}
-              
+
               <TableHead className="whitespace-nowrap min-w-[200px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle">Tags Other</TableHead>
-              
+
               <TableHead onClick={() => requestSort('direccionEnvio')} className="whitespace-nowrap min-w-[250px] bg-slate-50 font-bold text-slate-700 h-10 px-4 text-left align-middle cursor-pointer hover:bg-slate-100">
                 <div className="flex items-center">Address <SortIcon columnKey="direccionEnvio" /></div>
               </TableHead>
@@ -471,6 +533,7 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
                   onAllOtherTagsUpdate={handleAllOtherTagsUpdate}
                   onDelete={handleDelete}
                   onRefresh={onRefresh}
+                  hideStatusColumn={hideStatusColumn}
                 />
               ))
             ) : (
@@ -488,4 +551,3 @@ export function OrderTable({ orders: initialOrders, onRefresh }: { orders: Order
 }
 
 
-    

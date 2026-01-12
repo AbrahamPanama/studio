@@ -66,7 +66,7 @@ const groupAndSortOrders = (orders: Order[]) => {
 };
 
 const filterOrders = (orders: Order[], query: string, tab: string, excludeCompleted: boolean) => {
-  
+
   // --- 1. SEARCH MODE (High Priority) ---
   if (query) {
     const normalizedQuery = normalizeText(query);
@@ -81,7 +81,7 @@ const filterOrders = (orders: Order[], query: string, tab: string, excludeComple
       const matchesPhone = (field?: string | null) => {
         if (!field) return false;
         return normalizeText(field).includes(normalizedQuery) ||
-               (isNumericSearch && cleanNumber(field).includes(numericQuery));
+          (isNumericSearch && cleanNumber(field).includes(numericQuery));
       };
 
       return (
@@ -93,7 +93,6 @@ const filterOrders = (orders: Order[], query: string, tab: string, excludeComple
         matchesText(order.ruc) ||
         matchesText(order.direccionEnvio) ||
         matchesText(order.estado) ||
-        matchesText(order.subEstado) ||
         matchesPhone(order.celular) ||
         matchesPhone(order.celularSecundario) ||
         (order.tags || []).some(tag => matchesText(tag)) ||
@@ -127,18 +126,18 @@ const filterOrders = (orders: Order[], query: string, tab: string, excludeComple
 }
 
 // --- Main Content Component ---
-function DashboardPageContent({ 
-  allOrders, 
-  query, 
-  tab, 
+function DashboardPageContent({
+  allOrders,
+  query,
+  tab,
   excludeCompleted,
-  onRefresh 
-}: { 
-  allOrders: Order[], 
-  query: string, 
-  tab: string, 
+  onRefresh
+}: {
+  allOrders: Order[],
+  query: string,
+  tab: string,
   excludeCompleted: boolean,
-  onRefresh: () => void 
+  onRefresh: () => void
 }) {
   const { t } = useLanguage();
 
@@ -178,8 +177,8 @@ function DashboardPageContent({
               </div>
             </div>
           </div>
-          
-          { !query && (
+
+          {!query && (
             <TabsList className="bg-transparent p-0 space-x-6 h-auto w-full justify-start border-b border-slate-200">
               {/* Active Tab */}
               <TabsTrigger value="active" asChild className="p-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none">
@@ -231,14 +230,14 @@ function DashboardPageContent({
           {/* Orders Grid */}
           <div className="space-y-6">
             <div className="mt-0 space-y-6 animate-in fade-in-50 duration-300">
-            
+
               {query && (
                 <div className="px-2">
                   <h3 className="text-lg font-semibold text-slate-800">Search Results for "{query}"</h3>
                   <p className="text-sm text-muted-foreground">{filteredOrders.length} order(s) found.</p>
                 </div>
               )}
-            
+
               {orderGroups.map(({ status, orders }) => (
                 <div key={status} className="group">
                   <Card className="border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white overflow-hidden rounded-xl">
@@ -255,7 +254,7 @@ function DashboardPageContent({
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-0 pb-0 border-t border-slate-100">
-                          <OrderTable orders={orders} onRefresh={onRefresh} />
+                          <OrderTable orders={orders} onRefresh={onRefresh} hideStatusColumn={tab === 'quotes'} />
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -288,7 +287,7 @@ export default function DashboardPage() {
   const queryParam = searchParams.get('query') || '';
   const tab = searchParams.get('tab') || 'active';
   const excludeCompleted = searchParams.get('excludeCompleted') !== 'false';
-  
+
   const firestore = useFirestore();
 
   const [refreshKey, setRefreshKey] = React.useState(0);
@@ -310,11 +309,11 @@ export default function DashboardPage() {
     return <div className="flex justify-center items-center h-screen bg-red-50"><p className="text-red-500 font-medium">Error: {error.message}</p></div>
   }
 
-  return <DashboardPageContent 
-      allOrders={allOrders || []} 
-      query={queryParam} 
-      tab={tab}
-      excludeCompleted={excludeCompleted}
-      onRefresh={forceRefresh} 
-    />;
+  return <DashboardPageContent
+    allOrders={allOrders || []}
+    query={queryParam}
+    tab={tab}
+    excludeCompleted={excludeCompleted}
+    onRefresh={forceRefresh}
+  />;
 }
