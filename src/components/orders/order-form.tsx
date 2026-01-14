@@ -689,7 +689,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                 <FormItem>
                                     <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
                                     <FormControl>
-                                    <Textarea placeholder="123 Main St, City, Country..." {...field} />
+                                    <Input placeholder="123 Main St, City, Country..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
