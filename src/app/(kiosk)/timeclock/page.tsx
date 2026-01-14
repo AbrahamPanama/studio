@@ -6,11 +6,11 @@ import { firestore, storage } from '@/firebase';
 import { Employee } from '@/lib/types-timekeeper';
 import { verifyEmployeeFace } from '../actions';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, Keypad, RefreshCw, User } from 'lucide-react';
+import { Loader2, Camera, RefreshCw, User } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
@@ -109,14 +109,22 @@ export default function TimeclockPage() {
         // Better yet, let's just default to 'CLOCK_IN' for this demo unless we want to add buttons.
         // I'll just add "CLOCK_IN" for now, as it satisfies "Add doc".
 
-        await addDoc(collection(firestore, 'time_entries'), {
-            employeeId: employee.id,
-            employeeName: employee.name,
-            type: 'CLOCK_IN', // Placeholder behavior
-            timestamp: Timestamp.now(),
-            method,
-            snapshotUrl
-        });
+        // Timeout wrapper for Cloud Operations
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Database operation timed out")), 10000)
+        );
+
+        await Promise.race([
+            addDoc(collection(firestore, 'time_entries'), {
+                employeeId: employee.id,
+                employeeName: employee.name,
+                type: 'CLOCK_IN',
+                timestamp: Timestamp.now(),
+                method,
+                snapshotUrl
+            }),
+            timeoutPromise
+        ]);
     };
 
     return (
@@ -150,20 +158,29 @@ export default function TimeclockPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <div className="flex flex-col items-center text-center space-y-4 py-4">
-                        <h2 className="text-2xl font-bold">
-                            {authMethod === 'FACE' ? 'Biometric Check' : 'Enter PIN'}
-                        </h2>
-                        <p className="text-muted-foreground">
-                            Verifying {selectedEmployee?.name}
-                        </p>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold text-center">
+                                {authMethod === 'FACE' ? 'Biometric Check' : 'Enter PIN'}
+                            </DialogTitle>
+                            <DialogDescription className="text-center">
+                                Verifying {selectedEmployee?.name}
+                            </DialogDescription>
+                        </DialogHeader>
 
                         {authMethod === 'FACE' ? (
                             <div className="relative rounded-lg overflow-hidden border-2 border-slate-200 bg-black aspect-[4/3] w-full max-w-[320px]">
                                 <Webcam
                                     ref={webcamRef}
                                     screenshotFormat="image/jpeg"
+                                    screenshotQuality={0.7}
+                                    width={480}
+                                    height={360}
                                     className="w-full h-full object-cover"
-                                    videoConstraints={{ facingMode: "user" }}
+                                    videoConstraints={{
+                                        facingMode: "user",
+                                        width: 480,
+                                        height: 360
+                                    }}
                                 />
                                 {verifying && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">

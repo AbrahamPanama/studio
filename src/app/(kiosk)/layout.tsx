@@ -1,4 +1,5 @@
-import '../globals.css';
+import '../../globals.css';
+import { FirebaseClientProvider } from '@/firebase';
 
 export default function KioskLayout({
     children,
@@ -9,7 +10,9 @@ export default function KioskLayout({
         <html lang="en">
             <body className="antialiased bg-slate-100 min-h-screen">
                 <main className="w-full h-full">
-                    {children}
+                    <FirebaseClientProvider>
+                        {children}
+                    </FirebaseClientProvider>
                 </main>
             </body>
         </html>
