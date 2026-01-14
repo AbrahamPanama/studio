@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -38,6 +37,9 @@ export default function Header() {
           </Button>
           <Button asChild variant="ghost">
             <Link href="/reports">{t('navReports')}</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/quotes/follow-up">Follow-Up</Link>
           </Button>
 
           <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
