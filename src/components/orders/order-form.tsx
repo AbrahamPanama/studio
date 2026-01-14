@@ -222,8 +222,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const isQuote = formType === 'quote';
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = React.useTransition();
-  const [isConverting, startConverting] = React.useTransition();
+  const [isPending, startTransition] = React.useState(false);
+  const [isConverting, startConverting] = React.useState(false);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
 
@@ -926,7 +926,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                             <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
-                                <FormControl><Textarea placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
+                                <FormControl><Input placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )} />
