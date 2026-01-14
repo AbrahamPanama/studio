@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
-import { Timestamp, doc, collection } from 'firebase/firestore';
+import { Timestamp, doc, collection, query } from 'firebase/firestore';
 import { Check, Copy, Phone, Calendar, Clock, Loader2 } from 'lucide-react';
 
 import { useFirestore, useCollection, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
@@ -31,7 +31,7 @@ export function FollowUpDashboard() {
   
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'orders');
+    return query(collection(firestore, 'orders'));
   }, [firestore]);
 
   const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
