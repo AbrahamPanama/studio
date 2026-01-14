@@ -1,4 +1,4 @@
-import '../../globals.css';
+import '../globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 
 export default function KioskLayout({
