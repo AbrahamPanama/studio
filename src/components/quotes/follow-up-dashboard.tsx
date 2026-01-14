@@ -1,12 +1,11 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
-import { Timestamp, doc } from 'firebase/firestore';
+import { Timestamp, doc, collection } from 'firebase/firestore';
 import { Check, Copy, Phone, Calendar, Clock, Loader2 } from 'lucide-react';
 
-import { useFirestore, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { Order } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -27,9 +26,15 @@ const parseDate = (dateInput: any): Date => {
 };
 
 export function FollowUpDashboard() {
-  const { data: orders, isLoading } = useCollection<Order>('orders');
   const firestore = useFirestore();
   const { toast } = useToast();
+  
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'orders');
+  }, [firestore]);
+
+  const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
   
   const [daysThreshold, setDaysThreshold] = useState(5);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
