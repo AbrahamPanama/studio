@@ -70,6 +70,7 @@ export default function TimeclockPage() {
 
     const handlePinSubmit = async () => {
         if (!selectedEmployee) return;
+        // CORRECTED: Compare pinInput with the selectedEmployee's pin
         if (pinInput === selectedEmployee.pin) {
             setVerifying(true);
             try {
@@ -101,7 +102,6 @@ export default function TimeclockPage() {
         // Real-world would check last entry. 
         // User prompt says 'TimeEntry' has type 'CLOCK_IN' | 'CLOCK_OUT'. 
         // We will assume CLOCK_IN for now or toggle? 
-        // Let's simplified assumption: Toggle based on last entry or just ask user? 
         // The Plan Phase 1 step 1 mentions "type". 
         // The Phase 4 instructions don't specify asking the user.
         // I'll make a smart guess: fetch last entry to toggle, or just show buttons "Clock In" / "Clock Out" AFTER auth?
