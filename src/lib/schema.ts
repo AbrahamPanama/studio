@@ -46,6 +46,7 @@ export const orderSchema = z.object({
   orderTotal: z.coerce.number().default(0),
 
   createdBy: z.string().optional(),
+  lastFollowUp: z.preprocess((arg) => (arg === '' || arg === null ? undefined : arg), z.coerce.date().optional()),
 }).superRefine((data, ctx) => {
     // Solo aplicamos reglas estrictas si NO es una cotización
     if (data.estado !== 'Cotización') {

@@ -28,6 +28,7 @@ export type Order = Omit<z.infer<typeof orderSchema>, 'fechaIngreso' | 'entrega'
   celularSecundario?: string;
   direccionEnvio?: string;
   companyName?: string;
+  lastFollowUp?: Timestamp | string | Date;
 };
 
 export type Tag = z.infer<typeof tagSchema>;
