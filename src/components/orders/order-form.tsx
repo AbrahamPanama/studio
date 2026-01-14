@@ -679,22 +679,52 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                         <FormField control={form.control} name="celularSecundario" render={({ field }) => (
                           <FormItem><FormLabel>Secondary Phone</FormLabel><FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handleSecondaryPhoneNumberBlur} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        
-                        {/* Shipping Address for BOTH quote and order */}
+
+                        {/* NEW: Delivery Service Selection (Moved here to be visible for Quotes & Orders) */}
+                        <FormField
+                          control={form.control}
+                          name="servicioEntrega"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('formLabelDeliveryService')}</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={t('formPlaceholderSelectService')} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {DELIVERY_SERVICES.map((service) => (
+                                    <SelectItem key={service} value={service}>
+                                      {service}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* UPDATED: Shipping Address with Disable Logic */}
                         <div className="sm:col-span-2">
-                            <FormField
-                                control={form.control}
-                                name="direccionEnvio"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
-                                    <FormControl>
-                                    <Input placeholder="123 Main St, City, Country..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
+                          <FormField
+                            control={form.control}
+                            name="direccionEnvio"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="123 Main St, City, Country..." 
+                                    {...field} 
+                                    disabled={watchedServicio === 'Retiro taller'}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
                       </div>
                     </CardContent>
@@ -908,25 +938,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                                 <FormControl>
                                   <DatePicker value={field.value} onChange={field.onChange} />
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-                            <FormField control={form.control} name="servicioEntrega" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{t('formLabelDeliveryService')}</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder={t('formPlaceholderSelectService')} /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    {DELIVERY_SERVICES.map(service => <SelectItem key={service} value={service}>{service}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-                            <FormField control={form.control} name="direccionEnvio" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
-                                <FormControl><Input placeholder="123 Main St..." {...field} disabled={watchedServicio === 'Retiro taller'} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )} />
