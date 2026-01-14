@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -111,7 +112,7 @@ export default function TimeclockPage() {
 
         // Timeout wrapper for Cloud Operations
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Database operation timed out")), 10000)
+            setTimeout(() => reject(new Error("Database operation timed out")), 30000)
         );
 
         await Promise.race([
