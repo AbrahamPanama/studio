@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import Link from 'next/link';
 import { differenceInDays, isPast } from 'date-fns';
 import { doc, getDocs, collection } from 'firebase/firestore';
@@ -42,7 +42,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker';
 import { ORDER_STATUSES, PRIVACY_OPTIONS } from '@/lib/constants'; // Added PRIVACY_OPTIONS
 import { ProductEditPopover } from './product-edit-popover';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '../ui/popover';
 import { TagManager } from '../tags/tag-manager';
 import { Badge } from '../ui/badge';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -282,6 +282,15 @@ const OrderTableRow = ({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-96">
+            <div className="flex items-center justify-between mb-3 border-b pb-2">
+              <h4 className="font-semibold text-sm">{t('colTagsOther')}</h4>
+              <PopoverClose asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-slate-100">
+                  <X className="h-4 w-4 text-slate-500" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </PopoverClose>
+            </div>
             <TagManager
               allTags={allOtherTags}
               selectedTags={order.tagsOther || []}
@@ -552,5 +561,6 @@ export function OrderTable({ orders: initialOrders, onRefresh, hideStatusColumn 
     </div>
   );
 }
+
 
 
