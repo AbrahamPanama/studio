@@ -560,11 +560,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const onInvalid = (errors: any) => {
     console.error("Form Validation Errors:", errors);
     const firstError = Object.keys(errors)[0];
-    toast({
-        variant: 'destructive',
-        title: "Validation Error",
-        description: `Field '${firstError}' is invalid: ${errors[firstError]?.message || 'Unknown error'}. Check console for details.`,
-    });
+    setTimeout(() => {
+        toast({
+            variant: 'destructive',
+            title: "Validation Error",
+            description: `Field '${firstError}' is invalid: ${errors[firstError]?.message || 'Unknown error'}. Check console for details.`,
+        });
+    }, 0);
   };
 
   const handleConvertToOrder = () => {
