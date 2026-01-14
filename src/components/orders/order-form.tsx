@@ -648,74 +648,54 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                       <CardTitle>{t('formTitleCustomerInfo')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* Main Grid Container: 2 Columns on small screens and up */}
+                      {/* Main Grid Container */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         
-                        {/* --- ROW 1 --- */}
-                        {/* Left: Full Name */}
                         <FormField control={form.control} name="name" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('formLabelFullName')}</FormLabel>
-                            <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
+                          <FormItem><FormLabel>{t('formLabelFullName')}</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-
-                        {/* Right: Company Name (NEW) */}
+                        
                         <FormField control={form.control} name="companyName" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl><Input placeholder="Company S.A." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
+                          <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Company S.A." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
 
-                        {/* --- ROW 2 --- */}
-                        {/* Left: RUC */}
                         <FormField control={form.control} name="ruc" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>RUC</FormLabel>
-                            <FormControl><Input placeholder="8-888-888" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
+                          <FormItem><FormLabel>RUC</FormLabel><FormControl><Input placeholder="8-888-888" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
 
-                        {/* Right: Email */}
                         <FormField control={form.control} name="email" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('formLabelEmail')}</FormLabel>
-                            <FormControl><Input placeholder="email@example.com" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
+                          <FormItem><FormLabel>{t('formLabelEmail')}</FormLabel><FormControl><Input placeholder="email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-
-                        {/* --- ROW 3 --- */}
-                        {/* Left: Primary Phone + WhatsApp */}
+                        
                         <div className="space-y-2">
                           <FormField control={form.control} name="celular" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('formLabelPhone')}</FormLabel>
-                              <FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handlePhoneNumberBlur} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
+                            <FormItem><FormLabel>{t('formLabelPhone')}</FormLabel><FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handlePhoneNumberBlur} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          {/* WhatsApp Button - Compact styling to keep alignment */}
                           <Button type="button" variant="outline" size="sm" className="w-full text-xs h-8" asChild disabled={!watchedPhoneNumber}>
-                            <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank">
-                              <MessageSquare className="mr-2 h-3 w-3" /> WhatsApp
-                            </Link>
+                            <Link href={getWhatsAppUrl(watchedPhoneNumber)} target="_blank"><MessageSquare className="mr-2 h-3 w-3" /> WhatsApp</Link>
                           </Button>
                         </div>
-
-                        {/* Right: Secondary Phone */}
+                        
                         <FormField control={form.control} name="celularSecundario" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Secondary Phone</FormLabel>
-                            <FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handleSecondaryPhoneNumberBlur} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
+                          <FormItem><FormLabel>Secondary Phone</FormLabel><FormControl><Input placeholder="+507 6000-0000" {...field} onBlur={handleSecondaryPhoneNumberBlur} /></FormControl><FormMessage /></FormItem>
                         )} />
-
+                        
+                        {/* Shipping Address for BOTH quote and order */}
+                        <div className="sm:col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="direccionEnvio"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('formLabelShippingAddress')}</FormLabel>
+                                    <FormControl>
+                                    <Textarea placeholder="123 Main St, City, Country..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
