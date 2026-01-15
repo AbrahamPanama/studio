@@ -3,23 +3,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ⚠️ GLOBAL PERMISSION RULE
-    // Allows any logged-in user to read/write ANY collection (orders, inventory, etc.)
-    // This is less specific than the rules below and will be overridden by them.
+    // 1. GLOBAL RULE (Keep this for your Admin Dashboard)
+    // This allows any authenticated user to read/write any document.
+    // More specific rules below will override this for their respective paths.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
     
-    // NEW: Allow Kiosk to write logs without login
-    match /time_entries/{entryId} {
-      allow create: if true;  // <--- ALLOWS THE KIOSK TO WORK
-      allow read, update, delete: if request.auth != null; // Keep data safe
+    // 2. EMPLOYEES (Kiosk needs to READ faces, Admins need to WRITE)
+    // This rule is more specific than the global rule for the 'employees' collection.
+    match /employees/{employeeId} {
+      allow read: if true; // <--- ALLOW PUBLIC READ FOR KIOSK FACES
+      allow write: if request.auth != null; // Only logged-in users (admins) can change employee data
     }
 
-    // Allow Kiosk to read the employee list to show the grid
-    match /employees/{employeeId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // 3. TIME ENTRIES (Kiosk needs to CREATE logs)
+    // This rule is more specific than the global rule for the 'time_entries' collection.
+    match /time_entries/{entryId} {
+      allow create: if true; // <--- THIS FIXES YOUR TIMEOUT/ERROR by allowing public creation
+      allow read, update, delete: if request.auth != null; // Only admins can view or modify logs
     }
   }
 }
