@@ -6,7 +6,7 @@ import { firestore, storage } from '@/firebase';
 import { Employee } from '@/lib/types-timekeeper';
 import { verifyEmployeeFace } from '../actions';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -233,7 +233,9 @@ export default function TimeclockPage() {
                         <DialogTitle className={`text-3xl font-bold ${header.color}`}>
                             {header.text}
                         </DialogTitle>
-                        <p className="text-slate-500 font-medium text-lg mt-1">{header.sub}</p>
+                        <DialogDescription className="text-slate-500 font-medium text-lg mt-1 text-center">
+                            {header.sub}
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="flex flex-col items-center space-y-6 py-4">
