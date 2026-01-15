@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { ai } from './genkit';
 
@@ -15,34 +16,11 @@ export const verifyFace = ai.defineFlow(
         }),
     },
     async (input) => {
-        const promptText = `
-      Act as a biometric security system. 
-      Compare the person in Image A (Reference) with Image B (Live Capture). 
-      Ignore lighting/background differences. 
-      
-      Image A (Reference): ${input.referenceImage}
-      Image B (Live Capture): ${input.kioskImage}
-      
-      Strictly evaluate if they are the same person.
-      Return JSON with:
-      - isMatch: true ONLY if confidence > 85%
-      - confidence: matching probability (0-100)
-      - reasoning: brief explanation
-    `;
-
-        // Note: In a real multi-modal setup, we would pass image parts. 
-        // For this prompt-based flow, we assume the model can handle URLs/Base64 in text 
-        // or we rely on the multimodal capabilities if we were constructing a Part array.
-        // Given the simple instruction, we'll try to use the generate helper.
-
-        // However, since we are sending image data (potentially base64), it's best to use the structured prompt if the model supports it.
-        // For 'googleai/gemini-2.5-flash', passing images as parts is the way.
-
         const { output } = await ai.generate({
             prompt: [
-                { text: "Act as a biometric security system. Compare the person in Image A (Reference) with Image B (Live Capture). Ignore lighting/background. Return isMatch: true ONLY if confidence > 85%." },
-                { media: { url: input.referenceImage } },
-                { media: { url: input.kioskImage } }
+                { text: "Carefully compare the person in the reference image with the person in the live capture. Ignore lighting and background differences. Your task is to determine if they are the same person. Return `isMatch: true` ONLY if your confidence is greater than 75%." },
+                { media: { url: input.referenceImage, contentType: 'image/jpeg' } },
+                { media: { url: input.kioskImage, contentType: 'image/jpeg' } }
             ],
             output: {
                 schema: z.object({
@@ -54,7 +32,7 @@ export const verifyFace = ai.defineFlow(
         });
 
         if (!output) {
-            throw new Error("Failed to verify face");
+            throw new Error("Failed to get a response from the AI model for face verification.");
         }
 
         return output;
