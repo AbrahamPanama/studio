@@ -1,0 +1,272 @@
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { TimeEntry } from '@/lib/types-timekeeper';
+import { processTimeEntries, getCurrentPayPeriod } from '@/lib/timekeeping-utils';
+import { format, isSameDay } from 'date-fns';
+import { 
+  Card, CardContent, CardHeader, CardTitle, CardDescription 
+} from '@/components/ui/card';
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, AlertCircle, CheckCircle2, User } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
+
+export default function TimesheetsPage() {
+  const firestore = useFirestore();
+  const { t } = useLanguage(); // Assuming you have translations, or fallback to English text
+  
+  // 1. Get Current Pay Period
+  const payPeriod = useMemo(() => getCurrentPayPeriod(), []);
+  
+  // 2. Query Data (Fetch slightly more than needed to be safe, or exact period)
+  // For simplicity, we fetch all logs for the current month to handle the logic client-side
+  const logsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+        collection(firestore, 'time_entries'),
+        where('timestamp', '>=', Timestamp.fromDate(payPeriod.start)),
+        orderBy('timestamp', 'desc')
+    );
+  }, [firestore, payPeriod]);
+
+  const { data: rawLogs, isLoading } = useCollection<TimeEntry>(logsQuery);
+
+  // 3. Process Data
+  const { summary, todaysLogs } = useMemo(() => {
+    const safeLogs = rawLogs || [];
+    
+    // Process Payroll Summary
+    const processed = processTimeEntries(safeLogs, payPeriod.start, payPeriod.end);
+    
+    // Filter for "Today's" raw activity feed
+    const today = new Date();
+    const todayActivity = safeLogs.filter(log => {
+       const logDate = log.timestamp instanceof Date ? log.timestamp : (log.timestamp as any).toDate();
+       return isSameDay(logDate, today);
+    });
+
+    return { summary: Object.values(processed), todaysLogs: todayActivity };
+  }, [rawLogs, payPeriod]);
+
+  if (isLoading) return <div className="p-10">Loading Timesheets...</div>;
+
+  return (
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex items-center justify-between">
+        <div>
+           <h2 className="text-3xl font-bold tracking-tight">Timesheets & Payroll</h2>
+           <p className="text-muted-foreground">
+             Current Cycle: <span className="font-semibold text-slate-900">{payPeriod.label}</span> 
+             ({format(payPeriod.start, 'MMM d')} - {format(payPeriod.end, 'MMM d, yyyy')})
+           </p>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Hours (Period)</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {summary.reduce((acc, curr) => acc + curr.totalHours, 0).toFixed(1)} h
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+            <User className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {/* Count employees who have an 'ACTIVE' shift status currently */}
+              {summary.filter(s => s.shifts.some(shift => shift.status === 'ACTIVE')).length}
+            </div>
+            <p className="text-xs text-muted-foreground">Currently clocked in</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium">Missing Punches</CardTitle>
+             <AlertCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+               {summary.reduce((acc, curr) => acc + curr.missingPunches, 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Requires attention</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="payroll" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="payroll">Payroll Summary</TabsTrigger>
+          <TabsTrigger value="today">Today's Live Logs</TabsTrigger>
+        </TabsList>
+
+        {/* TAB 1: PAYROLL SUMMARY */}
+        <TabsContent value="payroll" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Period Summary ({payPeriod.label})</CardTitle>
+              <CardDescription>Total billable hours per employee.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead className="text-center">Shifts Worked</TableHead>
+                    <TableHead className="text-center">Missing Punches</TableHead>
+                    <TableHead className="text-right">Total Hours</TableHead>
+                    <TableHead className="text-right">Est. Cost ($4.50/hr)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.map((emp) => (
+                    <TableRow key={emp.employeeId}>
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                            <span>{emp.employeeName}</span>
+                            <span className="text-xs text-slate-400">ID: {emp.employeeId.slice(0,6)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">{emp.shifts.length}</TableCell>
+                      <TableCell className="text-center">
+                         {emp.missingPunches > 0 ? (
+                           <Badge variant="destructive">{emp.missingPunches} Issues</Badge>
+                         ) : (
+                           <span className="text-slate-300">-</span>
+                         )}
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-lg">{emp.totalHours}</TableCell>
+                      <TableCell className="text-right text-slate-500">
+                         {/* Placeholder rate logic - replace with real rate if stored in DB */}
+                         ${(emp.totalHours * 4.50).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {summary.length === 0 && (
+                      <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                              No records found for this period.
+                          </TableCell>
+                      </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          {/* Detailed Shifts Breakdown */}
+          <div className="grid gap-4 md:grid-cols-2">
+             {summary.map(emp => (
+                 <Card key={emp.employeeId} className="overflow-hidden">
+                     <CardHeader className="bg-slate-50 pb-3">
+                         <div className="flex justify-between items-center">
+                             <CardTitle className="text-base">{emp.employeeName}</CardTitle>
+                             <Badge variant="outline">{emp.totalHours} hrs</Badge>
+                         </div>
+                     </CardHeader>
+                     <CardContent className="p-0">
+                         <Table>
+                             <TableHeader>
+                                 <TableRow>
+                                     <TableHead className="w-[100px]">Date</TableHead>
+                                     <TableHead>In</TableHead>
+                                     <TableHead>Out</TableHead>
+                                     <TableHead className="text-right">Duration</TableHead>
+                                 </TableRow>
+                             </TableHeader>
+                             <TableBody>
+                                 {emp.shifts.map((shift, idx) => (
+                                     <TableRow key={idx}>
+                                         <TableCell className="text-xs">{format(shift.date, 'MMM d')}</TableCell>
+                                         <TableCell className="text-xs font-mono">{format(shift.clockIn, 'h:mm a')}</TableCell>
+                                         <TableCell className="text-xs font-mono">
+                                             {shift.clockOut ? format(shift.clockOut, 'h:mm a') : <span className="text-green-600 font-bold">Active</span>}
+                                             {shift.status === 'MISSING_OUT' && <span className="text-red-500 font-bold">MISSING</span>}
+                                         </TableCell>
+                                         <TableCell className="text-right text-xs">
+                                             {shift.durationMinutes > 0 
+                                               ? `${(shift.durationMinutes / 60).toFixed(1)}h` 
+                                               : '-'}
+                                         </TableCell>
+                                     </TableRow>
+                                 ))}
+                             </TableBody>
+                         </Table>
+                     </CardContent>
+                 </Card>
+             ))}
+          </div>
+        </TabsContent>
+
+        {/* TAB 2: TODAY'S LOGS */}
+        <TabsContent value="today">
+          <Card>
+            <CardHeader>
+              <CardTitle>Today's Activity ({format(new Date(), 'EEEE, MMM do')})</CardTitle>
+              <CardDescription>Real-time log of all punches.</CardDescription>
+            </CardHeader>
+            <CardContent>
+               <Table>
+                   <TableHeader>
+                       <TableRow>
+                           <TableHead>Time</TableHead>
+                           <TableHead>Employee</TableHead>
+                           <TableHead>Action</TableHead>
+                           <TableHead>Method</TableHead>
+                           <TableHead>Photo</TableHead>
+                       </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                       {todaysLogs.map(log => {
+                           const time = log.timestamp instanceof Date ? log.timestamp : (log.timestamp as any).toDate();
+                           return (
+                               <TableRow key={log.id}>
+                                   <TableCell className="font-mono">{format(time, 'h:mm:ss a')}</TableCell>
+                                   <TableCell className="font-medium">{log.employeeName}</TableCell>
+                                   <TableCell>
+                                       {log.type === 'CLOCK_IN' 
+                                         ? <Badge className="bg-green-600">IN</Badge> 
+                                         : <Badge variant="secondary">OUT</Badge>
+                                       }
+                                   </TableCell>
+                                   <TableCell className="text-xs text-muted-foreground">{log.method}</TableCell>
+                                   <TableCell>
+                                       {log.snapshotUrl ? (
+                                           <a href={log.snapshotUrl} target="_blank" className="text-blue-500 text-xs hover:underline">View Photo</a>
+                                       ) : '-'}
+                                   </TableCell>
+                               </TableRow>
+                           );
+                       })}
+                       {todaysLogs.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                                    No activity recorded today.
+                                </TableCell>
+                            </TableRow>
+                       )}
+                   </TableBody>
+               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

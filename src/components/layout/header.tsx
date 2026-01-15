@@ -41,6 +41,9 @@ export default function Header() {
           <Button asChild variant="ghost">
             <Link href="/quotes/follow-up">Follow-Up</Link>
           </Button>
+          <Button asChild variant="ghost">
+            <Link href="/admin/timesheets">Timesheets</Link>
+          </Button>
 
           <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
             <SelectTrigger className="w-[120px]">
