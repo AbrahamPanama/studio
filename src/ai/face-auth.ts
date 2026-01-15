@@ -18,7 +18,7 @@ export const verifyFace = ai.defineFlow(
     async (input) => {
         const { output } = await ai.generate({
             prompt: [
-                { text: "Carefully compare the person in the reference image with the person in the live capture. Ignore lighting and background differences. Your task is to determine if they are the same person. Return `isMatch: true` ONLY if your confidence is greater than 75%." },
+                { text: "Carefully compare the person in the reference image with the person in the live capture. Ignore lighting and background differences. Your task is to determine if they are the same person. Return `isMatch: true` ONLY if your confidence is greater than 60%." },
                 { media: { url: input.referenceImage, contentType: 'image/jpeg' } },
                 { media: { url: input.kioskImage, contentType: 'image/jpeg' } }
             ],
