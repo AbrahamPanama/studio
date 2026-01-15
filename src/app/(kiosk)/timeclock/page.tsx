@@ -245,6 +245,7 @@ export default function TimeclockPage() {
                                 <Webcam
                                     ref={webcamRef}
                                     screenshotFormat="image/jpeg"
+                                    screenshotQuality={0.25}
                                     width={480} height={360}
                                     className="w-full h-full object-cover"
                                     mirrored
