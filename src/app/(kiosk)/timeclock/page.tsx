@@ -105,28 +105,43 @@ export default function TimeclockPage() {
     };
 
     const recordTimeEntry = async (employee: Employee, method: 'FACE' | 'PIN', snapshotBase64?: string) => {
-        let snapshotUrl = undefined;
+        let snapshotUrl = null; // Change undefined to null
+
         // Upload snapshot if exists
         if (snapshotBase64) {
-            const snapshotRef = ref(storage, `time_snapshots/${employee.id}_${Date.now()}.jpg`);
-            await uploadString(snapshotRef, snapshotBase64, 'data_url');
-            snapshotUrl = await getDownloadURL(snapshotRef);
+            try {
+                const snapshotRef = ref(storage, `time_snapshots/${employee.id}_${Date.now()}.jpg`);
+                await uploadString(snapshotRef, snapshotBase64, 'data_url');
+                snapshotUrl = await getDownloadURL(snapshotRef);
+            } catch (err) {
+                console.error("Failed to upload snapshot", err);
+                // Continue recording the time entry even if image upload fails
+            }
         }
-        
-        // Timeout wrapper for Cloud Operations
+
+        // Prepare the payload (remove undefined values)
+        const payload: any = {
+            employeeId: employee.id,
+            employeeName: employee.name,
+            type: 'CLOCK_IN',
+            timestamp: Timestamp.now(), // Ensure Timestamp is imported from 'firebase/firestore'
+            method,
+        };
+
+        // Only add snapshotUrl if it is not null
+        if (snapshotUrl) {
+            payload.snapshotUrl = snapshotUrl;
+        }
+
+        // Timeout wrapper
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Database operation timed out")), 30000)
+            setTimeout(() => reject(new Error("Database operation timed out")), 10000)
         );
 
+        console.log("Attempting to write time entry:", payload); // Debug Log
+
         await Promise.race([
-            addDoc(collection(firestore, 'time_entries'), {
-                employeeId: employee.id,
-                employeeName: employee.name,
-                type: 'CLOCK_IN',
-                timestamp: Timestamp.now(),
-                method,
-                snapshotUrl
-            }),
+            addDoc(collection(firestore, 'time_entries'), payload),
             timeoutPromise
         ]);
     };
