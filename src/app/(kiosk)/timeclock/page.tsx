@@ -246,7 +246,11 @@ export default function TimeclockPage() {
                                     ref={webcamRef}
                                     screenshotFormat="image/jpeg"
                                     screenshotQuality={0.25}
-                                    width={480} height={360}
+                                    videoConstraints={{
+                                        width: 960,
+                                        height: 720,
+                                        aspectRatio: 4 / 3
+                                    }}
                                     className="w-full h-full object-cover"
                                     mirrored
                                 />
