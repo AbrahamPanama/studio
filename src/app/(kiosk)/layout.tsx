@@ -1,5 +1,7 @@
+
 import '../globals.css';
 import { FirebaseClientProvider } from '@/firebase';
+import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 
 export default function KioskLayout({
     children,
@@ -14,6 +16,7 @@ export default function KioskLayout({
                         {children}
                     </FirebaseClientProvider>
                 </main>
+                <Toaster />
             </body>
         </html>
     );

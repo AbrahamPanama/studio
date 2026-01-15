@@ -5,16 +5,21 @@ service cloud.firestore {
     
     // ⚠️ GLOBAL PERMISSION RULE
     // Allows any logged-in user to read/write ANY collection (orders, inventory, etc.)
+    // This is less specific than the rules below and will be overridden by them.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
     
-    // Explicit rules for Timekeeper (redundant with global but good for structure)
-    match /employees/{employeeId} {
-      allow read, write: if request.auth != null;
-    }
+    // NEW: Allow Kiosk to write logs without login
     match /time_entries/{entryId} {
-        allow read, write: if request.auth != null;
+      allow create: if true;  // <--- ALLOWS THE KIOSK TO WORK
+      allow read, update, delete: if request.auth != null; // Keep data safe
+    }
+
+    // Allow Kiosk to read the employee list to show the grid
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

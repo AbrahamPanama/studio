@@ -44,8 +44,19 @@ export default function TimeclockPage() {
 
     const captureAndVerify = async () => {
         if (!webcamRef.current || !selectedEmployee) return;
+
+        // FIX 1: Explicitly check for camera readiness
         const screenshot = webcamRef.current.getScreenshot();
-        if (!screenshot) return;
+        
+        if (!screenshot) {
+            // FIX 2: Stop the silence! Tell the user what's wrong.
+            toast({ 
+                title: "Camera not ready", 
+                description: "Please wait a moment or try moving closer.", 
+                variant: "destructive" 
+            });
+            return;
+        }
 
         setVerifying(true);
         try {
@@ -60,9 +71,14 @@ export default function TimeclockPage() {
                 toast({ title: "Face mismatch", description: "Please try again or use PIN.", variant: "destructive" });
                 // Optional: Shake logic here could be added with animation classes
             }
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Error verifying", variant: "destructive" });
+        } catch (error: any) {
+            console.error("Verification Error:", error);
+            // FIX 3: Show the actual error message from the database
+            toast({ 
+                title: "System Error", 
+                description: error.message || "Could not connect to database.", 
+                variant: "destructive" 
+            });
         } finally {
             setVerifying(false);
         }
@@ -77,8 +93,8 @@ export default function TimeclockPage() {
                 await recordTimeEntry(selectedEmployee, 'PIN');
                 toast({ title: `Welcome, ${selectedEmployee.name}!`, className: "bg-green-600 text-white" });
                 setIsDialogOpen(false);
-            } catch (e) {
-                toast({ title: "Error", variant: "destructive" });
+            } catch (e: any) {
+                toast({ title: "Error", description: e.message || "Could not record time entry.", variant: "destructive" });
             } finally {
                 setVerifying(false);
             }
@@ -96,20 +112,7 @@ export default function TimeclockPage() {
             await uploadString(snapshotRef, snapshotBase64, 'data_url');
             snapshotUrl = await getDownloadURL(snapshotRef);
         }
-
-        // Determine Clock In or Out? 
-        // For simplicity in this v1, we just log calls. 
-        // Real-world would check last entry. 
-        // User prompt says 'TimeEntry' has type 'CLOCK_IN' | 'CLOCK_OUT'. 
-        // We will assume CLOCK_IN for now or toggle? 
-        // The Plan Phase 1 step 1 mentions "type". 
-        // The Phase 4 instructions don't specify asking the user.
-        // I'll make a smart guess: fetch last entry to toggle, or just show buttons "Clock In" / "Clock Out" AFTER auth?
-        // Logic in Plan Phase 4 says: "Call verifyFace ... If Match: Add doc to time_entries".
-        // It doesn't specify In/Out. I will default to CLOCK_IN for simplicity or maybe check last entry.
-        // Better yet, let's just default to 'CLOCK_IN' for this demo unless we want to add buttons.
-        // I'll just add "CLOCK_IN" for now, as it satisfies "Add doc".
-
+        
         // Timeout wrapper for Cloud Operations
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("Database operation timed out")), 30000)
