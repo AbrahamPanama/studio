@@ -123,10 +123,17 @@ export default function TimeclockPage() {
         setVerifying(true);
         try {
             const result = await verifyEmployeeFace(selectedEmployee.photoUrl, screenshot);
+            console.log("Full verification result:", result);
+
             if (result.isMatch) {
                 await handleSuccess('FACE', screenshot);
             } else {
-                toast({ title: "Face mismatch", description: "Try again or use PIN.", variant: "destructive" });
+                // Show confidence score for debugging
+                toast({
+                    title: "Face mismatch",
+                    description: `Confidence: ${result.confidence}%. ${result.reasoning || 'Try PIN instead.'}`,
+                    variant: "destructive"
+                });
             }
         } catch (error) {
             console.error(error);
