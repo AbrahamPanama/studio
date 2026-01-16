@@ -24,7 +24,7 @@ type EmployeeStatus = {
 export default function TimeclockPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-    
+
     // Smart Status State
     const [status, setStatus] = useState<EmployeeStatus>({ isClockedIn: false, lastPunchTime: null, durationLabel: null });
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
@@ -59,19 +59,19 @@ export default function TimeclockPage() {
             const logsRef = collection(firestore, 'time_entries');
             // Note: This requires a composite index. If it fails, we fall back to client-side sort
             const q = query(
-                logsRef, 
-                where('employeeId', '==', emp.id), 
-                orderBy('timestamp', 'desc'), 
+                logsRef,
+                where('employeeId', '==', emp.id),
+                orderBy('timestamp', 'desc'),
                 limit(1)
             );
-            
+
             const snapshot = await getDocs(q);
-            
+
             if (!snapshot.empty) {
                 const lastLog = snapshot.docs[0].data();
                 const isClockedIn = lastLog.type === 'CLOCK_IN';
                 const lastTime = lastLog.timestamp.toDate();
-                
+
                 let durationLabel = null;
                 if (isClockedIn) {
                     const now = new Date();
@@ -96,19 +96,19 @@ export default function TimeclockPage() {
 
     const handleSuccess = async (method: 'FACE' | 'PIN', snapshotBase64?: string) => {
         if (!selectedEmployee) return;
-        
+
         // AUTO-TOGGLE: If In -> Out, If Out -> In
         const type = status.isClockedIn ? 'CLOCK_OUT' : 'CLOCK_IN';
-        
+
         await recordTimeEntry(selectedEmployee, type, method, snapshotBase64);
-        
+
         const actionText = type === 'CLOCK_IN' ? 'Clocked IN' : 'Clocked OUT';
-        toast({ 
-            title: `Success: ${actionText}`, 
+        toast({
+            title: `Success: ${actionText}`,
             description: type === 'CLOCK_OUT' ? `Shift duration: ${status.durationLabel}` : `Have a great shift!`,
-            className: type === 'CLOCK_IN' ? "bg-green-600 text-white" : "bg-blue-600 text-white" 
+            className: type === 'CLOCK_IN' ? "bg-green-600 text-white" : "bg-blue-600 text-white"
         });
-        
+
         setIsDialogOpen(false);
     };
 
@@ -179,7 +179,7 @@ export default function TimeclockPage() {
     // UI HELPER: Dynamic Header Color & Text
     const getHeaderContent = () => {
         if (isLoadingStatus) return { color: 'text-slate-500', text: 'Checking status...', sub: '' };
-        
+
         if (status.isClockedIn) {
             return {
                 color: 'text-red-600',
@@ -246,11 +246,7 @@ export default function TimeclockPage() {
                                     ref={webcamRef}
                                     screenshotFormat="image/jpeg"
                                     screenshotQuality={0.25}
-                                    videoConstraints={{
-                                        width: 960,
-                                        height: 720,
-                                        aspectRatio: 4 / 3
-                                    }}
+                                    videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
                                     className="w-full h-full object-cover"
                                     mirrored
                                 />
@@ -275,15 +271,15 @@ export default function TimeclockPage() {
                         )}
 
                         <div className="w-full max-w-[320px] space-y-3">
-                            <Button 
-                                size="lg" 
+                            <Button
+                                size="lg"
                                 className={`w-full text-lg h-14 ${status.isClockedIn ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-                                onClick={authMethod === 'FACE' ? captureAndVerify : handlePinSubmit} 
+                                onClick={authMethod === 'FACE' ? captureAndVerify : handlePinSubmit}
                                 disabled={verifying || isLoadingStatus}
                             >
                                 {verifying ? 'Verifying...' : (authMethod === 'FACE' ? 'Scan Face to Confirm' : 'Submit PIN')}
                             </Button>
-                            
+
                             <Button variant="ghost" className="w-full text-slate-400" onClick={() => setAuthMethod(authMethod === 'FACE' ? 'PIN' : 'FACE')}>
                                 Use {authMethod === 'FACE' ? 'PIN' : 'Face ID'} instead
                             </Button>

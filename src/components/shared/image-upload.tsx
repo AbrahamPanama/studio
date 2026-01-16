@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Image as ImageIcon, X } from 'lucide-react';
-import Image from 'next/image';
 
 interface ImageUploadProps {
   value?: string;           // Current URL
@@ -10,16 +9,60 @@ interface ImageUploadProps {
   onClear: () => void;      // Clear image
 }
 
+/**
+ * Resize image to a maximum dimension while maintaining aspect ratio.
+ * This standardizes reference photos for face recognition (matching webcam capture resolution).
+ */
+async function resizeImage(file: File, maxSize: number = 640): Promise<File> {
+  return new Promise((resolve) => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      // Scale down to maxSize maintaining aspect ratio
+      if (width > height && width > maxSize) {
+        height = Math.round((height * maxSize) / width);
+        width = maxSize;
+      } else if (height > maxSize) {
+        width = Math.round((width * maxSize) / height);
+        height = maxSize;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const resizedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg'
+          });
+          resolve(resizedFile);
+        } else {
+          resolve(file); // Fallback to original
+        }
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => resolve(file); // Fallback to original on error
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function ImageUpload({ value, onChange, onClear }: ImageUploadProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [preview, setPreview] = React.useState<string | null>(value || null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
+      // Resize image for consistent face recognition
+      const resizedFile = await resizeImage(file, 640);
+      const url = URL.createObjectURL(resizedFile);
       setPreview(url);
-      onChange(file);
+      onChange(resizedFile);
     }
   };
 
@@ -44,10 +87,10 @@ export function ImageUpload({ value, onChange, onClear }: ImageUploadProps) {
       {/* Preview Area */}
       {preview ? (
         <div className="relative w-full h-64 bg-slate-100 rounded-md overflow-hidden border">
-          <img 
-            src={preview} 
-            alt="Preview" 
-            className="w-full h-full object-contain" 
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-full object-contain"
           />
           <Button
             type="button"
@@ -60,7 +103,7 @@ export function ImageUpload({ value, onChange, onClear }: ImageUploadProps) {
           </Button>
         </div>
       ) : (
-        <div 
+        <div
           onClick={() => inputRef.current?.click()}
           className="w-full h-40 border-2 border-dashed border-slate-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors gap-2"
         >

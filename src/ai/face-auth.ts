@@ -18,7 +18,7 @@ export const verifyFace = ai.defineFlow(
     async (input) => {
         const { output } = await ai.generate({
             prompt: [
-                { text: "Carefully compare the person in the reference image with the person in the live capture. Ignore lighting and background differences. Your task is to determine if they are the same person. Return `isMatch: true` ONLY if your confidence is greater than 60%." },
+                { text: "You are performing biometric face verification for a workplace time clock system. Compare the person in the REFERENCE image (first image) with the person in the LIVE CAPTURE (second image). Focus ONLY on key facial features: face shape, eye spacing and shape, nose structure, mouth shape, and eyebrow positioning. IGNORE completely: lighting differences, image quality/resolution differences, background, clothing, minor facial hair changes, glasses, head angle variations up to 30 degrees. Return `isMatch: true` if your confidence that this is the same person is 45% or higher. Be reasonably lenient since this is for workplace convenience, not high-security access." },
                 { media: { url: input.referenceImage, contentType: 'image/jpeg' } },
                 { media: { url: input.kioskImage, contentType: 'image/jpeg' } }
             ],
