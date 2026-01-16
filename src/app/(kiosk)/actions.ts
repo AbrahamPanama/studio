@@ -8,9 +8,9 @@ export async function verifyEmployeeFace(referenceImage: string, kioskImage: str
     try {
         console.log(`Verifying face for ${referenceImage.slice(0, 50)}... vs ${kioskImage.slice(0, 50)}...`);
 
-        // Add a 15-second timeout
+        // Add a 30-second timeout
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Verification timed out")), 15000)
+            setTimeout(() => reject(new Error("Verification timed out")), 30000)
         );
 
         const result = await Promise.race([
