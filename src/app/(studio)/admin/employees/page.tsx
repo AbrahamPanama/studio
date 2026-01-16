@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -22,6 +23,9 @@ export default function EmployeesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [pinInput, setPinInput] = useState('');
 
     // Form State
     const [formData, setFormData] = useState<{
@@ -36,6 +40,41 @@ export default function EmployeesPage() {
         photoUrl: '',
         isActive: true,
     });
+
+    if (!isAuthorized) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Card className="w-full max-w-sm shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="text-center">Restricted Access</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Input 
+                            type="password" 
+                            placeholder="Enter Admin PIN" 
+                            className="text-center text-lg tracking-widest"
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value)}
+                        />
+                        <Button 
+                            className="w-full" 
+                            onClick={() => {
+                                if (pinInput === '2831') {
+                                    setIsAuthorized(true);
+                                    toast({ title: "Access Granted" });
+                                } else {
+                                    toast({ title: "Incorrect PIN", variant: "destructive" });
+                                    setPinInput('');
+                                }
+                            }}
+                        >
+                            Unlock Employees
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     // Fetch Employees
     useEffect(() => {

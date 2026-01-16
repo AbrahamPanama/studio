@@ -38,6 +38,9 @@ export default function TimesheetsPage() {
   const [fixTime, setFixTime] = useState('17:00');
   const [isSubmittingFix, setIsSubmittingFix] = useState(false);
   
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+
   // 1. Get Current Pay Period
   const payPeriod = useMemo(() => getCurrentPayPeriod(), []);
   
@@ -103,6 +106,41 @@ export default function TimesheetsPage() {
         setIsSubmittingFix(false);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+        <div className="flex h-[80vh] items-center justify-center">
+            <Card className="w-full max-w-sm shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-center">Restricted Access</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Input 
+                        type="password" 
+                        placeholder="Enter Admin PIN" 
+                        className="text-center text-lg tracking-widest"
+                        value={pinInput}
+                        onChange={(e) => setPinInput(e.target.value)}
+                    />
+                    <Button 
+                        className="w-full" 
+                        onClick={() => {
+                            if (pinInput === '2831') {
+                                setIsAuthorized(true);
+                                toast({ title: "Access Granted" });
+                            } else {
+                                toast({ title: "Incorrect PIN", variant: "destructive" });
+                                setPinInput('');
+                            }
+                        }}
+                    >
+                        Unlock Payroll
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   if (isLoading) return <div className="p-10">Loading Timesheets...</div>;
   if (error) return <div className="p-10 text-red-500">Error: {error.message}</div>;
