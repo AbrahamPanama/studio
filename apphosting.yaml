@@ -25,4 +25,4 @@ env:
     value: "1:1088963818534:web:ffb29ea70dbccfbf74a2e7"
     
   - variable: GOOGLE_GENAI_API_KEY
-    value: "AIzaSyDzQGwf64ccpslCNBMsV4RYHp6vGrx58wk"
+    secret: GOOGLE_GENAI_API_KEY
