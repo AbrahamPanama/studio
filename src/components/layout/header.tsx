@@ -42,7 +42,13 @@ export default function Header() {
             <Link href="/quotes/follow-up">Follow-Up</Link>
           </Button>
           <Button asChild variant="ghost">
+            <Link href="/admin/employees">Employees</Link>
+          </Button>
+          <Button asChild variant="ghost">
             <Link href="/admin/timesheets">Timesheets</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/timeclock" target="_blank">Time Clock</Link>
           </Button>
 
           <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'es')}>
