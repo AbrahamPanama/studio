@@ -47,13 +47,13 @@ export default function TimesheetsPage() {
   // 2. Query Data (Fetch slightly more than needed to be safe, or exact period)
   // For simplicity, we fetch all logs for the current month to handle the logic client-side
   const logsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null; // Don't query if not authorized
     return query(
         collection(firestore, 'time_entries'),
         where('timestamp', '>=', Timestamp.fromDate(payPeriod.start)),
         orderBy('timestamp', 'desc')
     );
-  }, [firestore, payPeriod]);
+  }, [firestore, payPeriod, isAuthorized]);
 
   const { data: rawLogs, isLoading, error } = useCollection<TimeEntry>(logsQuery);
 

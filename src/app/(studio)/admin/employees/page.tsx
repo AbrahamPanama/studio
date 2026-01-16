@@ -41,43 +41,9 @@ export default function EmployeesPage() {
         isActive: true,
     });
 
-    if (!isAuthorized) {
-        return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <Card className="w-full max-w-sm shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="text-center">Restricted Access</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Input 
-                            type="password" 
-                            placeholder="Enter Admin PIN" 
-                            className="text-center text-lg tracking-widest"
-                            value={pinInput}
-                            onChange={(e) => setPinInput(e.target.value)}
-                        />
-                        <Button 
-                            className="w-full" 
-                            onClick={() => {
-                                if (pinInput === '2831') {
-                                    setIsAuthorized(true);
-                                    toast({ title: "Access Granted" });
-                                } else {
-                                    toast({ title: "Incorrect PIN", variant: "destructive" });
-                                    setPinInput('');
-                                }
-                            }}
-                        >
-                            Unlock Employees
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
     // Fetch Employees
     useEffect(() => {
+        if (!isAuthorized) return; // Don't fetch if not authorized
         const q = query(collection(firestore, 'employees'), orderBy('name'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map((doc) => ({
@@ -89,7 +55,7 @@ export default function EmployeesPage() {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, []);
+    }, [isAuthorized]); // Re-run when authorization changes
 
     const handleImageUpload = async (file: File | null) => {
         if (!file) return;
@@ -168,6 +134,41 @@ export default function EmployeesPage() {
     const resetForm = () => {
         setFormData({ name: '', pin: '', photoUrl: '', isActive: true });
     };
+
+    if (!isAuthorized) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Card className="w-full max-w-sm shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="text-center">Restricted Access</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Input 
+                            type="password" 
+                            placeholder="Enter Admin PIN" 
+                            className="text-center text-lg tracking-widest"
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value)}
+                        />
+                        <Button 
+                            className="w-full" 
+                            onClick={() => {
+                                if (pinInput === '2831') {
+                                    setIsAuthorized(true);
+                                    toast({ title: "Access Granted" });
+                                } else {
+                                    toast({ title: "Incorrect PIN", variant: "destructive" });
+                                    setPinInput('');
+                                }
+                            }}
+                        >
+                            Unlock Employees
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="p-8 max-w-6xl mx-auto space-y-8">
