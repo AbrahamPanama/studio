@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, where, Timestamp, addDoc } from 'firebase/firestore';
 import { TimeEntry } from '@/lib/types-timekeeper';
 import { processTimeEntries, getCurrentPayPeriod } from '@/lib/timekeeping-utils';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, setHours, setMinutes } from 'date-fns';
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 
 } from '@/components/ui/card';
@@ -16,10 +16,27 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, AlertCircle, CheckCircle2, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TimesheetsPage() {
   const firestore = useFirestore();
-  const { t } = useLanguage(); // Assuming you have translations, or fallback to English text
+  const { t } = useLanguage();
+  const { toast } = useToast();
+
+  const [fixingShift, setFixingShift] = useState<{ empId: string, date: Date, name: string } | null>(null);
+  const [fixTime, setFixTime] = useState('17:00');
+  const [isSubmittingFix, setIsSubmittingFix] = useState(false);
   
   // 1. Get Current Pay Period
   const payPeriod = useMemo(() => getCurrentPayPeriod(), []);
@@ -35,7 +52,7 @@ export default function TimesheetsPage() {
     );
   }, [firestore, payPeriod]);
 
-  const { data: rawLogs, isLoading } = useCollection<TimeEntry>(logsQuery);
+  const { data: rawLogs, isLoading, error } = useCollection<TimeEntry>(logsQuery);
 
   // 3. Process Data
   const { summary, todaysLogs } = useMemo(() => {
@@ -53,10 +70,45 @@ export default function TimesheetsPage() {
 
     return { summary: Object.values(processed), todaysLogs: todayActivity };
   }, [rawLogs, payPeriod]);
+  
+  const handleFixSubmit = async () => {
+    if (!fixingShift || !firestore) return;
+
+    setIsSubmittingFix(true);
+    try {
+        const [hours, minutes] = fixTime.split(':').map(Number);
+        const fixedDate = setMinutes(setHours(fixingShift.date, hours), minutes);
+
+        await addDoc(collection(firestore, 'time_entries'), {
+            employeeId: fixingShift.empId,
+            employeeName: fixingShift.name,
+            type: 'CLOCK_OUT',
+            method: 'ADMIN',
+            timestamp: Timestamp.fromDate(fixedDate),
+        });
+
+        toast({
+            title: "Success",
+            description: "Missing punch has been corrected."
+        });
+        setFixingShift(null);
+    } catch (e) {
+        console.error("Failed to fix punch", e);
+        toast({
+            title: "Error",
+            description: "Could not save the correction.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsSubmittingFix(false);
+    }
+  };
 
   if (isLoading) return <div className="p-10">Loading Timesheets...</div>;
+  if (error) return <div className="p-10 text-red-500">Error: {error.message}</div>;
 
   return (
+    <>
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between">
         <div>
@@ -196,8 +248,17 @@ export default function TimesheetsPage() {
                                          <TableCell className="text-xs">{format(shift.date, 'MMM d')}</TableCell>
                                          <TableCell className="text-xs font-mono">{format(shift.clockIn, 'h:mm a')}</TableCell>
                                          <TableCell className="text-xs font-mono">
-                                             {shift.clockOut ? format(shift.clockOut, 'h:mm a') : <span className="text-green-600 font-bold">Active</span>}
-                                             {shift.status === 'MISSING_OUT' && <span className="text-red-500 font-bold">MISSING</span>}
+                                            {shift.clockOut ? format(shift.clockOut, 'h:mm a') : <span className="text-green-600 font-bold">Active</span>}
+                                            {shift.status === 'MISSING_OUT' && (
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm" 
+                                                  className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100 h-6 text-xs"
+                                                  onClick={() => setFixingShift({ empId: emp.employeeId, name: emp.employeeName, date: shift.clockIn })}
+                                                >
+                                                  Fix Missing Out
+                                                </Button>
+                                            )}
                                          </TableCell>
                                          <TableCell className="text-right text-xs">
                                              {shift.durationMinutes > 0 
@@ -268,5 +329,37 @@ export default function TimesheetsPage() {
         </TabsContent>
       </Tabs>
     </div>
+
+    <Dialog open={!!fixingShift} onOpenChange={(isOpen) => !isOpen && setFixingShift(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Fix Missing Clock-Out</DialogTitle>
+                <DialogDescription>
+                    You are manually adding a clock-out for <span className="font-bold">{fixingShift?.name}</span> on <span className="font-bold">{fixingShift?.date.toLocaleDateString()}</span>.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="fix-time" className="text-right">
+                        Clock-Out Time
+                    </Label>
+                    <Input
+                        id="fix-time"
+                        type="time"
+                        value={fixTime}
+                        onChange={(e) => setFixTime(e.target.value)}
+                        className="col-span-3"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setFixingShift(null)}>Cancel</Button>
+                <Button type="submit" onClick={handleFixSubmit} disabled={isSubmittingFix}>
+                    {isSubmittingFix ? "Saving..." : "Save Correction"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -15,6 +15,6 @@ export interface TimeEntry {
     employeeName: string;
     type: 'CLOCK_IN' | 'CLOCK_OUT';
     timestamp: Date; // Firestore Timestamp converted to Date
-    method: 'FACE' | 'PIN';
+    method: 'FACE' | 'PIN' | 'ADMIN' | 'RECOVERY';
     snapshotUrl?: string; // Optional URL if a photo was taken
 }

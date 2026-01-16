@@ -3,17 +3,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, where, addDoc, Timestamp, getDocs, orderBy, limit } from 'firebase/firestore';
 import { firestore, storage } from '@/firebase';
-import { Employee } from '@/lib/types-timekeeper';
+import { Employee, TimeEntry } from '@/lib/types-timekeeper';
 import { verifyEmployeeFace } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Clock, LogOut, LogIn } from 'lucide-react';
+import { Loader2, User, Clock, LogOut, LogIn, AlertTriangle } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { differenceInHours, differenceInMinutes } from 'date-fns';
+import { differenceInHours, differenceInMinutes, setHours, setMinutes } from 'date-fns';
 
 type EmployeeStatus = {
     isClockedIn: boolean;
@@ -28,6 +29,10 @@ export default function TimeclockPage() {
     // Smart Status State
     const [status, setStatus] = useState<EmployeeStatus>({ isClockedIn: false, lastPunchTime: null, durationLabel: null });
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+    
+    // Stale Shift State
+    const [staleShift, setStaleShift] = useState<{ isStale: boolean, start: Date, durationLabel: string } | null>(null);
+    const [recoveryTime, setRecoveryTime] = useState('17:00');
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [verifying, setVerifying] = useState(false);
@@ -53,11 +58,11 @@ export default function TimeclockPage() {
         setIsDialogOpen(true); // Open immediately
         setAuthMethod('FACE');
         setPinInput('');
+        setStaleShift(null); // Reset stale shift on new click
 
         try {
             // Fetch the very last log for this user
             const logsRef = collection(firestore, 'time_entries');
-            // Note: This requires a composite index. If it fails, we fall back to client-side sort
             const q = query(
                 logsRef,
                 where('employeeId', '==', emp.id),
@@ -71,23 +76,29 @@ export default function TimeclockPage() {
                 const lastLog = snapshot.docs[0].data();
                 const isClockedIn = lastLog.type === 'CLOCK_IN';
                 const lastTime = lastLog.timestamp.toDate();
-
-                let durationLabel = null;
+                
                 if (isClockedIn) {
                     const now = new Date();
                     const hours = differenceInHours(now, lastTime);
                     const minutes = differenceInMinutes(now, lastTime) % 60;
-                    durationLabel = `${hours}h ${minutes}m`;
+                    const durationLabel = `${hours}h ${minutes}m`;
+
+                    if (hours > 14) {
+                        setStaleShift({ isStale: true, start: lastTime, durationLabel });
+                        // Don't set normal status, let recovery UI take over
+                    } else {
+                        setStatus({ isClockedIn, lastPunchTime: lastTime, durationLabel });
+                    }
+                } else {
+                     setStatus({ isClockedIn: false, lastPunchTime: lastTime, durationLabel: null });
                 }
 
-                setStatus({ isClockedIn, lastPunchTime: lastTime, durationLabel });
             } else {
                 // No logs ever -> Assume Clocked OUT
                 setStatus({ isClockedIn: false, lastPunchTime: null, durationLabel: null });
             }
         } catch (err) {
             console.error("Status fetch error (likely missing index):", err);
-            // Fallback: Default to "Clock In" if we can't read DB
             setStatus({ isClockedIn: false, lastPunchTime: null, durationLabel: null });
         } finally {
             setIsLoadingStatus(false);
@@ -128,7 +139,6 @@ export default function TimeclockPage() {
             if (result.isMatch) {
                 await handleSuccess('FACE', screenshot);
             } else {
-                // Show confidence score for debugging
                 toast({
                     title: "Face mismatch",
                     description: `Confidence: ${result.confidence}%. ${result.reasoning || 'Try PIN instead.'}`,
@@ -159,8 +169,38 @@ export default function TimeclockPage() {
             setPinInput('');
         }
     };
+    
+    const handleRecoverySubmit = async () => {
+        if (!staleShift || !selectedEmployee) return;
 
-    const recordTimeEntry = async (employee: Employee, type: 'CLOCK_IN' | 'CLOCK_OUT', method: 'FACE' | 'PIN', snapshotBase64?: string) => {
+        setVerifying(true);
+        try {
+            const [hours, minutes] = recoveryTime.split(':').map(Number);
+            const recoveryDate = setMinutes(setHours(staleShift.start, hours), minutes);
+
+            await recordTimeEntry(selectedEmployee, 'CLOCK_OUT', 'RECOVERY', undefined, recoveryDate);
+
+            toast({
+                title: "Correction Saved",
+                description: `Clock-out for yesterday recorded at ${recoveryTime}. You can now clock in.`
+            });
+
+            // Reset and re-trigger to show the normal Clock-In screen
+            setIsDialogOpen(false);
+            setStaleShift(null);
+            setTimeout(() => {
+                if (selectedEmployee) handleCardClick(selectedEmployee);
+            }, 500);
+
+        } catch (e) {
+            console.error(e);
+            toast({ title: "Error Saving Correction", variant: "destructive" });
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+    const recordTimeEntry = async (employee: Employee, type: 'CLOCK_IN' | 'CLOCK_OUT', method: 'FACE' | 'PIN' | 'ADMIN' | 'RECOVERY', snapshotBase64?: string, customTimestamp?: Date) => {
         let snapshotUrl = null;
         if (snapshotBase64) {
             try {
@@ -173,17 +213,15 @@ export default function TimeclockPage() {
         const payload: any = {
             employeeId: employee.id,
             employeeName: employee.name,
-            type, // <--- DYNAMIC TYPE
-            timestamp: Timestamp.now(),
+            type,
+            timestamp: customTimestamp ? Timestamp.fromDate(customTimestamp) : Timestamp.now(),
             method,
         };
         if (snapshotUrl) payload.snapshotUrl = snapshotUrl;
 
-        // Write to DB
         await addDoc(collection(firestore, 'time_entries'), payload);
     };
 
-    // UI HELPER: Dynamic Header Color & Text
     const getHeaderContent = () => {
         if (isLoadingStatus) return { color: 'text-slate-500', text: 'Checking status...', sub: '' };
 
@@ -235,63 +273,101 @@ export default function TimeclockPage() {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-md border-0">
-                    <DialogHeader className="flex flex-col items-center justify-center pb-2">
-                        {header.icon}
-                        <DialogTitle className={`text-3xl font-bold ${header.color}`}>
-                            {header.text}
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-500 font-medium text-lg mt-1 text-center">
-                            {header.sub}
-                        </DialogDescription>
-                    </DialogHeader>
+                    {staleShift?.isStale ? (
+                        <>
+                            <DialogHeader className="flex flex-col items-center justify-center pb-2 text-center">
+                                <AlertTriangle className="w-10 h-10 text-amber-500 mb-2" />
+                                <DialogTitle className="text-3xl font-bold text-amber-600">
+                                    Missing Clock-Out?
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-500 font-medium text-lg mt-1">
+                                    Your last shift was over 14 hours long ({staleShift.durationLabel}). If you forgot to clock out, please enter the time you left.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4">
+                                <div className="grid grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="recovery-time" className="text-right">
+                                        Time you left
+                                    </Label>
+                                    <Input
+                                        id="recovery-time"
+                                        type="time"
+                                        value={recoveryTime}
+                                        onChange={(e) => setRecoveryTime(e.target.value)}
+                                        className="col-span-2"
+                                    />
+                                </div>
+                                <Button
+                                    size="lg"
+                                    className="w-full text-lg h-14 bg-amber-600 hover:bg-amber-700"
+                                    onClick={handleRecoverySubmit}
+                                    disabled={verifying}
+                                >
+                                    {verifying ? 'Saving...' : 'Save & Continue to Clock-In'}
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <DialogHeader className="flex flex-col items-center justify-center pb-2">
+                                {header.icon}
+                                <DialogTitle className={`text-3xl font-bold ${header.color}`}>
+                                    {header.text}
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-500 font-medium text-lg mt-1 text-center">
+                                    {header.sub}
+                                </DialogDescription>
+                            </DialogHeader>
 
-                    <div className="flex flex-col items-center space-y-6 py-4">
-                        {/* CAMERA / PIN UI */}
-                        {authMethod === 'FACE' ? (
-                            <div className="relative rounded-xl overflow-hidden border-4 border-slate-100 shadow-inner bg-black aspect-[4/3] w-full max-w-[320px]">
-                                <Webcam
-                                    ref={webcamRef}
-                                    screenshotFormat="image/jpeg"
-                                    screenshotQuality={0.25}
-                                    videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
-                                    className="w-full h-full object-cover"
-                                    mirrored
-                                />
-                                {verifying && (
-                                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                                        <Loader2 className="h-12 w-12 animate-spin mb-2" />
-                                        <span className="font-medium">Verifying Face...</span>
+                            <div className="flex flex-col items-center space-y-6 py-4">
+                                {/* CAMERA / PIN UI */}
+                                {authMethod === 'FACE' ? (
+                                    <div className="relative rounded-xl overflow-hidden border-4 border-slate-100 shadow-inner bg-black aspect-[4/3] w-full max-w-[320px]">
+                                        <Webcam
+                                            ref={webcamRef}
+                                            screenshotFormat="image/jpeg"
+                                            screenshotQuality={0.25}
+                                            videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
+                                            className="w-full h-full object-cover"
+                                            mirrored
+                                        />
+                                        {verifying && (
+                                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white backdrop-blur-sm">
+                                                <Loader2 className="h-12 w-12 animate-spin mb-2" />
+                                                <span className="font-medium">Verifying Face...</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="w-full max-w-[240px] py-4">
+                                        <Input
+                                            type="password"
+                                            className="text-center text-4xl tracking-[1em] h-16 font-bold"
+                                            maxLength={4}
+                                            placeholder="••••"
+                                            value={pinInput}
+                                            onChange={(e) => setPinInput(e.target.value)}
+                                        />
                                     </div>
                                 )}
-                            </div>
-                        ) : (
-                            <div className="w-full max-w-[240px] py-4">
-                                <Input
-                                    type="password"
-                                    className="text-center text-4xl tracking-[1em] h-16 font-bold"
-                                    maxLength={4}
-                                    placeholder="••••"
-                                    value={pinInput}
-                                    onChange={(e) => setPinInput(e.target.value)}
-                                />
-                            </div>
-                        )}
 
-                        <div className="w-full max-w-[320px] space-y-3">
-                            <Button
-                                size="lg"
-                                className={`w-full text-lg h-14 ${status.isClockedIn ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-                                onClick={authMethod === 'FACE' ? captureAndVerify : handlePinSubmit}
-                                disabled={verifying || isLoadingStatus}
-                            >
-                                {verifying ? 'Verifying...' : (authMethod === 'FACE' ? 'Scan Face to Confirm' : 'Submit PIN')}
-                            </Button>
+                                <div className="w-full max-w-[320px] space-y-3">
+                                    <Button
+                                        size="lg"
+                                        className={`w-full text-lg h-14 ${status.isClockedIn ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                                        onClick={authMethod === 'FACE' ? captureAndVerify : handlePinSubmit}
+                                        disabled={verifying || isLoadingStatus}
+                                    >
+                                        {verifying ? 'Verifying...' : (authMethod === 'FACE' ? 'Scan Face to Confirm' : 'Submit PIN')}
+                                    </Button>
 
-                            <Button variant="ghost" className="w-full text-slate-400" onClick={() => setAuthMethod(authMethod === 'FACE' ? 'PIN' : 'FACE')}>
-                                Use {authMethod === 'FACE' ? 'PIN' : 'Face ID'} instead
-                            </Button>
-                        </div>
-                    </div>
+                                    <Button variant="ghost" className="w-full text-slate-400" onClick={() => setAuthMethod(authMethod === 'FACE' ? 'PIN' : 'FACE')}>
+                                        Use {authMethod === 'FACE' ? 'PIN' : 'Face ID'} instead
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
