@@ -23,3 +23,6 @@ env:
     
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:1088963818534:web:ffb29ea70dbccfbf74a2e7"
+    
+  - variable: GOOGLE_GENAI_API_KEY
+    value: "REPLACE_WITH_REAL_KEY"
