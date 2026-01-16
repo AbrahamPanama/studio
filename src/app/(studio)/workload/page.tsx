@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -100,7 +101,14 @@ function getWorkloadData(
 
   // Initialize Horizon Keys
   for (let i = 0; i < horizonDays; i++) {
-    dailyVolume.set(format(addDays(now, i), 'yyyy-MM-dd'), {
+    const date = addDays(now, i);
+    
+    // Skip Sunday if toggle is off
+    if (!includeSundays && isSunday(date)) {
+        continue;
+    }
+
+    dailyVolume.set(format(date, 'yyyy-MM-dd'), {
       total: 0,
       high: 0,
       medium: 0,
