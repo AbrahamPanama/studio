@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -40,6 +41,16 @@ export default function TimeclockPage() {
     const [pinInput, setPinInput] = useState('');
     const webcamRef = useRef<Webcam>(null);
     const { toast } = useToast();
+
+    const speak = (text: string) => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES'; // Set language to Spanish
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    };
 
     // 1. Load Active Employees
     useEffect(() => {
@@ -111,6 +122,13 @@ export default function TimeclockPage() {
         // AUTO-TOGGLE: If In -> Out, If Out -> In
         const type = status.isClockedIn ? 'CLOCK_OUT' : 'CLOCK_IN';
 
+        const firstName = selectedEmployee.name.split(' ')[0];
+        if (type === 'CLOCK_IN') {
+            speak(`Bienvenido de nuevo, ${firstName}`);
+        } else {
+            speak(`Hasta luego, ${firstName}. Que descanses.`);
+        }
+
         await recordTimeEntry(selectedEmployee, type, method, snapshotBase64);
 
         const actionText = type === 'CLOCK_IN' ? 'Clocked IN' : 'Clocked OUT';
@@ -139,6 +157,7 @@ export default function TimeclockPage() {
             if (result.isMatch) {
                 await handleSuccess('FACE', screenshot);
             } else {
+                speak("Rostro no reconocido. Intente de nuevo.");
                 toast({
                     title: "Face mismatch",
                     description: `Confidence: ${result.confidence}%. ${result.reasoning || 'Try PIN instead.'}`,
@@ -165,6 +184,7 @@ export default function TimeclockPage() {
                 setVerifying(false);
             }
         } else {
+            speak("Pin incorrecto. Intente de nuevo.");
             toast({ title: "Invalid PIN", variant: "destructive" });
             setPinInput('');
         }
@@ -327,7 +347,7 @@ export default function TimeclockPage() {
                                             ref={webcamRef}
                                             screenshotFormat="image/jpeg"
                                             screenshotQuality={0.25}
-                                            videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
+                                            videoConstraints={{ width: 960, height: 720, facingMode: 'user' }}
                                             className="w-full h-full object-cover"
                                             mirrored
                                         />
