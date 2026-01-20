@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -15,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // Helper to parse dates safely
 const parseDate = (dateInput: any): Date => {
@@ -38,6 +41,7 @@ export function FollowUpDashboard() {
   
   const [daysThreshold, setDaysThreshold] = useState(5);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [showContacted, setShowContacted] = useState(true);
 
   // Logic: 
   // 1. Must be a Quote (Cotización)
@@ -49,8 +53,17 @@ export function FollowUpDashboard() {
     const now = new Date();
     
     return orders
-      .filter(o => o.estado === 'Cotización')
       .filter(o => {
+        // Must be a quote
+        if (o.estado !== 'Cotización') return false;
+
+        // Hard exclusion for max attempts
+        if ((o.followUpCount || 0) >= 2) return false;
+
+        // Toggle filter for in-progress
+        if (!showContacted && (o.followUpCount || 0) > 0) return false;
+
+        // Date-based filtering
         const createdDate = parseDate(o.fechaIngreso);
         const daysSinceCreation = differenceInDays(now, createdDate);
         
@@ -72,7 +85,7 @@ export function FollowUpDashboard() {
         const dateB = parseDate(b.fechaIngreso).getTime();
         return dateA - dateB;
       });
-  }, [orders, daysThreshold]);
+  }, [orders, daysThreshold, showContacted]);
 
   const handleCopyPhone = (phone: string, name: string) => {
     // Sanitization logic matching your main dashboard
@@ -94,8 +107,10 @@ export function FollowUpDashboard() {
     
     try {
         const docRef = doc(firestore, 'orders', orderId);
+        const currentCount = orders?.find(o => o.id === orderId)?.followUpCount || 0;
         await updateDocumentNonBlocking(docRef, {
-            lastFollowUp: new Date()
+            lastFollowUp: new Date(),
+            followUpCount: currentCount + 1
         });
         
         toast({
@@ -148,6 +163,12 @@ export function FollowUpDashboard() {
                     <TabsTrigger value="15" className="text-xs">15 Days</TabsTrigger>
                 </TabsList>
             </Tabs>
+            <div className="flex items-center space-x-2 border-l pl-4 ml-4">
+                <Switch id="show-contacted" checked={showContacted} onCheckedChange={setShowContacted} />
+                <Label htmlFor="show-contacted" className="text-xs text-slate-600">
+                    Show In-Progress
+                </Label>
+            </div>
         </div>
       </div>
 
@@ -169,6 +190,7 @@ export function FollowUpDashboard() {
             actionableQuotes.map((quote) => {
                 const createdDate = parseDate(quote.fechaIngreso);
                 const isProcessing = processingIds.has(quote.id);
+                const attemptNum = (quote.followUpCount || 0) + 1;
                 
                 return (
                     <Card key={quote.id} className={cn("transition-all hover:shadow-md border-l-4 border-l-transparent hover:border-l-indigo-500", isProcessing && "opacity-50 pointer-events-none")}>
@@ -181,6 +203,9 @@ export function FollowUpDashboard() {
                                     <Badge variant="outline" className="font-normal text-slate-500 bg-slate-50">
                                         <Clock className="w-3 h-3 mr-1" />
                                         {formatDistanceToNow(createdDate)} ago
+                                    </Badge>
+                                    <Badge variant={attemptNum > 1 ? "secondary" : "outline"} className="ml-2">
+                                        Attempt {attemptNum}/2
                                     </Badge>
                                 </div>
                                 <div className="text-sm text-slate-500 truncate mb-2">
