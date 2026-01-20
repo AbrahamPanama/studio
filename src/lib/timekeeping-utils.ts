@@ -5,6 +5,8 @@ import {
 } from 'date-fns';
 
 export interface DailyShift {
+  clockInId: string;
+  clockOutId?: string;
   date: Date;
   clockIn: Date;
   clockOut?: Date;
@@ -81,6 +83,7 @@ export function processTimeEntries(entries: TimeEntry[], periodStart: Date, peri
         if (currentIn) {
           // Double Clock In (Forgot to clock out previous shift)
           shifts.push({
+            clockInId: currentIn.id,
             date: startOfDay(currentIn.timestamp instanceof Date ? currentIn.timestamp : (currentIn.timestamp as any).toDate()),
             clockIn: currentIn.timestamp instanceof Date ? currentIn.timestamp : (currentIn.timestamp as any).toDate(),
             durationMinutes: 0,
@@ -96,6 +99,8 @@ export function processTimeEntries(entries: TimeEntry[], periodStart: Date, peri
           const duration = differenceInMinutes(entryTime, inTime);
           
           shifts.push({
+            clockInId: currentIn.id,
+            clockOutId: entry.id,
             date: startOfDay(inTime),
             clockIn: inTime,
             clockOut: entryTime,
@@ -113,6 +118,7 @@ export function processTimeEntries(entries: TimeEntry[], periodStart: Date, peri
     // Handle Active Shift (Still clocked in right now)
     if (currentIn) {
        shifts.push({
+          clockInId: currentIn.id,
           date: startOfDay(currentIn.timestamp instanceof Date ? currentIn.timestamp : (currentIn.timestamp as any).toDate()),
           clockIn: currentIn.timestamp instanceof Date ? currentIn.timestamp : (currentIn.timestamp as any).toDate(),
           durationMinutes: 0,

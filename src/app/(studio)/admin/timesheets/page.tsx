@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where, Timestamp, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, where, Timestamp, addDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { TimeEntry } from '@/lib/types-timekeeper';
 import { processTimeEntries, getCurrentPayPeriod } from '@/lib/timekeeping-utils';
 import { format, isSameDay, setHours, setMinutes } from 'date-fns';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, AlertCircle, CheckCircle2, User } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle2, User, Pencil, StopCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import {
   Dialog,
@@ -41,13 +41,19 @@ export default function TimesheetsPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [pinInput, setPinInput] = useState('');
 
+  const [editingShift, setEditingShift] = useState<{
+    inId: string, outId?: string,
+    inTime: string, outTime: string, date: Date
+  } | null>(null);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+
   // 1. Get Current Pay Period
   const payPeriod = useMemo(() => getCurrentPayPeriod(), []);
   
-  // 2. Query Data (Fetch slightly more than needed to be safe, or exact period)
-  // For simplicity, we fetch all logs for the current month to handle the logic client-side
+  // 2. Query Data
   const logsQuery = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null; // Don't query if not authorized
+    if (!firestore || !isAuthorized) return null;
     return query(
         collection(firestore, 'time_entries'),
         where('timestamp', '>=', Timestamp.fromDate(payPeriod.start)),
@@ -60,28 +66,21 @@ export default function TimesheetsPage() {
   // 3. Process Data
   const { summary, todaysLogs } = useMemo(() => {
     const safeLogs = rawLogs || [];
-    
-    // Process Payroll Summary
     const processed = processTimeEntries(safeLogs, payPeriod.start, payPeriod.end);
-    
-    // Filter for "Today's" raw activity feed
     const today = new Date();
     const todayActivity = safeLogs.filter(log => {
        const logDate = log.timestamp instanceof Date ? log.timestamp : (log.timestamp as any).toDate();
        return isSameDay(logDate, today);
     });
-
     return { summary: Object.values(processed), todaysLogs: todayActivity };
   }, [rawLogs, payPeriod]);
   
   const handleFixSubmit = async () => {
     if (!fixingShift || !firestore) return;
-
     setIsSubmittingFix(true);
     try {
         const [hours, minutes] = fixTime.split(':').map(Number);
         const fixedDate = setMinutes(setHours(fixingShift.date, hours), minutes);
-
         await addDoc(collection(firestore, 'time_entries'), {
             employeeId: fixingShift.empId,
             employeeName: fixingShift.name,
@@ -89,22 +88,59 @@ export default function TimesheetsPage() {
             method: 'ADMIN',
             timestamp: Timestamp.fromDate(fixedDate),
         });
-
-        toast({
-            title: "Success",
-            description: "Missing punch has been corrected."
-        });
+        toast({ title: "Success", description: "Missing punch has been corrected." });
         setFixingShift(null);
     } catch (e) {
         console.error("Failed to fix punch", e);
-        toast({
-            title: "Error",
-            description: "Could not save the correction.",
-            variant: "destructive"
-        });
+        toast({ title: "Error", description: "Could not save the correction.", variant: "destructive" });
     } finally {
         setIsSubmittingFix(false);
     }
+  };
+
+  const handleStopClock = async (empId: string, name: string) => {
+    if (!firestore) return;
+    try {
+      await addDoc(collection(firestore, 'time_entries'), {
+        employeeId: empId,
+        employeeName: name,
+        type: 'CLOCK_OUT',
+        method: 'ADMIN',
+        timestamp: Timestamp.now(),
+      });
+      toast({ title: "Success", description: `${name} has been clocked out.` });
+    } catch (e) {
+      console.error("Failed to stop clock", e);
+      toast({ title: "Error", description: "Could not clock out the employee.", variant: "destructive" });
+    }
+  };
+  
+  const handleEditSubmit = async () => {
+      if (!editingShift || !firestore) return;
+      setIsSubmittingEdit(true);
+      try {
+          const batch = writeBatch(firestore);
+
+          const [startHours, startMinutes] = editingShift.inTime.split(':').map(Number);
+          const newStartDate = setMinutes(setHours(editingShift.date, startHours), startMinutes);
+          const inRef = doc(firestore, 'time_entries', editingShift.inId);
+          batch.update(inRef, { timestamp: Timestamp.fromDate(newStartDate) });
+
+          if (editingShift.outId && editingShift.outTime) {
+              const [endHours, endMinutes] = editingShift.outTime.split(':').map(Number);
+              const newEndDate = setMinutes(setHours(editingShift.date, endHours), endMinutes);
+              const outRef = doc(firestore, 'time_entries', editingShift.outId);
+              batch.update(outRef, { timestamp: Timestamp.fromDate(newEndDate) });
+          }
+          await batch.commit();
+          toast({ title: "Shift Updated", description: "The shift times have been saved." });
+          setEditingShift(null);
+      } catch (e) {
+          console.error("Failed to edit shift", e);
+          toast({ title: "Error", description: "Could not update the shift.", variant: "destructive" });
+      } finally {
+          setIsSubmittingEdit(false);
+      }
   };
 
   if (!isAuthorized) {
@@ -158,7 +194,6 @@ export default function TimesheetsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -171,7 +206,6 @@ export default function TimesheetsPage() {
             </div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
@@ -179,13 +213,11 @@ export default function TimesheetsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {/* Count employees who have an 'ACTIVE' shift status currently */}
               {summary.filter(s => s.shifts.some(shift => shift.status === 'ACTIVE')).length}
             </div>
             <p className="text-xs text-muted-foreground">Currently clocked in</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium">Missing Punches</CardTitle>
@@ -206,7 +238,6 @@ export default function TimesheetsPage() {
           <TabsTrigger value="today">Today's Live Logs</TabsTrigger>
         </TabsList>
 
-        {/* TAB 1: PAYROLL SUMMARY */}
         <TabsContent value="payroll" className="space-y-4">
           <Card>
             <CardHeader>
@@ -243,7 +274,6 @@ export default function TimesheetsPage() {
                       </TableCell>
                       <TableCell className="text-right font-bold text-lg">{emp.totalHours}</TableCell>
                       <TableCell className="text-right text-slate-500">
-                         {/* Placeholder rate logic - replace with real rate if stored in DB */}
                          ${(emp.totalHours * 4.50).toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -260,7 +290,6 @@ export default function TimesheetsPage() {
             </CardContent>
           </Card>
           
-          {/* Detailed Shifts Breakdown */}
           <div className="grid gap-4 md:grid-cols-2">
              {summary.map(emp => (
                  <Card key={emp.employeeId} className="overflow-hidden">
@@ -278,6 +307,7 @@ export default function TimesheetsPage() {
                                      <TableHead>In</TableHead>
                                      <TableHead>Out</TableHead>
                                      <TableHead className="text-right">Duration</TableHead>
+                                     <TableHead className="text-right">Actions</TableHead>
                                  </TableRow>
                              </TableHeader>
                              <TableBody>
@@ -286,7 +316,14 @@ export default function TimesheetsPage() {
                                          <TableCell className="text-xs">{format(shift.date, 'MMM d')}</TableCell>
                                          <TableCell className="text-xs font-mono">{format(shift.clockIn, 'h:mm a')}</TableCell>
                                          <TableCell className="text-xs font-mono">
-                                            {shift.clockOut ? format(shift.clockOut, 'h:mm a') : <span className="text-green-600 font-bold">Active</span>}
+                                            {shift.clockOut ? format(shift.clockOut, 'h:mm a') : (
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-green-600 font-bold">Active</span>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleStopClock(emp.employeeId, emp.employeeName)}>
+                                                  <StopCircle className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                            )}
                                             {shift.status === 'MISSING_OUT' && (
                                                 <Button 
                                                   variant="outline" 
@@ -299,9 +336,18 @@ export default function TimesheetsPage() {
                                             )}
                                          </TableCell>
                                          <TableCell className="text-right text-xs">
-                                             {shift.durationMinutes > 0 
-                                               ? `${(shift.durationMinutes / 60).toFixed(1)}h` 
-                                               : '-'}
+                                             {shift.durationMinutes > 0 ? `${(shift.durationMinutes / 60).toFixed(1)}h` : '-'}
+                                         </TableCell>
+                                         <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingShift({
+                                                inId: shift.clockInId,
+                                                outId: shift.clockOutId,
+                                                date: shift.date,
+                                                inTime: format(shift.clockIn, "HH:mm"),
+                                                outTime: shift.clockOut ? format(shift.clockOut, "HH:mm") : ''
+                                            })}>
+                                                <Pencil className="h-3 w-3 text-slate-500" />
+                                            </Button>
                                          </TableCell>
                                      </TableRow>
                                  ))}
@@ -313,7 +359,6 @@ export default function TimesheetsPage() {
           </div>
         </TabsContent>
 
-        {/* TAB 2: TODAY'S LOGS */}
         <TabsContent value="today">
           <Card>
             <CardHeader>
@@ -339,16 +384,11 @@ export default function TimesheetsPage() {
                                    <TableCell className="font-mono">{format(time, 'h:mm:ss a')}</TableCell>
                                    <TableCell className="font-medium">{log.employeeName}</TableCell>
                                    <TableCell>
-                                       {log.type === 'CLOCK_IN' 
-                                         ? <Badge className="bg-green-600">IN</Badge> 
-                                         : <Badge variant="secondary">OUT</Badge>
-                                       }
+                                       {log.type === 'CLOCK_IN' ? <Badge className="bg-green-600">IN</Badge> : <Badge variant="secondary">OUT</Badge>}
                                    </TableCell>
                                    <TableCell className="text-xs text-muted-foreground">{log.method}</TableCell>
                                    <TableCell>
-                                       {log.snapshotUrl ? (
-                                           <a href={log.snapshotUrl} target="_blank" className="text-blue-500 text-xs hover:underline">View Photo</a>
-                                       ) : '-'}
+                                       {log.snapshotUrl ? (<a href={log.snapshotUrl} target="_blank" className="text-blue-500 text-xs hover:underline">View Photo</a>) : '-'}
                                    </TableCell>
                                </TableRow>
                            );
@@ -378,22 +418,42 @@ export default function TimesheetsPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="fix-time" className="text-right">
-                        Clock-Out Time
-                    </Label>
-                    <Input
-                        id="fix-time"
-                        type="time"
-                        value={fixTime}
-                        onChange={(e) => setFixTime(e.target.value)}
-                        className="col-span-3"
-                    />
+                    <Label htmlFor="fix-time" className="text-right">Clock-Out Time</Label>
+                    <Input id="fix-time" type="time" value={fixTime} onChange={(e) => setFixTime(e.target.value)} className="col-span-3"/>
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setFixingShift(null)}>Cancel</Button>
-                <Button type="submit" onClick={handleFixSubmit} disabled={isSubmittingFix}>
-                    {isSubmittingFix ? "Saving..." : "Save Correction"}
+                <Button type="submit" onClick={handleFixSubmit} disabled={isSubmittingFix}>{isSubmittingFix ? "Saving..." : "Save Correction"}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={!!editingShift} onOpenChange={(isOpen) => !isOpen && setEditingShift(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Shift</DialogTitle>
+                <DialogDescription>Manually adjust the start and end time for this shift.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-start-time" className="text-right">Start Time</Label>
+                    <Input id="edit-start-time" type="time" value={editingShift?.inTime || ''} 
+                        onChange={(e) => setEditingShift(s => s ? {...s, inTime: e.target.value} : null)}
+                        className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-end-time" className="text-right">End Time</Label>
+                    <Input id="edit-end-time" type="time" value={editingShift?.outTime || ''}
+                        onChange={(e) => setEditingShift(s => s ? {...s, outTime: e.target.value} : null)}
+                        disabled={!editingShift?.outId}
+                        className="col-span-3"/>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingShift(null)}>Cancel</Button>
+                <Button type="submit" onClick={handleEditSubmit} disabled={isSubmittingEdit}>
+                    {isSubmittingEdit ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Changes"}
                 </Button>
             </DialogFooter>
         </DialogContent>
