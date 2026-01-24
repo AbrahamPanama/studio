@@ -30,6 +30,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { INVENTORY_COLORS } from '@/lib/constants';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type SortConfig = { key: keyof InventoryItem; direction: 'asc' | 'desc'; };
 
@@ -41,6 +43,7 @@ export default function InventoryPage() {
   const [search, setSearch] = React.useState('');
   const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [isPending, startTransition] = React.useTransition();
+  const [showLowStockOnly, setShowLowStockOnly] = React.useState(false);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -80,13 +83,19 @@ export default function InventoryPage() {
 
   // --- SPLIT ITEMS LOGIC ---
   const filteredItems = React.useMemo(() => {
-    return items.filter(item =>
+    let results = items;
+
+    if (showLowStockOnly) {
+      results = results.filter(item => item.quantity <= (item.minStock || 0));
+    }
+
+    return results.filter(item =>
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.sku?.toLowerCase().includes(search.toLowerCase()) ||
       item.color?.toLowerCase().includes(search.toLowerCase()) ||
       item.category?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [items, search]);
+  }, [items, search, showLowStockOnly]);
 
   const sortItems = (list: InventoryItem[]) => {
     return [...list].sort((a, b) => {
@@ -215,9 +224,19 @@ export default function InventoryPage() {
         </Button>
       </div>
 
-      <div className="flex items-center space-x-2 bg-white p-2 rounded-md border shadow-sm w-full sm:w-80">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input placeholder={t('searchItems')} value={search} onChange={(e) => setSearch(e.target.value)} className="border-0 focus-visible:ring-0" />
+      <div className="flex items-center gap-4">
+        <div className="flex items-center space-x-2 bg-white p-2 rounded-md border shadow-sm w-full sm:w-80">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input placeholder={t('searchItems')} value={search} onChange={(e) => setSearch(e.target.value)} className="border-0 focus-visible:ring-0" />
+        </div>
+        <div className="flex items-center space-x-2">
+            <Switch 
+                id="low-stock-filter" 
+                checked={showLowStockOnly} 
+                onCheckedChange={setShowLowStockOnly}
+            />
+            <Label htmlFor="low-stock-filter">{t('showLowStockOnly')}</Label>
+        </div>
       </div>
 
       <Tabs defaultValue="materials" className="w-full">

@@ -170,6 +170,7 @@ export const translations = {
     negativeStock: 'Negative stock.',
     deleteItemTitle: 'Delete Item?',
     deleteItemDesc: 'Permanently remove {name}?',
+    showLowStockOnly: 'Show Low Stock Only',
 
     // --- NEW: Inventory Form ---
     imageError: 'Image Error',
@@ -431,6 +432,7 @@ export const translations = {
     negativeStock: 'Stock negativo.',
     deleteItemTitle: '¿Eliminar Artículo?',
     deleteItemDesc: '¿Eliminar permanentemente {name}?',
+    showLowStockOnly: 'Mostrar solo stock bajo',
 
     // --- NEW: Inventory Form ---
     imageError: 'Error de Imagen',
