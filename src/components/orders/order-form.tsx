@@ -227,6 +227,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = React.useState(false);
+  const [validationError, setValidationError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!firestore) return;
@@ -400,6 +401,18 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   React.useEffect(() => {
     form.reset(defaultValues);
   }, [currentOrder, form]);
+  
+  React.useEffect(() => {
+    if (validationError) {
+      toast({
+        variant: 'destructive',
+        title: "Validation Error",
+        description: validationError,
+      });
+      // Reset the error after showing the toast
+      setValidationError(null);
+    }
+  }, [validationError, toast]);
 
   const handlePhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formattedNumber = formatPhoneNumber(e.target.value);
@@ -561,13 +574,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const onInvalid = (errors: any) => {
     console.error("Form Validation Errors:", errors);
     const firstError = Object.keys(errors)[0];
-    setTimeout(() => {
-      toast({
-        variant: 'destructive',
-        title: "Validation Error",
-        description: `Field '${firstError}' is invalid: ${errors[firstError]?.message || 'Unknown error'}. Check console for details.`,
-      });
-    }, 0);
+    const errorMessage = `Field '${firstError}' is invalid: ${errors[firstError]?.message || 'Unknown error'}. Check console for details.`;
+    setValidationError(errorMessage);
   };
 
   const handleConvertToOrder = () => {
