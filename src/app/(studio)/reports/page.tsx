@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -95,8 +96,23 @@ function calculateKPIs(orders: Order[] = []) {
     const averageOrderValue = totalOrders > 0 ? totalRevenueAllTime / totalOrders : 0;
 
     const totalOutstanding = confirmedOrders.reduce((sum, o) => {
-        const paid = o.totalAbono || 0;
         const total = o.orderTotal || 0;
+        let paid = o.totalAbono || 0;
+
+        // Rule 1: Completed orders are assumed to be fully paid (100%)
+        if (o.estado === 'Done') {
+            paid = total;
+        } 
+        // Rule 2: Active orders are assumed to have at least a 50% deposit
+        else {
+            const minDeposit = total * 0.5;
+            // If recorded payment is less than 50%, use the 50% assumption
+            if (paid < minDeposit) {
+                paid = minDeposit;
+            }
+        }
+
+        // Calculate balance based on these assumptions
         return sum + Math.max(0, total - paid);
     }, 0);
 
