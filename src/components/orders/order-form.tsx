@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import html2canvas from 'html2canvas';
@@ -203,8 +203,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const [isConverting, startConverting] = React.useState(false);
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
-  
-  // NEW: State for Unsaved Changes Dialog
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = React.useState(false);
 
   React.useEffect(() => {
@@ -227,25 +225,27 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     fetchTags();
   }, [firestore]);
 
-  const defaultValues: Partial<OrderFormValues> = isEditing
+  // FIX 1: Memoize defaultValues so it doesn't change on every render
+  const defaultValues: Partial<OrderFormValues> = useMemo(() => {
+    return isEditing
     ? {
         ...currentOrder,
-        orderNumber: currentOrder.orderNumber,
-        companyName: currentOrder.companyName || '',
-        entrega: parseDate(currentOrder.entrega),
-        entregaLimite: parseDate(currentOrder.entregaLimite),
-        description: currentOrder.description || '',
-        comentarios: currentOrder.comentarios || '',
-        abono: currentOrder.abono || false,
-        cancelo: currentOrder.cancelo || false,
-        totalAbono: currentOrder.totalAbono || 0,
-        tagsOther: currentOrder.tagsOther || [],
-        itbms: currentOrder.itbms || false,
-        createdBy: currentOrder.createdBy,
-        productos: currentOrder.productos.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })),
-        ruc: currentOrder.ruc || '',
-        celularSecundario: currentOrder.celularSecundario || '',
-        direccionEnvio: currentOrder.direccionEnvio || '',
+        orderNumber: currentOrder?.orderNumber,
+        companyName: currentOrder?.companyName || '',
+        entrega: parseDate(currentOrder?.entrega),
+        entregaLimite: parseDate(currentOrder?.entregaLimite),
+        description: currentOrder?.description || '',
+        comentarios: currentOrder?.comentarios || '',
+        abono: currentOrder?.abono || false,
+        cancelo: currentOrder?.cancelo || false,
+        totalAbono: currentOrder?.totalAbono || 0,
+        tagsOther: currentOrder?.tagsOther || [],
+        itbms: currentOrder?.itbms || false,
+        createdBy: currentOrder?.createdBy,
+        productos: currentOrder?.productos?.map(p => ({...p, description: p.description || '', isTaxable: p.isTaxable !== false })) || [],
+        ruc: currentOrder?.ruc || '',
+        celularSecundario: currentOrder?.celularSecundario || '',
+        direccionEnvio: currentOrder?.direccionEnvio || '',
       }
     : {
         name: '',
@@ -273,12 +273,16 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         tagsOther: [],
         createdBy: user?.email || undefined,
       };
+  }, [currentOrder, isEditing, isQuote, user?.email]);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues,
     mode: 'onChange',
   });
+
+  // FIX 2: Destructure isDirty to ensure React tracks subscription
+  const { isDirty } = form.formState;
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -326,9 +330,21 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const newTax = itbms ? taxableSubtotal * TAX_RATE : 0;
     const newOrderTotal = newSubtotal + newTax;
 
-    form.setValue('subtotal', newSubtotal, { shouldValidate: true, shouldDirty: true });
-    form.setValue('tax', newTax, { shouldValidate: true, shouldDirty: true });
-    form.setValue('orderTotal', newOrderTotal, { shouldValidate: true, shouldDirty: true });
+    // Use shouldDirty: true to ensure these calculations mark the form as dirty if they change values
+    const currentSubtotal = form.getValues('subtotal');
+    if (currentSubtotal !== newSubtotal) {
+        form.setValue('subtotal', newSubtotal, { shouldValidate: true, shouldDirty: true });
+    }
+    
+    const currentTax = form.getValues('tax');
+    if (currentTax !== newTax) {
+        form.setValue('tax', newTax, { shouldValidate: true, shouldDirty: true });
+    }
+
+    const currentTotal = form.getValues('orderTotal');
+    if (currentTotal !== newOrderTotal) {
+        form.setValue('orderTotal', newOrderTotal, { shouldValidate: true, shouldDirty: true });
+    }
 
   }, [form]);
 
@@ -371,9 +387,13 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }
   }, [watchedTotalAbono, form, orderTotal]);
 
+  // FIX 3: Only reset if the Order ID changes or currentOrder actually changes structure significantly
+  // We use currentOrder?.id to avoid deep comparison or resetting on every render
   React.useEffect(() => {
-        form.reset(defaultValues);
-  }, [currentOrder, form]);
+        if (currentOrder) {
+            form.reset(defaultValues);
+        }
+  }, [currentOrder?.id, form, defaultValues]); 
 
   const handlePhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formattedNumber = formatPhoneNumber(e.target.value);
@@ -531,11 +551,10 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }, 0);
   };
 
-  // NEW: Updated Convert Function to check for dirty state
   const handleConvertToOrder = () => {
     if (!isEditing || !currentOrder || !firestore) return;
 
-    if (form.formState.isDirty) {
+    if (isDirty) {
       setShowUnsavedChangesDialog(true);
       return;
     }
@@ -548,7 +567,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   };
 
-  // NEW: Handler for Save & Close
   const handleSaveAndClose = () => {
     setShowUnsavedChangesDialog(false);
     handleCalculateTotals();
@@ -567,7 +585,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   };
 
-  // NEW: Handler for Save & Convert
   const handleSaveAndConvert = () => {
     setShowUnsavedChangesDialog(false);
     handleCalculateTotals();
@@ -991,7 +1008,6 @@ export function OrderForm({ order, formType }: OrderFormProps) {
           />
       </div>
       </form>
-       {/* Post-Save Dialog */}
        <Dialog open={showPostSaveDialog} onOpenChange={setShowPostSaveDialog}>
             <DialogContent>
                 <DialogHeader>
@@ -1029,7 +1045,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
             </DialogContent>
         </Dialog>
 
-        {/* NEW: Unsaved Changes Dialog */}
+        {/* Unsaved Changes Dialog */}
         <Dialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
           <DialogContent>
             <DialogHeader>
