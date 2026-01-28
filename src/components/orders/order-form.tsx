@@ -200,7 +200,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   
-  // FIX: Use standard loading state instead of misusing useState as a transition hook
+  // FIX: Using explicit boolean state instead of misnamed "startTransition"
   const [isPending, setIsPending] = React.useState(false);
   const [isConverting, setIsConverting] = React.useState(false);
   
@@ -228,7 +228,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     fetchTags();
   }, [firestore]);
 
-  // FIX: Memoize defaultValues to prevent form reset loop
+  // FIX: Memoize defaultValues to prevent infinite reset loops
   const defaultValues: Partial<OrderFormValues> = useMemo(() => {
     return isEditing
     ? {
@@ -284,7 +284,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     mode: 'onChange',
   });
 
-  // FIX: Destructure isDirty to ensure React subscribes to changes
+  // FIX: Destructure isDirty to ensure subscription
   const { isDirty } = form.formState;
 
   const { fields, append, remove } = useFieldArray({
@@ -386,7 +386,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }
   }, [watchedTotalAbono, form, orderTotal]);
 
-  // FIX: Reset form only when the ID changes to avoid overwriting dirty state
+  // FIX: Only reset form when ID changes
   React.useEffect(() => {
     if (currentOrder) {
         form.reset(defaultValues);
@@ -463,6 +463,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   };
 
+  // FIX: Using Async/Await with explicit state control instead of wrapped startTransition
   async function onSubmit(data: OrderFormValues) {
     handleCalculateTotals();
     const finalValues = form.getValues();
@@ -472,7 +473,8 @@ export function OrderForm({ order, formType }: OrderFormProps) {
         return;
     }
 
-    setIsPending(true);
+    setIsPending(true); // Manually set loading state
+    
     const payload: Omit<OrderFormValues, 'orderNumber'> & { [key: string]: any } = {
         ...data,
         ...finalValues
@@ -530,7 +532,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
             description: t(isEditing ? (isQuote ? 'toastQuoteUpdateFailed' : 'toastOrderUpdateFailed') : (isQuote ? 'toastQuoteCreateFailed' : 'toastOrderCreateFailed')),
         });
     } finally {
-        setIsPending(false);
+        setIsPending(false); // Reset loading state
     }
   }
 
@@ -554,7 +556,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       return;
     }
 
-    setIsConverting(true);
+    setIsConverting(true); // Explicit state update
     try {
         const docRef = doc(firestore, 'orders', currentOrder.id);
         await updateDocumentNonBlocking(docRef, { estado: 'New' });
@@ -573,7 +575,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const finalValues = form.getValues();
     if (!firestore || !currentOrder) return;
 
-    setIsPending(true);
+    setIsPending(true); // Explicit state update
     try {
         const docRef = doc(firestore, 'orders', currentOrder.id);
         await updateDocumentNonBlocking(docRef, finalValues);
@@ -592,7 +594,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const finalValues = form.getValues();
     if (!firestore || !currentOrder) return;
 
-    setIsConverting(true);
+    setIsConverting(true); // Explicit state update
     try {
         const docRef = doc(firestore, 'orders', currentOrder.id);
         await updateDocumentNonBlocking(docRef, { ...finalValues, estado: 'New' });
@@ -652,12 +654,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                       <Button type="button" variant="outline" onClick={() => router.back()}>{t('formButtonCancel')}</Button>
                       {isEditing && isQuote && (
                         <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
-                            {isConverting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
                         </Button>
                       )}
                       <Button type="submit" disabled={isPending}>
-                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isPending ? t('formButtonSaving') : t(isQuote ? 'formButtonSaveQuote' : 'formButtonSaveOrder')}
                       </Button>
                     </div>
