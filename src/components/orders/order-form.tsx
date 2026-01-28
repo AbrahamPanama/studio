@@ -49,7 +49,7 @@ import { DELIVERY_SERVICES, ORDER_STATUSES, PRIVACY_OPTIONS } from '@/lib/consta
 import { cn, formatCurrency, formatPhoneNumber, getWhatsAppUrl, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown, Copy } from 'lucide-react';
+import { PlusCircle, Trash2, Calculator, MessageSquare, ArrowRightLeft, Download, User, Calendar, ImageDown, Copy, Loader2 } from 'lucide-react';
 import { TagManager } from '@/components/tags/tag-manager';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
@@ -199,8 +199,11 @@ export function OrderForm({ order, formType }: OrderFormProps) {
   const isQuote = formType === 'quote';
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = React.useState(false);
-  const [isConverting, startConverting] = React.useState(false);
+  
+  // FIX: Use standard loading state instead of misusing useState as a transition hook
+  const [isPending, setIsPending] = React.useState(false);
+  const [isConverting, setIsConverting] = React.useState(false);
+  
   const [allOtherTags, setAllOtherTags] = React.useState<Tag[]>([]);
   const [showPostSaveDialog, setShowPostSaveDialog] = React.useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = React.useState(false);
@@ -225,7 +228,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     fetchTags();
   }, [firestore]);
 
-  // FIX 1: Memoize defaultValues so it doesn't change on every render
+  // FIX: Memoize defaultValues to prevent form reset loop
   const defaultValues: Partial<OrderFormValues> = useMemo(() => {
     return isEditing
     ? {
@@ -281,7 +284,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     mode: 'onChange',
   });
 
-  // FIX 2: Destructure isDirty to ensure React tracks subscription
+  // FIX: Destructure isDirty to ensure React subscribes to changes
   const { isDirty } = form.formState;
 
   const { fields, append, remove } = useFieldArray({
@@ -330,22 +333,18 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     const newTax = itbms ? taxableSubtotal * TAX_RATE : 0;
     const newOrderTotal = newSubtotal + newTax;
 
-    // Use shouldDirty: true to ensure these calculations mark the form as dirty if they change values
     const currentSubtotal = form.getValues('subtotal');
     if (currentSubtotal !== newSubtotal) {
         form.setValue('subtotal', newSubtotal, { shouldValidate: true, shouldDirty: true });
     }
-    
     const currentTax = form.getValues('tax');
     if (currentTax !== newTax) {
         form.setValue('tax', newTax, { shouldValidate: true, shouldDirty: true });
     }
-
     const currentTotal = form.getValues('orderTotal');
     if (currentTotal !== newOrderTotal) {
         form.setValue('orderTotal', newOrderTotal, { shouldValidate: true, shouldDirty: true });
     }
-
   }, [form]);
 
   React.useEffect(() => {
@@ -387,13 +386,12 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }
   }, [watchedTotalAbono, form, orderTotal]);
 
-  // FIX 3: Only reset if the Order ID changes or currentOrder actually changes structure significantly
-  // We use currentOrder?.id to avoid deep comparison or resetting on every render
+  // FIX: Reset form only when the ID changes to avoid overwriting dirty state
   React.useEffect(() => {
-        if (currentOrder) {
-            form.reset(defaultValues);
-        }
-  }, [currentOrder?.id, form, defaultValues]); 
+    if (currentOrder) {
+        form.reset(defaultValues);
+    }
+  }, [currentOrder?.id, form, defaultValues]);
 
   const handlePhoneNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formattedNumber = formatPhoneNumber(e.target.value);
@@ -465,78 +463,75 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     });
   };
 
-  function onSubmit(data: OrderFormValues) {
+  async function onSubmit(data: OrderFormValues) {
     handleCalculateTotals();
     const finalValues = form.getValues();
 
-    startTransition(async () => {
-      if (!firestore) {
+    if (!firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firestore is not initialized.' });
         return;
-      }
-      
-      const payload: Omit<OrderFormValues, 'orderNumber'> & { [key: string]: any } = {
-          ...data,
-          ...finalValues
-      };
+    }
 
-      try {
+    setIsPending(true);
+    const payload: Omit<OrderFormValues, 'orderNumber'> & { [key: string]: any } = {
+        ...data,
+        ...finalValues
+    };
+
+    try {
         if (isEditing && currentOrder) {
-          const docRef = doc(firestore, 'orders', currentOrder.id);
-          updateDocumentNonBlocking(docRef, payload);
-          toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
-          if (isQuote) {
-            setShowPostSaveDialog(true);
-          } else {
-            router.push('/');
-          }
+            const docRef = doc(firestore, 'orders', currentOrder.id);
+            await updateDocumentNonBlocking(docRef, payload);
+            toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteUpdated' : 'toastOrderUpdated') });
+            if (isQuote) {
+                setShowPostSaveDialog(true);
+            } else {
+                router.push('/');
+            }
         } else {
-          const ordersCol = collection(firestore, 'orders');
-          const latestOrderQuery = query(ordersCol, orderBy('orderNumber', 'desc'));
-          const latestOrderSnapshot = await getDocs(latestOrderQuery);
-          let newOrderNumber = 1;
-          if (!latestOrderSnapshot.empty) {
-              const latestOrder = latestOrderSnapshot.docs[0].data();
-              if(latestOrder.orderNumber && !isNaN(parseInt(latestOrder.orderNumber, 10))) {
-                newOrderNumber = parseInt(latestOrder.orderNumber, 10) + 1;
-              }
-          }
-          const orderNumberString = newOrderNumber.toString().padStart(6, '0');
-          const newOrderData = {
-              ...payload,
-              createdBy: user?.email || 'Unknown',
-              fechaIngreso: serverTimestamp(),
-              orderNumber: orderNumberString,
-          };
-          const newDocRef = await addDocumentNonBlocking(ordersCol, newOrderData);
-          toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
-          
-          if (newDocRef) {
-             if (isQuote) {
-               const optimisticOrder: Order = {
-                 ...newOrderData,
-                 id: newDocRef.id,
-                 orderNumber: orderNumberString,
-                 fechaIngreso: new Date().toISOString(),
-               };
-               setCurrentOrder(optimisticOrder);
-               window.history.replaceState(null, '', `/quotes/${newDocRef.id}/edit`);
-               setShowPostSaveDialog(true);
-             } else {
-               router.push('/');
-             }
-          } else {
-             router.push('/');
-          }
+            const ordersCol = collection(firestore, 'orders');
+            const latestOrderQuery = query(ordersCol, orderBy('orderNumber', 'desc'));
+            const latestOrderSnapshot = await getDocs(latestOrderQuery);
+            let newOrderNumber = 1;
+            if (!latestOrderSnapshot.empty) {
+                const latestOrder = latestOrderSnapshot.docs[0].data();
+                if (latestOrder.orderNumber && !isNaN(parseInt(latestOrder.orderNumber, 10))) {
+                    newOrderNumber = parseInt(latestOrder.orderNumber, 10) + 1;
+                }
+            }
+            const orderNumberString = newOrderNumber.toString().padStart(6, '0');
+            const newOrderData = {
+                ...payload,
+                createdBy: user?.email || 'Unknown',
+                fechaIngreso: serverTimestamp(),
+                orderNumber: orderNumberString,
+            };
+            const newDocRef = await addDocumentNonBlocking(ordersCol, newOrderData);
+            toast({ title: t('toastSuccess'), description: t(isQuote ? 'toastQuoteCreated' : 'toastOrderCreated') });
+
+            if (newDocRef && isQuote) {
+                const optimisticOrder: Order = {
+                    ...newOrderData,
+                    id: newDocRef.id,
+                    orderNumber: orderNumberString,
+                    fechaIngreso: new Date().toISOString(),
+                };
+                setCurrentOrder(optimisticOrder);
+                window.history.replaceState(null, '', `/quotes/${newDocRef.id}/edit`);
+                setShowPostSaveDialog(true);
+            } else {
+                router.push('/');
+            }
         }
-      } catch (error) {
+    } catch (error) {
         toast({
-          variant: 'destructive',
-          title: t('toastError'),
-          description: t(isEditing ? (isQuote ? 'toastQuoteUpdateFailed' : 'toastOrderUpdateFailed') : (isQuote ? 'toastQuoteCreateFailed' : 'toastOrderCreateFailed')),
+            variant: 'destructive',
+            title: t('toastError'),
+            description: t(isEditing ? (isQuote ? 'toastQuoteUpdateFailed' : 'toastOrderUpdateFailed') : (isQuote ? 'toastQuoteCreateFailed' : 'toastOrderCreateFailed')),
         });
-      }
-    });
+    } finally {
+        setIsPending(false);
+    }
   }
 
   const onInvalid = (errors: any) => {
@@ -551,7 +546,7 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     }, 0);
   };
 
-  const handleConvertToOrder = () => {
+  const handleConvertToOrder = async () => {
     if (!isEditing || !currentOrder || !firestore) return;
 
     if (isDirty) {
@@ -559,48 +554,55 @@ export function OrderForm({ order, formType }: OrderFormProps) {
       return;
     }
 
-    startConverting(() => {
-      const docRef = doc(firestore, 'orders', currentOrder.id);
-      updateDocumentNonBlocking(docRef, { estado: 'New' });
-      toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
-      router.push('/');
-    });
-  };
-
-  const handleSaveAndClose = () => {
-    setShowUnsavedChangesDialog(false);
-    handleCalculateTotals();
-    const finalValues = form.getValues();
-    if (!firestore || !currentOrder) return;
-
-    startTransition(async () => {
-      try {
+    setIsConverting(true);
+    try {
         const docRef = doc(firestore, 'orders', currentOrder.id);
-        updateDocumentNonBlocking(docRef, finalValues);
-        toast({ title: t('toastSuccess'), description: t('toastQuoteUpdated') });
-        router.push('/');
-      } catch (error) {
-        toast({ variant: 'destructive', title: t('toastError'), description: t('toastQuoteUpdateFailed') });
-      }
-    });
-  };
-
-  const handleSaveAndConvert = () => {
-    setShowUnsavedChangesDialog(false);
-    handleCalculateTotals();
-    const finalValues = form.getValues();
-    if (!firestore || !currentOrder) return;
-
-    startConverting(async () => {
-      try {
-        const docRef = doc(firestore, 'orders', currentOrder.id);
-        updateDocumentNonBlocking(docRef, { ...finalValues, estado: 'New' });
+        await updateDocumentNonBlocking(docRef, { estado: 'New' });
         toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
         router.push('/');
-      } catch (error) {
+    } catch (error) {
         toast({ variant: 'destructive', title: t('toastError'), description: t('toastQuoteConvertFailed') });
-      }
-    });
+    } finally {
+        setIsConverting(false);
+    }
+  };
+
+  const handleSaveAndClose = async () => {
+    setShowUnsavedChangesDialog(false);
+    handleCalculateTotals();
+    const finalValues = form.getValues();
+    if (!firestore || !currentOrder) return;
+
+    setIsPending(true);
+    try {
+        const docRef = doc(firestore, 'orders', currentOrder.id);
+        await updateDocumentNonBlocking(docRef, finalValues);
+        toast({ title: t('toastSuccess'), description: t('toastQuoteUpdated') });
+        router.push('/');
+    } catch (error) {
+        toast({ variant: 'destructive', title: t('toastError'), description: t('toastQuoteUpdateFailed') });
+    } finally {
+        setIsPending(false);
+    }
+  };
+
+  const handleSaveAndConvert = async () => {
+    setShowUnsavedChangesDialog(false);
+    handleCalculateTotals();
+    const finalValues = form.getValues();
+    if (!firestore || !currentOrder) return;
+
+    setIsConverting(true);
+    try {
+        const docRef = doc(firestore, 'orders', currentOrder.id);
+        await updateDocumentNonBlocking(docRef, { ...finalValues, estado: 'New' });
+        toast({ title: t('toastSuccess'), description: t('toastQuoteConverted') });
+        router.push('/');
+    } catch (error) {
+        toast({ variant: 'destructive', title: t('toastError'), description: t('toastQuoteConvertFailed') });
+    } finally {
+        setIsConverting(false);
+    }
   };
 
   const title = isQuote
@@ -650,11 +652,12 @@ export function OrderForm({ order, formType }: OrderFormProps) {
                       <Button type="button" variant="outline" onClick={() => router.back()}>{t('formButtonCancel')}</Button>
                       {isEditing && isQuote && (
                         <Button type="button" variant="secondary" onClick={handleConvertToOrder} disabled={isConverting}>
-                          <ArrowRightLeft className="mr-2 h-4 w-4" />
-                          {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
+                            {isConverting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isConverting ? t('formButtonConverting') : t('formButtonConvertToOrder')}
                         </Button>
                       )}
                       <Button type="submit" disabled={isPending}>
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isPending ? t('formButtonSaving') : t(isQuote ? 'formButtonSaveQuote' : 'formButtonSaveOrder')}
                       </Button>
                     </div>
@@ -1070,3 +1073,4 @@ export function OrderForm({ order, formType }: OrderFormProps) {
     </Form>
   );
 }
+
