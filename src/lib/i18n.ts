@@ -32,6 +32,12 @@ export const translations = {
     toastQuoteConverted: 'Quote successfully converted to an order.',
     toastQuoteConvertFailed: 'Failed to convert quote to order.',
 
+    // Unsaved Changes Dialog
+    dialogUnsavedChangesTitle: 'Unsaved Changes',
+    dialogUnsavedChangesDesc: 'You have unsaved changes. Would you like to save them before proceeding?',
+    formButtonSaveAndClose: 'Save & Close',
+    formButtonSaveAndConvert: 'Save & Convert',
+
     // Order Form
     formTitleEditQuote: 'Edit Quote',
     formTitleNewQuote: 'Create New Quote',
@@ -293,6 +299,12 @@ export const translations = {
     toastQuoteCreateFailed: 'Error al crear la cotización.',
     toastQuoteConverted: 'La cotización se convirtió en pedido con éxito.',
     toastQuoteConvertFailed: 'Error al convertir la cotización a pedido.',
+
+    // Unsaved Changes Dialog
+    dialogUnsavedChangesTitle: 'Cambios sin Guardar',
+    dialogUnsavedChangesDesc: 'Tienes cambios sin guardar. ¿Deseas guardarlos antes de continuar?',
+    formButtonSaveAndClose: 'Guardar y Cerrar',
+    formButtonSaveAndConvert: 'Guardar y Convertir',
 
     // Order Form
     formTitleEditQuote: 'Editar Cotización',
