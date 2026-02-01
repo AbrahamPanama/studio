@@ -1,3 +1,4 @@
+
 import { TimeEntry } from './types-timekeeper';
 import { 
   startOfDay, endOfDay, differenceInMinutes, isSameDay, 
@@ -23,18 +24,17 @@ export interface EmployeePeriodSummary {
   missingPunches: number;
 }
 
-// Helper to determine your specific Pay Cycles
-export function getCurrentPayPeriod() {
-  const now = new Date();
-  const day = now.getDate();
-  const currentMonthStart = startOfMonth(now);
-  const currentMonthEnd = endOfMonth(now);
+// Helper to determine specific Pay Cycles (1st-15th or 16th-End)
+export function getPayPeriod(referenceDate: Date = new Date()) {
+  const day = referenceDate.getDate();
+  const currentMonthStart = startOfMonth(referenceDate);
+  const currentMonthEnd = endOfMonth(referenceDate);
 
   if (day <= 15) {
     // First Period: 1st - 15th
     return {
       start: currentMonthStart,
-      end: endOfDay(setDate(now, 15)),
+      end: endOfDay(setDate(referenceDate, 15)),
       label: '1st - 15th'
     };
   } else {

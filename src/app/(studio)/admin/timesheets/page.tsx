@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where, Timestamp, addDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { TimeEntry } from '@/lib/types-timekeeper';
-import { processTimeEntries, getCurrentPayPeriod } from '@/lib/timekeeping-utils';
+import { processTimeEntries, getPayPeriod } from '@/lib/timekeeping-utils';
 import { format, isSameDay, setHours, setMinutes } from 'date-fns';
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, AlertCircle, CheckCircle2, User, Pencil, StopCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle2, User, Pencil, StopCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import {
   Dialog,
@@ -46,10 +47,11 @@ export default function TimesheetsPage() {
     inTime: string, outTime: string, date: Date
   } | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [viewDate, setViewDate] = useState(new Date());
 
 
   // 1. Get Current Pay Period
-  const payPeriod = useMemo(() => getCurrentPayPeriod(), []);
+  const payPeriod = useMemo(() => getPayPeriod(viewDate), [viewDate]);
   
   // 2. Query Data
   const logsQuery = useMemoFirebase(() => {
@@ -57,6 +59,7 @@ export default function TimesheetsPage() {
     return query(
         collection(firestore, 'time_entries'),
         where('timestamp', '>=', Timestamp.fromDate(payPeriod.start)),
+        where('timestamp', '<=', Timestamp.fromDate(payPeriod.end)),
         orderBy('timestamp', 'desc')
     );
   }, [firestore, payPeriod, isAuthorized]);
@@ -74,6 +77,24 @@ export default function TimesheetsPage() {
     });
     return { summary: Object.values(processed), todaysLogs: todayActivity };
   }, [rawLogs, payPeriod]);
+
+  const handlePrevPeriod = () => {
+    const day = viewDate.getDate();
+    // If in 2nd half (16+), go to 1st half (1). Else go to 2nd half of prev month (16)
+    const newDate = day > 15 
+        ? new Date(viewDate.getFullYear(), viewDate.getMonth(), 1)
+        : new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 16);
+    setViewDate(newDate);
+  };
+
+  const handleNextPeriod = () => {
+      const day = viewDate.getDate();
+      // If in 1st half (<=15), go to 2nd half (16). Else go to 1st half of next month (1)
+      const newDate = day <= 15
+          ? new Date(viewDate.getFullYear(), viewDate.getMonth(), 16)
+          : new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+      setViewDate(newDate);
+  };
   
   const handleFixSubmit = async () => {
     if (!fixingShift || !firestore) return;
@@ -185,13 +206,23 @@ export default function TimesheetsPage() {
     <>
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between">
-        <div>
-           <h2 className="text-3xl font-bold tracking-tight">Timesheets & Payroll</h2>
-           <p className="text-muted-foreground">
-             Current Cycle: <span className="font-semibold text-slate-900">{payPeriod.label}</span> 
-             ({format(payPeriod.start, 'MMM d')} - {format(payPeriod.end, 'MMM d, yyyy')})
-           </p>
-        </div>
+          <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" onClick={handlePrevPeriod}>
+                  <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold tracking-tight">Payroll: {payPeriod.label}</h2>
+                <p className="text-muted-foreground text-sm">
+                  {format(payPeriod.start, 'MMM d')} - {format(payPeriod.end, 'MMM d, yyyy')}
+                </p>
+              </div>
+              <Button variant="outline" size="icon" onClick={handleNextPeriod}>
+                  <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setViewDate(new Date())}>
+                  Today
+              </Button>
+          </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
