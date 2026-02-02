@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import {
   Select,
   SelectContent,
@@ -179,7 +180,6 @@ export default function TimesheetsPage() {
 
   const handleDeleteShift = async (shift: any) => {
     if(!firestore) return;
-    if(!confirm("Are you sure you want to delete this shift?")) return;
     
     const batch = writeBatch(firestore);
     const inRef = doc(firestore, 'time_entries', shift.inId);
@@ -192,7 +192,23 @@ export default function TimesheetsPage() {
     
     await batch.commit();
     setEditingShift(null);
-    toast({ title: "Shift Deleted" });
+    
+    toast({ 
+        title: "Shift Deleted", 
+        description: "The record has been removed.",
+        action: (
+            <ToastAction altText="Undo" onClick={async () => {
+                const undoBatch = writeBatch(firestore);
+                undoBatch.update(inRef, { isDeleted: false });
+                if (shift.outId) {
+                    const outRef = doc(firestore, 'time_entries', shift.outId);
+                    undoBatch.update(outRef, { isDeleted: false });
+                }
+                await undoBatch.commit();
+                toast({ title: "Restored", description: "The shift has been restored." });
+            }}>Undo</ToastAction>
+        ),
+    });
   };
 
   const handleAddShift = async () => {
@@ -291,7 +307,7 @@ export default function TimesheetsPage() {
               <Button variant="ghost" size="sm" onClick={() => setViewDate(new Date())}>
                   Today
               </Button>
-              <Button onClick={() => setIsAddingShift(true)}><Plus className="mr-2 h-4 w-4"/> Add Shift</Button>
+              <Button onClick={() => setIsAddingShift(true)} className="ml-2"><Plus className="mr-2 h-4 w-4"/> Add Shift</Button>
           </div>
       </div>
 
@@ -552,7 +568,7 @@ export default function TimesheetsPage() {
                 </div>
             </div>
             <DialogFooter className="justify-between">
-                <Button variant="destructive" onClick={() => editingShift && handleDeleteShift(editingShift)}>
+                <Button type="button" variant="destructive" onClick={() => editingShift && handleDeleteShift(editingShift)}>
                     <Trash2 className="h-4 w-4 mr-2"/> Delete
                 </Button>
                 <div className="flex gap-2">
