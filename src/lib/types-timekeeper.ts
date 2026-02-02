@@ -17,4 +17,5 @@ export interface TimeEntry {
     timestamp: Date; // Firestore Timestamp converted to Date
     method: 'FACE' | 'PIN' | 'ADMIN' | 'RECOVERY';
     snapshotUrl?: string; // Optional URL if a photo was taken
+    isDeleted?: boolean;
 }

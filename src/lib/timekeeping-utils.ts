@@ -51,8 +51,11 @@ export function getPayPeriod(referenceDate: Date = new Date()) {
 export function processTimeEntries(entries: TimeEntry[], periodStart: Date, periodEnd: Date): Record<string, EmployeePeriodSummary> {
   const summary: Record<string, EmployeePeriodSummary> = {};
 
+  // Filter out soft-deleted entries
+  const activeEntries = entries.filter(e => !e.isDeleted);
+
   // 1. Sort entries by time ASC
-  const sortedEntries = [...entries].sort((a, b) => {
+  const sortedEntries = [...activeEntries].sort((a, b) => {
     const timeA = a.timestamp instanceof Date ? a.timestamp : (a.timestamp as any).toDate();
     const timeB = b.timestamp instanceof Date ? b.timestamp : (b.timestamp as any).toDate();
     return timeA.getTime() - timeB.getTime();

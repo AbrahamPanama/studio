@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where, Timestamp, addDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { TimeEntry } from '@/lib/types-timekeeper';
-import { processTimeEntries, getPayPeriod } from '@/lib/timekeeping-utils';
+import { processTimeEntries, getPayPeriod, type DailyShift } from '@/lib/timekeeping-utils';
 import { format, isSameDay, setHours, setMinutes } from 'date-fns';
 import { 
   Card, CardContent, CardHeader, CardTitle, CardDescription 
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, AlertCircle, CheckCircle2, User, Pencil, StopCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle2, User, Pencil, StopCircle, Loader2, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import {
   Dialog,
@@ -29,6 +29,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 
 export default function TimesheetsPage() {
   const firestore = useFirestore();
@@ -48,6 +56,11 @@ export default function TimesheetsPage() {
   } | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
+  
+  const [isAddingShift, setIsAddingShift] = useState(false);
+  const [newShiftData, setNewShiftData] = useState({ 
+      employeeId: '', date: format(new Date(), 'yyyy-MM-dd'), start: '08:00', end: '' 
+  });
 
 
   // 1. Get Current Pay Period
@@ -164,6 +177,62 @@ export default function TimesheetsPage() {
       }
   };
 
+  const handleDeleteShift = async (shift: any) => {
+    if(!firestore) return;
+    if(!confirm("Are you sure you want to delete this shift?")) return;
+    
+    const batch = writeBatch(firestore);
+    const inRef = doc(firestore, 'time_entries', shift.inId);
+    batch.update(inRef, { isDeleted: true });
+    
+    if (shift.outId) {
+        const outRef = doc(firestore, 'time_entries', shift.outId);
+        batch.update(outRef, { isDeleted: true });
+    }
+    
+    await batch.commit();
+    setEditingShift(null);
+    toast({ title: "Shift Deleted" });
+  };
+
+  const handleAddShift = async () => {
+    if(!firestore || !newShiftData.employeeId) return;
+    
+    const baseDate = new Date(newShiftData.date + 'T00:00:00');
+    const [h1, m1] = newShiftData.start.split(':').map(Number);
+    const startTs = setMinutes(setHours(baseDate, h1), m1);
+    
+    const empName = summary.find(e => e.employeeId === newShiftData.employeeId)?.employeeName || 'Unknown';
+
+    const batch = writeBatch(firestore);
+    
+    const inRef = doc(collection(firestore, 'time_entries'));
+    batch.set(inRef, {
+        employeeId: newShiftData.employeeId,
+        employeeName: empName,
+        type: 'CLOCK_IN',
+        method: 'ADMIN',
+        timestamp: Timestamp.fromDate(startTs)
+    });
+
+    if(newShiftData.end) {
+          const [h2, m2] = newShiftData.end.split(':').map(Number);
+          const endTs = setMinutes(setHours(baseDate, h2), m2);
+          const outRef = doc(collection(firestore, 'time_entries'));
+          batch.set(outRef, {
+            employeeId: newShiftData.employeeId,
+            employeeName: empName,
+            type: 'CLOCK_OUT',
+            method: 'ADMIN',
+            timestamp: Timestamp.fromDate(endTs)
+        });
+    }
+    
+    await batch.commit();
+    setIsAddingShift(false);
+    toast({ title: "Shift Created" });
+  };
+
   if (!isAuthorized) {
     return (
         <div className="flex h-[80vh] items-center justify-center">
@@ -222,6 +291,7 @@ export default function TimesheetsPage() {
               <Button variant="ghost" size="sm" onClick={() => setViewDate(new Date())}>
                   Today
               </Button>
+              <Button onClick={() => setIsAddingShift(true)}><Plus className="mr-2 h-4 w-4"/> Add Shift</Button>
           </div>
       </div>
 
@@ -481,11 +551,56 @@ export default function TimesheetsPage() {
                         className="col-span-3"/>
                 </div>
             </div>
-            <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditingShift(null)}>Cancel</Button>
-                <Button type="submit" onClick={handleEditSubmit} disabled={isSubmittingEdit}>
-                    {isSubmittingEdit ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Changes"}
+            <DialogFooter className="justify-between">
+                <Button variant="destructive" onClick={() => editingShift && handleDeleteShift(editingShift)}>
+                    <Trash2 className="h-4 w-4 mr-2"/> Delete
                 </Button>
+                <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setEditingShift(null)}>Cancel</Button>
+                    <Button type="submit" onClick={handleEditSubmit} disabled={isSubmittingEdit}>
+                        {isSubmittingEdit ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Changes"}
+                    </Button>
+                </div>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={isAddingShift} onOpenChange={setIsAddingShift}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Add Manual Shift</DialogTitle>
+                <DialogDescription>Manually create a clock-in and optional clock-out entry.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="new-employee" className="text-right">Employee</Label>
+                    <Select onValueChange={(val) => setNewShiftData(d => ({...d, employeeId: val}))}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select an employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {summary.map(emp => (
+                                <SelectItem key={emp.employeeId} value={emp.employeeId}>{emp.employeeName}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="new-date" className="text-right">Date</Label>
+                    <Input id="new-date" type="date" value={newShiftData.date} onChange={(e) => setNewShiftData(d => ({...d, date: e.target.value}))} className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="new-start" className="text-right">Start Time</Label>
+                    <Input id="new-start" type="time" value={newShiftData.start} onChange={(e) => setNewShiftData(d => ({...d, start: e.target.value}))} className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="new-end" className="text-right">End Time</Label>
+                    <Input id="new-end" type="time" value={newShiftData.end} onChange={(e) => setNewShiftData(d => ({...d, end: e.target.value}))} className="col-span-3"/>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddingShift(false)}>Cancel</Button>
+                <Button type="submit" onClick={handleAddShift}>Create Shift</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
