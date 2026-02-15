@@ -61,14 +61,29 @@ export function processTimeEntries(entries: TimeEntry[], periodStart: Date, peri
     return timeA.getTime() - timeB.getTime();
   });
 
-  // 2. Group by Employee
-  const grouped: Record<string, TimeEntry[]> = {};
+  // 2. Deduplicate "Burst" Punches (same employee, same type, within 60 seconds)
+  // This prevents kiosk double-clicks from creating phantom "Missing Out" rows.
+  const dedupedEntries: TimeEntry[] = [];
+  const lastPunch: Record<string, { type: string, time: number }> = {};
+
   sortedEntries.forEach(entry => {
+    const time = (entry.timestamp instanceof Date ? entry.timestamp : (entry.timestamp as any).toDate()).getTime();
+    const last = lastPunch[entry.employeeId];
+    
+    if (!last || last.type !== entry.type || (time - last.time > 60000)) {
+      dedupedEntries.push(entry);
+      lastPunch[entry.employeeId] = { type: entry.type, time };
+    }
+  });
+
+  // 3. Group by Employee
+  const grouped: Record<string, TimeEntry[]> = {};
+  dedupedEntries.forEach(entry => {
     if (!grouped[entry.employeeId]) grouped[entry.employeeId] = [];
     grouped[entry.employeeId].push(entry);
   });
 
-  // 3. Process Pairs (In -> Out)
+  // 4. Process Pairs (In -> Out)
   Object.keys(grouped).forEach(empId => {
     const empEntries = grouped[empId];
     const shifts: DailyShift[] = [];
@@ -113,7 +128,7 @@ export function processTimeEntries(entries: TimeEntry[], periodStart: Date, peri
           totalMinutes += duration;
           currentIn = null;
         } else {
-          // Orphaned Clock Out (Ignore or log error)
+          // Orphaned Clock Out (Ignore)
         }
       }
     });

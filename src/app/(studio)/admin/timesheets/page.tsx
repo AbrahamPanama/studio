@@ -161,11 +161,30 @@ export default function TimesheetsPage() {
           const inRef = doc(firestore, 'time_entries', editingShift.inId);
           batch.update(inRef, { timestamp: Timestamp.fromDate(newStartDate) });
 
-          if (editingShift.outId && editingShift.outTime) {
+          if (editingShift.outId) {
+              if (editingShift.outTime) {
+                  const [endHours, endMinutes] = editingShift.outTime.split(':').map(Number);
+                  const newEndDate = setMinutes(setHours(editingShift.date, endHours), endMinutes);
+                  const outRef = doc(firestore, 'time_entries', editingShift.outId);
+                  batch.update(outRef, { timestamp: Timestamp.fromDate(newEndDate) });
+              }
+          } else if (editingShift.outTime && editingShift.outTime.trim() !== '') {
+              // Handle adding a missing OUT punch via the Edit dialog
               const [endHours, endMinutes] = editingShift.outTime.split(':').map(Number);
               const newEndDate = setMinutes(setHours(editingShift.date, endHours), endMinutes);
-              const outRef = doc(firestore, 'time_entries', editingShift.outId);
-              batch.update(outRef, { timestamp: Timestamp.fromDate(newEndDate) });
+              
+              // Find employee info from summary to create a complete TimeEntry
+              const emp = summary.find(e => e.shifts.some(s => s.clockInId === editingShift.inId));
+              if (emp) {
+                  const outRef = doc(collection(firestore, 'time_entries'));
+                  batch.set(outRef, {
+                      employeeId: emp.employeeId,
+                      employeeName: emp.employeeName,
+                      type: 'CLOCK_OUT',
+                      method: 'ADMIN',
+                      timestamp: Timestamp.fromDate(newEndDate)
+                  });
+              }
           }
           await batch.commit();
           toast({ title: "Shift Updated", description: "The shift times have been saved." });
@@ -563,7 +582,6 @@ export default function TimesheetsPage() {
                     <Label htmlFor="edit-end-time" className="text-right">End Time</Label>
                     <Input id="edit-end-time" type="time" value={editingShift?.outTime || ''}
                         onChange={(e) => setEditingShift(s => s ? {...s, outTime: e.target.value} : null)}
-                        disabled={!editingShift?.outId}
                         className="col-span-3"/>
                 </div>
             </div>
